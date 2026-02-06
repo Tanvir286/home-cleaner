@@ -328,16 +328,17 @@ export class AuthService {
   }
 
   async register({
-    name,
     first_name,
     last_name,
+    address,
     email,
     password,
     type,
   }: {
-    name: string;
+   
     first_name: string;
     last_name: string;
+    address: string;
     email: string;
     password: string;
     type?: string;
@@ -357,9 +358,9 @@ export class AuthService {
       }
 
       const user = await this.userRepository.createUser({
-        name: name,
         first_name: first_name,
         last_name: last_name,
+        address: address,
         email: email,
         password: password,
         type: type,
@@ -376,7 +377,7 @@ export class AuthService {
       const stripeCustomer = await StripePayment.createCustomer({
         user_id: user.data.id,
         email: email,
-        name: name,
+        name: user.data.first_name,
       });
 
       if (stripeCustomer) {
@@ -390,41 +391,28 @@ export class AuthService {
         });
       }
 
-      // ----------------------------------------------------
-      // // create otp code
-      // const token = await this.ucodeRepository.createToken({
-      //   userId: user.data.id,
-      //   isOtp: true,
-      // });
-
-      // // send otp code to email
-      // await this.mailService.sendOtpCodeToEmail({
-      //   email: email,
-      //   name: name,
-      //   otp: token,
-      // });
-
-      // return {
-      //   success: true,
-      //   message: 'We have sent an OTP code to your email',
-      // };
-
-      // ----------------------------------------------------
-
-      // Generate verification token
-      const token = await this.ucodeRepository.createVerificationToken({
+      // create otp code
+      const token = await this.ucodeRepository.createToken({
         userId: user.data.id,
+        isOtp: true,
+      });
+
+      // send otp code to email
+      await this.mailService.sendOtpCodeToEmail({
         email: email,
+        name: first_name,
+        otp: token,
       });
 
-      // Send verification email with token
-      await this.mailService.sendVerificationLink({
-        email,
-        name: email,
-        token: token.token,
-        type: type,
-      });
+      return {
+        success: true,
+        message: 'We have sent an OTP code to your email',
+      };
 
+      
+
+      
+     
       return {
         success: true,
         message: 'We have sent a verification link to your email',

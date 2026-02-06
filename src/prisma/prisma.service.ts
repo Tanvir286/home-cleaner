@@ -23,7 +23,7 @@ export class PrismaService
     }
 
     const adapter = new PrismaPg({ connectionString });
-    super({ adapter });
+    super({ adapter } as any);
 
     if (process.env.PRISMA_ENV == '1') {
       this.logger.log('Prisma Middleware disabled');

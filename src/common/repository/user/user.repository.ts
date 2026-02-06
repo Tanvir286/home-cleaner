@@ -90,7 +90,7 @@ export class UserRepository {
           username: username,
           email: email,
           password: password,
-          type: 'su_admin',
+          type: 'SU_ADMIN',
         },
       });
       return user;
@@ -121,6 +121,7 @@ export class UserRepository {
           name: name,
           username: username,
           email: email,
+          type: 'USER',
         },
       });
       if (user) {
@@ -196,6 +197,7 @@ export class UserRepository {
     first_name,
     last_name,
     email,
+    address,
     password,
     phone_number,
     role_id = null,
@@ -204,6 +206,7 @@ export class UserRepository {
     name?: string;
     first_name?: string;
     last_name?: string;
+    address?: string;
     email: string;
     password: string;
     phone_number?: string;
@@ -212,18 +215,20 @@ export class UserRepository {
   }) {
     try {
       const data = {};
-      if (name) {
-        data['name'] = name;
-      }
+      
       if (first_name) {
         data['first_name'] = first_name;
       }
+
       if (last_name) {
         data['last_name'] = last_name;
       }
-      if (phone_number) {
-        data['phone_number'] = phone_number;
+
+      if (address) {
+        data['address'] = address;
       }
+
+  
       if (email) {
         // Check if email already exist
         const userEmailExist = await this.exist({
@@ -237,9 +242,9 @@ export class UserRepository {
             message: 'Email already exist',
           };
         }
-
         data['email'] = email;
       }
+
       if (password) {
         data['password'] = await bcrypt.hash(
           password,
@@ -247,16 +252,14 @@ export class UserRepository {
         );
       }
 
-      if (type && ArrayHelper.inArray(type, Object.values(Role))) {
-        data['type'] = type;
 
-        // if (type == Role.VENDOR) {
-        //   data['approved_at'] = DateHelper.now();
-        // }
+      if (ArrayHelper.inArray(type, Object.values(Role))) {
+        data['type'] = type;
       }
 
       const user = await this.prisma.user.create({
         data: {
+          type: 'USER',
           ...data,
         },
       });
@@ -511,7 +514,7 @@ export class UserRepository {
           message: 'User not found',
         };
       }
-      if (userDetails.type == 'vendor') {
+      if (userDetails.type == 'VENDOR') {
         return {
           success: false,
           message: 'User is already a vendor',
@@ -519,7 +522,7 @@ export class UserRepository {
       }
       await this.prisma.user.update({
         where: { id: user_id },
-        data: { type: type },
+        data: { type: type as any },
       });
 
       return {

@@ -117,7 +117,7 @@ export class MessageService {
         AND: [{ id: conversation_id }],
       };
 
-      if (userDetails.type != Role.ADMIN) {
+      if (userDetails.type != 'ADMIN') {
         where_condition['OR'] = [
           { creator_id: user_id },
           { participant_id: user_id },

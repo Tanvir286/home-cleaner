@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client"
   output   = "./generated"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -31,6 +32,19 @@ model Account {
   @@map("accounts")
 }
 
+
+enum UserType {
+  ADMIN
+  CLIENT
+  MAID
+  HOMEOWNER
+  SU_ADMIN
+  VENDOR
+  USER
+}
+
+
+
 model User {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -42,11 +56,16 @@ model User {
   availability String?
 
   email      String? @unique
-  username   String? @unique
-  name       String? @db.VarChar(255)
+  password   String? @db.VarChar(255) 
   first_name String? @db.VarChar(255)
   last_name  String? @db.VarChar(255)
-  password   String? @db.VarChar(255)
+  address       String?
+  type              UserType  @default(MAID)
+  
+
+  username   String? @unique
+  name       String? @db.VarChar(255)
+
   domain     String? @unique
   avatar     String?
 
@@ -54,19 +73,17 @@ model User {
   country       String?
   state         String?
   city          String?
-  address       String?
   zip_code      String?
   gender        String?
   date_of_birth DateTime? @db.Date
 
-  // billing id. e.g. stripe customer id
+
   billing_id String?
 
-  type              String?   @default("user")
   email_verified_at DateTime?
 
   is_two_factor_enabled Int?    @default(0)
-  two_factor_secret     String? // secret key for two factor authentication
+  two_factor_secret     String? 
 
   accounts                  Account[]
   creator_conversations     Conversation[] @relation("creator")

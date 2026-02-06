@@ -11,7 +11,7 @@ export class UserService {
         where: {
           status: 1,
           type: {
-            not: 'user',
+            not: 'USER',
           },
         },
         select: {
