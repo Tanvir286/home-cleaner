@@ -31,6 +31,12 @@ model Account {
   @@map("accounts")
 }
 
+
+/*---------------------------------------------------------------------
+                      User Schema start
+---------------------------------------------------------------------*/
+
+
 enum UserType {
   ADMIN
   CLIENT
@@ -85,6 +91,10 @@ model User {
   two_factor_secret     String?
   accounts              Account[]
 
+
+  profiles             Profile[]
+
+
   // --- Conversation & Messaging ---
   participants Participant[] @relation("participantUser")
   sentMessages Message[] @relation("messageSender")
@@ -117,6 +127,49 @@ model Ucode {
 
   @@map("ucodes")
 }
+
+
+/*---------------------------------------------------------------------
+                      User Schema end
+---------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------
+                      project requirement Schema 
+---------------------------------------------------------------------*/
+
+enum serviceType {
+  GENERAL_CLEANING
+  DEEP_CLEANING
+}
+
+model Profile {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+
+  service_type serviceType?
+
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+}
+
+
+
+
+
+
+
+
+
+
+
+/*---------------------------------------------------------------------
+                      project requirement Schema end
+---------------------------------------------------------------------*/
 
 
 /*---------------------------------------------------------------------
