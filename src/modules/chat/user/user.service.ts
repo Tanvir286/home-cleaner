@@ -12,7 +12,7 @@ export class UserService {
         where: {
           status: 1,
           type: {
-            not: 'CLIENT',
+            not: 'HOMEOWNER',
           },
         },
         select: {

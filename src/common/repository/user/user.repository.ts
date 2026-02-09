@@ -46,7 +46,10 @@ export class UserRepository {
       where: {
         id: userId,
       },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        type: true,
         role_users: {
           include: {
             role: {
@@ -503,10 +506,10 @@ export class UserRepository {
           message: 'User not found',
         };
       }
-      if (userDetails.type == UserType.EDITOR) {
+      if (userDetails.type == UserType.HOMEOWNER) {
         return {
           success: false,
-          message: 'User is already an editor',
+          message: 'User is already a homeowner',
         };
       }
       await this.prisma.user.update({

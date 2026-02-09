@@ -39,8 +39,7 @@ model Account {
 
 enum UserType {
   ADMIN
-  CLIENT
-  EDITOR
+  HOMEOWNER 
   MAID
 }
 
@@ -59,7 +58,7 @@ model User {
   email      String?   @unique
   address    String?
   password   String?   @db.VarChar(255)
-  type       UserType? @default(CLIENT)
+  type       UserType? @default(MAID)
 
   name     String? @db.VarChar(255)
   location String? @db.VarChar(255)
@@ -148,13 +147,12 @@ model Profile {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-
-  service_type serviceType?
-
+  service_type serviceType[]
 
   user_id String
   user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@map("profile")
 }
 
 

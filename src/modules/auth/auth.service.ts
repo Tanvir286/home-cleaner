@@ -173,6 +173,9 @@ export class AuthService {
     try {
       const user = await this.userRepository.getUserDetails(userId);
 
+      console.log('Login - User details:', user);
+      console.log('Login - User type:', user?.type);
+
       const payload = { email: email, sub: userId, type: user?.type };
 
 

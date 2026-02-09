@@ -2,6 +2,9 @@
 CREATE TYPE "UserType" AS ENUM ('ADMIN', 'CLIENT', 'EDITOR', 'MAID');
 
 -- CreateEnum
+CREATE TYPE "serviceType" AS ENUM ('GENERAL_CLEANING', 'DEEP_CLEANING');
+
+-- CreateEnum
 CREATE TYPE "MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ', 'PENDING');
 
 -- CreateTable
@@ -34,6 +37,7 @@ CREATE TABLE "users" (
     "first_name" VARCHAR(255),
     "last_name" VARCHAR(255),
     "avatar" TEXT,
+    "bio" TEXT,
     "about_me" TEXT,
     "email" TEXT,
     "address" TEXT,
@@ -46,7 +50,6 @@ CREATE TABLE "users" (
     "stripe_connect_id" TEXT,
     "balance" DECIMAL(10,2) DEFAULT 0.0,
     "email_verified_at" TIMESTAMP(3),
-    "bio" TEXT,
     "domain" TEXT,
     "username" TEXT,
     "phone_number" TEXT,
@@ -77,6 +80,18 @@ CREATE TABLE "ucodes" (
     "verified_at" TIMESTAMP(3),
 
     CONSTRAINT "ucodes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "profile" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "service_type" "serviceType"[],
+    "user_id" TEXT NOT NULL,
+
+    CONSTRAINT "profile_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -288,6 +303,9 @@ ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user
 
 -- AddForeignKey
 ALTER TABLE "ucodes" ADD CONSTRAINT "ucodes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "profile" ADD CONSTRAINT "profile_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Participant" ADD CONSTRAINT "Participant_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;

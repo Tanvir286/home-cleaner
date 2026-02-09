@@ -32,10 +32,14 @@ export class RolesGuard implements CanActivate {
     const userDetails = await this.userRepository.getUserDetails(user.userId);
 
     if (!userDetails) {
+      console.log('User not found for userId:', user.userId);
       return false;
     }
 
-    if (requiredRoles.some((role) => userDetails.type?.includes(role))) {
+   
+    const userType = userDetails.type;
+    
+    if (requiredRoles.some((role) => userType === role)) {
       return true;
     } else {
       throw new HttpException(

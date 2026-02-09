@@ -37,7 +37,7 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({
     enum: UserType,
-    default: UserType.CLIENT,
+    default: UserType.HOMEOWNER,
   })
   @IsOptional()
   @IsEnum(UserType)
