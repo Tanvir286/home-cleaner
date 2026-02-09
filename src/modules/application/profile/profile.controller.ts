@@ -1,39 +1,41 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
+@UseGuards(JwtAuthGuard)
 @Controller('profile')
 export class ProfileController {
   
   constructor(private readonly profileService: ProfileService) {}
 
-  @Post()
-  create(@Body() createProfileDto: CreateProfileDto) {
-    return this.profileService.create(createProfileDto);
+  // update profile profile
+  @Patch()
+   @UseInterceptors(
+      FileInterceptor('image', {
+        storage: memoryStorage(),
+        limits: { fileSize: 5 * 1024 * 1024 }, 
+      }),
+    )
+  async update(
+    @Body() updateProfileDto: UpdateProfileDto,
+    @Req() req,
+    @UploadedFile() image?: Express.Multer.File,
+ ) {
+    const userId = req.user.userId; 
+    return this.profileService.update(
+      userId,
+      updateProfileDto,
+      image
+    );
   }
-
-  @Get()
-  findAll() {
-    return this.profileService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.profileService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.profileService.update(+id, updateProfileDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.profileService.remove(+id);
-  }
-
-
 
   
+
+
+
+
 }

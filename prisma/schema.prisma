@@ -54,6 +54,7 @@ model User {
   first_name String?   @db.VarChar(255)
   last_name  String?   @db.VarChar(255)
   avatar     String?
+  bio           String?   @db.Text
   about_me   String?
   email      String?   @unique
   address    String?
@@ -74,7 +75,6 @@ model User {
   email_verified_at DateTime?
 
   //----------------------------------------
-  bio           String?   @db.Text
   domain        String?   @unique
   username      String?   @unique
   phone_number  String?
