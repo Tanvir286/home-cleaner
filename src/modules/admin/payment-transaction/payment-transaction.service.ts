@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { UserRepository } from '../../../common/repository/user/user.repository';
+import { UserType } from 'prisma/generated/client';
 
 @Injectable()
 export class PaymentTransactionService {
@@ -14,7 +15,7 @@ export class PaymentTransactionService {
       const userDetails = await this.userRepository.getUserDetails(user_id);
 
       const whereClause = {};
-      if (userDetails.type == 'VENDOR') {
+      if (userDetails.type == UserType.EDITOR) {
         whereClause['user_id'] = user_id;
       }
 
@@ -55,7 +56,7 @@ export class PaymentTransactionService {
       const userDetails = await this.userRepository.getUserDetails(user_id);
 
       const whereClause = {};
-      if (userDetails.type == 'VENDOR') {
+      if (userDetails.type == UserType.EDITOR) {
         whereClause['user_id'] = user_id;
       }
 
@@ -103,7 +104,7 @@ export class PaymentTransactionService {
       const userDetails = await this.userRepository.getUserDetails(user_id);
 
       const whereClause = {};
-      if (userDetails.type == 'VENDOR') {
+      if (userDetails.type == UserType.EDITOR) {
         whereClause['user_id'] = user_id;
       }
 

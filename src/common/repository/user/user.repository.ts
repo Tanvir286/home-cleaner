@@ -1,12 +1,12 @@
-import * as bcrypt from 'bcrypt';
-import * as speakeasy from 'speakeasy';
-import * as QRCode from 'qrcode';
-import appConfig from '../../../config/app.config';
-import { ArrayHelper } from '../../helper/array.helper';
-import { Role } from '../../guard/role/role.enum';
 import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { UserType } from 'prisma/generated/client';
+import * as QRCode from 'qrcode';
+import * as speakeasy from 'speakeasy';
+import appConfig from '../../../config/app.config';
 import { PrismaService } from '../../../prisma/prisma.service';
-
+import { Role } from '../../guard/role/role.enum';
+import { ArrayHelper } from '../../helper/array.helper';
 
 @Injectable()
 export class UserRepository {
@@ -34,6 +34,8 @@ export class UserRepository {
     });
     return user;
   }
+
+ 
 
   /**
    * get user details
@@ -90,7 +92,7 @@ export class UserRepository {
           username: username,
           email: email,
           password: password,
-          type: 'SU_ADMIN',
+          type: UserType.ADMIN,
         },
       });
       return user;
@@ -121,7 +123,6 @@ export class UserRepository {
           name: name,
           username: username,
           email: email,
-          type: 'USER',
         },
       });
       if (user) {
@@ -144,13 +145,7 @@ export class UserRepository {
    * @param param0
    * @returns
    */
-  async attachRole({
-    user_id,
-    role_id,
-  }: {
-    user_id: string;
-    role_id: string;
-  }) {
+  async attachRole({ user_id, role_id }: { user_id: string; role_id: string }) {
     const role = await this.prisma.roleUser.create({
       data: {
         user_id: user_id,
@@ -165,13 +160,7 @@ export class UserRepository {
    * @param param0
    * @returns
    */
-  async syncRole({
-    user_id,
-    role_id,
-  }: {
-    user_id: string;
-    role_id: string;
-  }) {
+  async syncRole({ user_id, role_id }: { user_id: string; role_id: string }) {
     const role = await this.prisma.roleUser.updateMany({
       where: {
         AND: [
@@ -193,21 +182,20 @@ export class UserRepository {
    * @returns
    */
   async createUser({
-    name,
     first_name,
     last_name,
-    email,
     address,
+    name,
+    email,
     password,
-    phone_number,
-    role_id = null,
-    type = 'user',
+    type,
+    role_id,
   }: {
     name?: string;
     first_name?: string;
     last_name?: string;
-    address?: string;
     email: string;
+    address?: string;
     password: string;
     phone_number?: string;
     role_id?: string;
@@ -215,7 +203,38 @@ export class UserRepository {
   }) {
     try {
       const data = {};
-      
+
+      if (name) {
+        data['name'] = name;
+      }
+
+      if (email) {
+        const userEmailExist = await this.exist({
+          field: 'email',
+          value: String(email),
+        });
+
+        if (userEmailExist) {
+          return {
+            success: false,
+            message: 'Email already exist',
+          };
+        }
+
+        data['email'] = email;
+      }
+
+      if (password) {
+        data['password'] = await bcrypt.hash(
+          password,
+          appConfig().security.salt,
+        );
+      }
+
+      if (type && ArrayHelper.inArray(type, Object.values(Role))) {
+        data['type'] = type;
+      }
+
       if (first_name) {
         data['first_name'] = first_name;
       }
@@ -228,38 +247,8 @@ export class UserRepository {
         data['address'] = address;
       }
 
-  
-      if (email) {
-        // Check if email already exist
-        const userEmailExist = await this.exist({
-          field: 'email',
-          value: String(email),
-        });
-
-        if (userEmailExist) {
-          return {
-            success: false,
-            message: 'Email already exist',
-          };
-        }
-        data['email'] = email;
-      }
-
-      if (password) {
-        data['password'] = await bcrypt.hash(
-          password,
-          appConfig().security.salt,
-        );
-      }
-
-
-      if (ArrayHelper.inArray(type, Object.values(Role))) {
-        data['type'] = type;
-      }
-
       const user = await this.prisma.user.create({
         data: {
-          type: 'USER',
           ...data,
         },
       });
@@ -514,15 +503,15 @@ export class UserRepository {
           message: 'User not found',
         };
       }
-      if (userDetails.type == 'VENDOR') {
+      if (userDetails.type == UserType.EDITOR) {
         return {
           success: false,
-          message: 'User is already a vendor',
+          message: 'User is already an editor',
         };
       }
       await this.prisma.user.update({
         where: { id: user_id },
-        data: { type: type as any },
+        data: { type: type as UserType },
       });
 
       return {

@@ -14,7 +14,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import appConfig from '../../../config/app.config';
 import { ChatRepository } from '../../../common/repository/chat/chat.repository';
-import { MessageStatus } from 'prisma/generated/enums';
+
+// Temporary enum until Prisma generates it
+enum MessageStatus {
+  SENT = 'SENT',
+  DELIVERED = 'DELIVERED',
+  READ = 'READ',
+  PENDING = 'PENDING',
+}
 
 @WebSocketGateway({
   cors: {
@@ -24,11 +31,10 @@ import { MessageStatus } from 'prisma/generated/enums';
 })
 export class MessageGateway
   implements
-    OnGatewayInit,
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-    OnModuleInit
-{
+  OnGatewayInit,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnModuleInit {
   @WebSocketServer()
   server: Server;
 
@@ -39,58 +45,108 @@ export class MessageGateway
     '../../../../public/storage/recordings',
   );
 
-  constructor(private readonly chatRepository: ChatRepository) {
+  constructor() {
     if (!fs.existsSync(this.uploadsDir)) {
       fs.mkdirSync(this.uploadsDir, { recursive: true });
     }
   }
 
-  // Map to store connected clients
-  public clients = new Map<string, string>(); // userId -> socketId
-  private activeUsers = new Map<string, string>(); // username -> socketId
+ 
+  public clients = new Map<string, string>(); 
+  private activeUsers = new Map<string, string>(); 
 
-  onModuleInit() {}
+  onModuleInit() { }
 
   afterInit(server: Server) {
     console.log('Websocket server started');
   }
 
-  // implement jwt token validation
+  /*
   async handleConnection(client: Socket, ...args: any[]) {
     try {
-      // const token = client.handshake.headers.authorization?.split(' ')[1];
       const token = client.handshake.auth.token;
       if (!token) {
         client.disconnect();
-        console.log('No token provided');
         return;
       }
 
+      
       const decoded: any = jwt.verify(token, appConfig().jwt.secret);
-      // const decoded: any = this.jwtService.verify(token);
-      // const userId = client.handshake.query.userId as string;
-      const userId = decoded.sub;
+
+      const { sub: userId } = decoded;
+
       if (!userId) {
         client.disconnect();
-        console.log('Invalid token');
         return;
       }
 
       this.clients.set(userId, client.id);
-      // console.log(`User ${userId} connected with socket ${client.id}`);
-      await this.chatRepository.updateUserStatus(userId, 'online');
-      // notify the user that the user is online
+      await ChatRepository.updateUserStatus(userId, 'online');
+      
+
       this.server.emit('userStatusChange', {
         user_id: userId,
         status: 'online',
       });
 
       console.log(`User ${userId} connected`);
+
     } catch (error) {
       client.disconnect();
       console.error('Error handling connection:', error);
     }
-  }
+  }*/
+
+  async handleConnection(client: Socket, ...args: any[]) {
+  
+
+    try {
+   
+      const authHeader = client.handshake.headers.authorization;
+      
+      if (!authHeader) {
+        client.disconnect();
+        return;
+      }
+
+      const token = authHeader.split(' ')[1];
+
+      if (!token) {
+        console.error('[DEBUG] Token not found after split. Disconnecting client.');
+        client.disconnect();
+        return;
+      }
+
+      console.log('[DEBUG] Token extracted successfully. Verifying...');
+
+     
+      const decoded: any = jwt.verify(token, appConfig().jwt.secret);
+
+      console.log('[DEBUG] JWT verification successful. Decoded payload:', decoded);
+
+     
+      const { sub: userId } = decoded;
+
+      
+      if (!userId) {
+        console.error('[DEBUG] Payload missing `sub` (userId). Disconnecting client.');
+        client.disconnect();
+        return;
+      }
+
+      
+      this.clients.set(userId, client.id);
+
+      client.join(`user_${userId}`);
+
+      console.log(`User joined room: user_${userId}`);   
+
+    } catch (error) {
+      
+      console.error('Error handling connection:', error.message); 
+      client.disconnect();
+    }
+  }  
 
   async handleDisconnect(client: Socket) {
     const userId = [...this.clients.entries()].find(
@@ -106,7 +162,7 @@ export class MessageGateway
         this.activeUsers.delete(username);
       }
 
-      await this.chatRepository.updateUserStatus(userId, 'offline');
+      // await ChatRepository.updateUserStatus(userId, 'offline');
       // notify the user that the user is offline
       this.server.emit('userStatusChange', {
         user_id: userId,
@@ -117,13 +173,16 @@ export class MessageGateway
     }
   }
 
-  @SubscribeMessage('joinRoom')
-  handleRoomJoin(client: Socket, body: { room_id: string }) {
-    const roomId = body.room_id;
 
-    client.join(roomId); // join the room using user_id
-    client.emit('joinedRoom', { room_id: roomId });
+
+  @SubscribeMessage('joinroom')
+  handleRoomJoin(client: Socket, body: { room_id: string }) {
+    const room_id = body.room_id;
+    console.log('room connected', room_id); 
+    client.join(room_id); 
+    client.emit('joinedRoom', { room_id: room_id });
   }
+
 
   @SubscribeMessage('sendMessage')
   async listenForMessages(
@@ -144,7 +203,7 @@ export class MessageGateway
     client: Socket,
     @MessageBody() body: { message_id: string; status: MessageStatus },
   ) {
-    await this.chatRepository.updateMessageStatus(body.message_id, body.status);
+    // await ChatRepository.updateMessageStatus(body.message_id, body.status);
     // notify the sender that the message has been sent
     this.server.emit('messageStatusUpdated', {
       message_id: body.message_id,
@@ -277,3 +336,26 @@ export class MessageGateway
     }
   }
 }
+
+
+
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+

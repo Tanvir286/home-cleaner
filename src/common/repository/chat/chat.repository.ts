@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../../prisma/prisma.service';
-import { MessageStatus } from 'prisma/generated/enums';
+
+// Temporary enum until Prisma generates it
+enum MessageStatus {
+  SENT = 'SENT',
+  DELIVERED = 'DELIVERED',
+  READ = 'READ',
+  PENDING = 'PENDING',
+}
 
 @Injectable()
 export class ChatRepository {

@@ -12,10 +12,15 @@ const Stripe = new stripe(STRIPE_SECRET_KEY, {
 });
 
 const STRIPE_WEBHOOK_SECRET = appConfig().payment.stripe.webhook_secret;
-/**
- * Stripe payment method helper
- */
+
 export class StripePayment {
+
+
+  /*-----------------------------------------
+            important Schema start
+  -----------------------------------------*/
+
+  // create payment method
   static async createPaymentMethod({
     card,
     billing_details,
@@ -35,11 +40,27 @@ export class StripePayment {
     return paymentMethod;
   }
 
-  /**
-   * Add customer to stripe
-   * @param email
-   * @returns
-   */
+  // create payment intent
+  static async createPaymentIntent({
+    amount,
+    currency,
+    customer_id,
+    metadata,
+  }: {
+    amount: number;
+    currency: string;
+    customer_id: string;
+    metadata?: stripe.MetadataParam;
+  }): Promise<stripe.PaymentIntent> {
+    return Stripe.paymentIntents.create({
+      amount: amount * 100, // amount in cents
+      currency: currency,
+      customer: customer_id,
+      metadata: metadata,
+    });
+  }
+
+  // create customer
   static async createCustomer({
     user_id,
     name,
@@ -59,6 +80,84 @@ export class StripePayment {
     });
     return customer;
   }
+
+
+
+
+  /*-----------------------------------------
+            important Schema end
+  -----------------------------------------*/
+
+
+  /*-----------------------------------------
+         withdraw Schema start
+  -----------------------------------------*/
+
+  // create connected account
+  static async createConnectedAccount(email: string) {
+    const connectedAccount = await Stripe.accounts.create({
+      type: 'express',
+      email: email,
+      country: 'US', // change as per user's country
+      // business_profile: {
+      //   url: appConfig().app.url,
+      // },
+      // settings: {
+      //   payouts: {
+      //     schedule: {
+      //       interval: 'manual',
+      //     },
+      //   },
+      // },
+      capabilities: {
+        // card_payments: {
+        //   enabled: true,
+        // },
+        transfers: {
+          // enabled: true,
+          requested: true,
+        },
+      },
+    });
+
+    return connectedAccount;
+  }
+
+  // Stripe Connect onboarding.
+  static async createOnboardingAccountLink(account_id: string) {
+    const accountLink = await Stripe.accountLinks.create({
+      account: account_id,
+      refresh_url: appConfig().app.url,
+      return_url: appConfig().app.url,
+      type: 'account_onboarding',
+    });
+    return accountLink;
+  }
+
+
+  // transfer money to account
+  static async createTransfer(
+    account_id: string,
+    amount: number,
+    currency: string,
+  ) {
+    const transfer = await Stripe.transfers.create({
+      amount: amount * 100,
+      currency: currency,
+      destination: account_id,
+    });
+    return transfer;
+  }
+
+
+  /*-----------------------------------------
+         withdraw Schema end
+  -----------------------------------------*/
+
+
+
+
+
 
   static async attachCustomerPaymentMethodId({
     customer_id,
@@ -127,24 +226,7 @@ export class StripePayment {
     return session;
   }
 
-  static async createPaymentIntent({
-    amount,
-    currency,
-    customer_id,
-    metadata,
-  }: {
-    amount: number;
-    currency: string;
-    customer_id: string;
-    metadata?: stripe.MetadataParam;
-  }): Promise<stripe.PaymentIntent> {
-    return Stripe.paymentIntents.create({
-      amount: amount * 100, // amount in cents
-      currency: currency,
-      customer: customer_id,
-      metadata: metadata,
-    });
-  }
+
 
   /**
    * Create stripe hosted checkout session
@@ -153,9 +235,8 @@ export class StripePayment {
    * @returns
    */
   static async createCheckoutSession() {
-    const success_url = `${
-      appConfig().app.url
-    }/success?session_id={CHECKOUT_SESSION_ID}`;
+    const success_url = `${appConfig().app.url
+      }/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancel_url = `${appConfig().app.url}/failed`;
 
     const session = await Stripe.checkout.sessions.create({
@@ -191,9 +272,8 @@ export class StripePayment {
     customer: string,
     price: string,
   ) {
-    const success_url = `${
-      appConfig().app.url
-    }/success?session_id={CHECKOUT_SESSION_ID}`;
+    const success_url = `${appConfig().app.url
+      }/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancel_url = `${appConfig().app.url}/failed`;
 
     const session = await Stripe.checkout.sessions.create({
@@ -292,60 +372,10 @@ export class StripePayment {
   // -----------------------payout system start--------------------------------
 
   // If you are paying users, they need Stripe Connect accounts. You can create Express or Standard accounts.
-  static async createConnectedAccount(email: string) {
-    const connectedAccount = await Stripe.accounts.create({
-      type: 'express',
-      email: email,
-      country: 'US', // change as per user's country
-      // business_profile: {
-      //   url: appConfig().app.url,
-      // },
-      // settings: {
-      //   payouts: {
-      //     schedule: {
-      //       interval: 'manual',
-      //     },
-      //   },
-      // },
-      capabilities: {
-        // card_payments: {
-        //   enabled: true,
-        // },
-        transfers: {
-          // enabled: true,
-          requested: true,
-        },
-      },
-    });
 
-    return connectedAccount;
-  }
 
-  // Before making payouts, users must complete Stripe Connect onboarding.
-  static async createOnboardingAccountLink(account_id: string) {
-    const accountLink = await Stripe.accountLinks.create({
-      account: account_id,
-      refresh_url: appConfig().app.url,
-      return_url: appConfig().app.url,
-      type: 'account_onboarding',
-    });
 
-    return accountLink;
-  }
 
-  // transfer money to account
-  static async createTransfer(
-    account_id: string,
-    amount: number,
-    currency: string,
-  ) {
-    const transfer = await Stripe.transfers.create({
-      amount: amount * 100,
-      currency: currency,
-      destination: account_id,
-    });
-    return transfer;
-  }
 
   // Once the user has an approved Stripe account with a linked bank, you can send them funds.
   static async createPayout(

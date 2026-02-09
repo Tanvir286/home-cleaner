@@ -29,7 +29,7 @@ export class LocalAuthGuard extends AuthGuard('local') {
       } else if (!password) {
         throw new HttpException(
           { message: 'password not provided' },
-          HttpStatus.OK,
+          HttpStatus.OK,  
         );
       } else {
         throw err || new UnauthorizedException();

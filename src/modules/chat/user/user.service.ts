@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class UserService {
         where: {
           status: 1,
           type: {
-            not: 'USER',
+            not: 'CLIENT',
           },
         },
         select: {

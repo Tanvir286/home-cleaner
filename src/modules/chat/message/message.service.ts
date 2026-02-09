@@ -1,237 +1,395 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
+import appConfig from "../../../config/app.config";
+import { CreateMessageDto } from "./dto/create-message.dto";
+import { PrismaService } from "../../../prisma/prisma.service";
+import { TanvirStorage } from '../../../common/lib/Disk/TanvirStorage';
+import { MessageGateway } from "./message.gateway";
+import { StringHelper } from "src/common/helper/string.helper";
+import { paginateResponse, PaginationDto } from "src/common/pagination";
+import { ChatRepository } from "../../../common/repository/chat/chat.repository";
 
-import appConfig from '../../../config/app.config';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { PrismaService } from '../../../prisma/prisma.service';
-import { ChatRepository } from '../../../common/repository/chat/chat.repository';
-import { SojebStorage } from '../../../common/lib/Disk/SojebStorage';
-import { DateHelper } from '../../../common/helper/date.helper';
-import { MessageGateway } from './message.gateway';
-import { UserRepository } from '../../../common/repository/user/user.repository';
-import { Role } from '../../../common/guard/role/role.enum';
-import { MessageStatus } from 'prisma/generated/enums';
+// Temporary enum until Prisma generates it
+enum MessageStatus {
+  SENT = 'SENT',
+  DELIVERED = 'DELIVERED',
+  READ = 'READ',
+  PENDING = 'PENDING',
+}
 
 @Injectable()
 export class MessageService {
   constructor(
-    private prisma: PrismaService,
+    private readonly prisma: PrismaService,
     private readonly messageGateway: MessageGateway,
-    private userRepository: UserRepository,
-    private chatRepository: ChatRepository,
-  ) {}
+  ) { }
 
-  async create(user_id: string, createMessageDto: CreateMessageDto) {
-    try {
-      const data: any = {};
+  // *Send message (with Prisma transaction)
+  async create(
+    createMessageDto: CreateMessageDto,
+    sender: string,
+    files?: Express.Multer.File[],
+  ) {
+    const { text, conversationId } = createMessageDto;
 
-      if (createMessageDto.conversation_id) {
-        data.conversation_id = createMessageDto.conversation_id;
-      }
+    const participant = await this.prisma.participant.findFirst({
+      where: { conversationId, userId: sender },
+    });
 
-      if (createMessageDto.receiver_id) {
-        data.receiver_id = createMessageDto.receiver_id;
-      }
-
-      if (createMessageDto.message) {
-        data.message = createMessageDto.message;
-      }
-
-      // check if conversation exists
-      const conversation = await this.prisma.conversation.findFirst({
-        where: {
-          id: data.conversation_id,
-        },
-      });
-
-      if (!conversation) {
-        return {
-          success: false,
-          message: 'Conversation not found',
-        };
-      }
-
-      // check if receiver exists
-      const receiver = await this.prisma.user.findFirst({
-        where: {
-          id: data.receiver_id,
-        },
-      });
-
-      if (!receiver) {
-        return {
-          success: false,
-          message: 'Receiver not found',
-        };
-      }
-
-      const message = await this.prisma.message.create({
-        data: {
-          ...data,
-          status: MessageStatus.SENT,
-          sender_id: user_id,
-        },
-      });
-
-      // update conversation updated_at
-      await this.prisma.conversation.update({
-        where: {
-          id: data.conversation_id,
-        },
-        data: {
-          updated_at: DateHelper.now(),
-        },
-      });
-
-      // this.messageGateway.server
-      //   .to(this.messageGateway.clients.get(data.receiver_id))
-      //   .emit('message', { from: data.receiver_id, data: message });
-
-      return {
-        success: true,
-        data: message,
-        message: 'Message sent successfully',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
+    if (!participant) {
+      throw new UnauthorizedException(
+        "You are not a participant of this conversation.",
+      );
     }
-  }
 
-  async findAll({
-    user_id,
-    conversation_id,
-    limit = 20,
-    cursor,
-  }: {
-    user_id: string;
-    conversation_id: string;
-    limit?: number;
-    cursor?: string;
-  }) {
-    try {
-      const userDetails = await this.userRepository.getUserDetails(user_id);
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { participants: true },
+    });
 
-      const where_condition = {
-        AND: [{ id: conversation_id }],
-      };
-
-      if (userDetails.type != 'ADMIN') {
-        where_condition['OR'] = [
-          { creator_id: user_id },
-          { participant_id: user_id },
-        ];
-      }
-
-      const conversation = await this.prisma.conversation.findFirst({
-        where: {
-          ...where_condition,
-        },
-      });
-
-      if (!conversation) {
-        return {
-          success: false,
-          message: 'Conversation not found',
-        };
-      }
-
-      const paginationData = {};
-      if (limit) {
-        paginationData['take'] = limit;
-      }
-      if (cursor) {
-        paginationData['cursor'] = cursor ? { id: cursor } : undefined;
-      }
-
-      const messages = await this.prisma.message.findMany({
-        ...paginationData,
-        where: {
-          conversation_id: conversation_id,
-        },
-        orderBy: {
-          created_at: 'asc',
-        },
-        select: {
-          id: true,
-          message: true,
-          created_at: true,
-          status: true,
-          sender: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          receiver: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-
-          attachment: {
-            select: {
-              id: true,
-              name: true,
-              type: true,
-              size: true,
-              file: true,
-            },
-          },
-        },
-      });
-
-      // add attachment url
-      for (const message of messages) {
-        if (message.attachment) {
-          message.attachment['file_url'] = SojebStorage.url(
-            appConfig().storageUrl.attachment + message.attachment.file,
-          );
-        }
-      }
-
-      // add image url
-      for (const message of messages) {
-        if (message.sender && message.sender.avatar) {
-          message.sender['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + message.sender.avatar,
-          );
-        }
-        if (message.receiver && message.receiver.avatar) {
-          message.receiver['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + message.receiver.avatar,
-          );
-        }
-      }
-
-      return {
-        success: true,
-        data: messages,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
+    if (!conversation) {
+      throw new NotFoundException("Conversation not found");
     }
+
+    const savedFileNames: string[] = [];
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const fileName = `${StringHelper.randomString(8)}_${file.originalname}`;
+        await TanvirStorage.put(
+          appConfig().storageUrl.attachment + "/" + fileName,
+          file.buffer,
+        );
+        savedFileNames.push(fileName);
+      }
+    }
+
+    const message = await this.prisma.message.create({
+      data: {
+        text,
+        conversationId,
+        senderId: sender,
+        status: MessageStatus.SENT,
+        attachments: savedFileNames.length > 0 ? savedFileNames : [],
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() },
+    });
+
+    const formatted = {
+      id: message.id,
+      text: message.text,
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+      status: message.status,
+      attchment: message.attachments,
+      attachments_url: (message.attachments || []).map((f) =>
+        TanvirStorage.url(`${appConfig().storageUrl.attachment}/${f}`),
+      ),
+      sender: {
+        id: message.sender.id,
+        name: message.sender.name,
+        email: message.sender.email,
+        avatar: message.sender.avatar
+          ? TanvirStorage.url(
+            `${appConfig().storageUrl.avatar}/${message.sender.avatar}`,
+          )
+          : null,
+      },
+    };
+
+    // note: socket implementation for message sending
+    const senderSocketId = this.messageGateway.clients.get(sender);
+
+    if (senderSocketId) {
+      this.messageGateway.server
+        .to(conversationId)
+        .except(senderSocketId)
+        .emit("message", {
+          from: sender,
+          data: formatted,
+        });
+    } else {
+      this.messageGateway.server.to(conversationId).emit("message", {
+        from: sender,
+        data: formatted,
+      });
+    }
+
+    /*
+     socket.on('message', (msg) => {
+      console.log('New message received:', msg);
+    });
+    */
+
+    return {
+      message: "Message sent successfully",
+      success: true,
+      data: formatted,
+    };
   }
 
-  async updateMessageStatus(message_id: string, status: MessageStatus) {
-    return await this.chatRepository.updateMessageStatus(message_id, status);
-  }
+  // *get all messages for a conversation
+  async findAll(
+    conversationId: string,
+    userId: string,
+    paginationdto: PaginationDto,
+  ) {
+    const { page, perPage } = paginationdto;
+    const skip = (page - 1) * perPage;
+    const take = perPage;
+    const whereClause = { conversationId };
 
-  async readMessage(message_id: string) {
-    return await this.chatRepository.updateMessageStatus(
-      message_id,
-      MessageStatus.READ,
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException("Conversation not found");
+    }
+
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId,
     );
+    if (!isParticipant) {
+      throw new UnauthorizedException(
+        "You are not a participant of this conversation.",
+      );
+    }
+
+    const receiverParticipant = conversation.participants.find(
+      (p) => p.userId !== userId,
+    );
+
+    let formattedReceiver = null;
+    if (receiverParticipant) {
+      formattedReceiver = {
+        id: receiverParticipant.user.id,
+        name: receiverParticipant.user.name,
+        email: receiverParticipant.user.email,
+        avatar_url: receiverParticipant.user.avatar
+          ? TanvirStorage.url(
+            `${appConfig().storageUrl.avatar}/${receiverParticipant.user.avatar}`,
+          )
+          : null,
+      };
+    }
+
+    const [totalMessages, messages] = await this.prisma.$transaction([
+      this.prisma.message.count({ where: whereClause }),
+      this.prisma.message.findMany({
+        where: whereClause,
+        include: {
+          sender: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+        skip,
+        take,
+      }),
+    ]);
+
+    if (totalMessages === 0) {
+      return {
+        message: "No messages found",
+        success: true,
+        data: paginateResponse([], page, perPage, totalMessages),
+      };
+    }
+
+    const formattedMessages = messages.map((msg) => ({
+      id: msg.id,
+      text: msg.text,
+      attachments: msg.attachments,
+      attachments_url: (msg.attachments || []).map((f) =>
+        TanvirStorage.url(`${appConfig().storageUrl.attachment}/${f}`),
+      ),
+      createdAt: msg.createdAt,
+      sender: {
+        id: msg.sender.id,
+        name: msg.sender.name,
+        email: msg.sender.email,
+        avater: msg.sender.avatar,
+        avatar_url: msg.sender.avatar
+          ? TanvirStorage.url(
+            `${appConfig().storageUrl.avatar}/${msg.sender.avatar}`,
+          )
+          : null,
+      },
+
+      receiver: formattedReceiver,
+    }));
+
+    const paginationResult = paginateResponse(
+      formattedMessages,
+      page,
+      perPage,
+      totalMessages,
+    );
+
+    return {
+      message: "Messages retrieved successfully",
+      success: true,
+      ...paginationResult,
+    };
   }
 
-  async updateUserStatus(user_id: string, status: string) {
-    return await this.chatRepository.updateUserStatus(user_id, status);
+  // Delete a message
+  async deleteMessage(userId: string, messageId: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        sender: true,
+      },
+    });
+
+    if (!message) {
+      throw new NotFoundException("Message not found");
+    }
+
+    if (message.senderId !== userId) {
+      throw new UnauthorizedException(
+        "You are not authorized to delete this message.",
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+
+      await tx.message.delete({
+        where: { id: messageId },
+      });
+
+      if (message.attachments && message.attachments.length > 0) {
+        for (const fname of message.attachments) {
+          await TanvirStorage.delete(
+            `${appConfig().storageUrl.attachment}/${fname}`,
+          );
+        }
+      }
+    });
+
+    return {
+      message: "Message deleted successfully",
+      success: true,
+    };
   }
+
+
+  // unread message count
+  async getUnreadMessage(userId: string, conversationId: string) {
+    const participant = await this.prisma.participant.findFirst({
+      where: { conversationId, userId },
+    });
+
+    if (!participant) {
+      throw new UnauthorizedException(
+        "You are not a participant of this conversation.",
+      );
+    }
+
+    const lastReadAt = participant.lastReadAt || new Date(0);
+
+    const whereClause = {
+      conversationId,
+      NOT: { status: MessageStatus.READ },
+      senderId: { not: userId },
+      createdAt: { gt: lastReadAt },
+    };
+
+    const [unreadCount, unreadMessages] = await this.prisma.$transaction([
+      this.prisma.message.count({ where: whereClause }),
+      this.prisma.message.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "asc" },
+        include: {
+          sender: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
+        },
+      }),
+    ]);
+
+    const formattedMessages = unreadMessages.map((msg) => ({
+      id: msg.id,
+      text: msg.text,
+      senderName: msg.sender.name,
+      attachments: (msg.attachments || []).map((f) =>
+        TanvirStorage.url(`${appConfig().storageUrl.attachment}/${f}`),
+      ),
+    }));
+
+    return {
+      message: "Unread message count retrieved successfully",
+      success: true,
+      data: {
+        count: unreadCount,
+        messages: formattedMessages,
+      },
+    };
+  }
+
+  // Mark messages as read
+  async readMessages(userId: string, conversationId: string) {
+    const participant = await this.prisma.participant.findFirst({
+      where: { conversationId, userId },
+    });
+
+    if (!participant) {
+      throw new UnauthorizedException(
+        "You are not a participant of this conversation.",
+      );
+    }
+
+    const lastReadAt = participant.lastReadAt || new Date(0);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.message.updateMany({
+        where: {
+          conversationId,
+          senderId: { not: userId },
+          status: { not: "READ" },
+          createdAt: { gt: lastReadAt },
+        },
+        data: { status: "READ" },
+      });
+
+      await tx.participant.update({
+        where: { id: participant.id },
+        data: { lastReadAt: new Date() },
+      });
+    });
+
+    return {
+      message: "Messages marked as read successfully",
+      success: true,
+    };
+  }
+
+
 }

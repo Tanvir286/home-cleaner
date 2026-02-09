@@ -1,69 +1,65 @@
 // external imports
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
 import helmet from 'helmet';
-import { join } from 'path';
-// import express from 'express';
+import { join, resolve } from 'path';
 // internal imports
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
-import appConfig from './config/app.config';
 import { CustomExceptionFilter } from './common/exception/custom-exception.filter';
-import { SojebStorage } from './common/lib/Disk/SojebStorage';
+import { TanvirStorage } from './common/lib/Disk/TanvirStorage';
+import appConfig from './config/app.config';
+import { PrismaExceptionFilter } from './common/exception/prisma-exception.filter';
 
 async function bootstrap() {
+ 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
 
-  // Handle raw body for webhooks
-  // app.use('/payment/stripe/webhook', express.raw({ type: 'application/json' }));
-
+ 
+  app.useWebSocketAdapter(new IoAdapter(app));
   app.setGlobalPrefix('api');
   app.enableCors();
   app.use(helmet());
-  // Enable it, if special charactrers not encoding perfectly
-  // app.use((req, res, next) => {
-  //   // Only force content-type for specific API routes, not Swagger or assets
-  //   if (req.path.startsWith('/api') && !req.path.startsWith('/api/docs')) {
-  //     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  //   }
-  //   next();
-  // });
-  app.useStaticAssets(join(__dirname, '..', 'public'), {
+ 
+
+  app.useStaticAssets(join(__dirname, "..", "..", "public"), {
     index: false,
-    prefix: '/public',
+    prefix: "/public",
   });
-  app.useStaticAssets(join(__dirname, '..', 'public/storage'), {
-    index: false,
-    prefix: '/storage',
-  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
-  app.useGlobalFilters(new CustomExceptionFilter());
+  
+  app.useGlobalFilters(
+    new CustomExceptionFilter(),
+    new PrismaExceptionFilter(),  
+  );
 
   // storage setup
-  SojebStorage.config({
+  TanvirStorage.config({
     driver: 'local',
     connection: {
       rootUrl: appConfig().storageUrl.rootUrl,
       publicUrl: appConfig().storageUrl.rootUrlPublic,
-      // aws s3
       awsBucket: appConfig().fileSystems.s3.bucket,
       awsAccessKeyId: appConfig().fileSystems.s3.key,
       awsSecretAccessKey: appConfig().fileSystems.s3.secret,
       awsDefaultRegion: appConfig().fileSystems.s3.region,
       awsEndpoint: appConfig().fileSystems.s3.endpoint,
       minio: true,
-      // google cloud storage
-      gcpProjectId: appConfig().fileSystems.gcs.projectId,
-      gcpKeyFile: appConfig().fileSystems.gcs.keyFile,
-      gcpApiEndpoint: appConfig().fileSystems.gcs.apiEndpoint,
-      gcpBucket: appConfig().fileSystems.gcs.bucket,
     },
   });
 
@@ -77,7 +73,7 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/docs', app, document);
-  // end swagger
+ 
 
   await app.listen(process.env.PORT ?? 4000, '0.0.0.0');
 }

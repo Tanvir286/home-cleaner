@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { UserRepository } from '../../../common/repository/user/user.repository';
 import appConfig from '../../../config/app.config';
-import { SojebStorage } from '../../../common/lib/Disk/SojebStorage';
+import { TanvirStorage } from '../../../common/lib/Disk/TanvirStorage';
 import { DateHelper } from '../../../common/helper/date.helper';
 
 @Injectable()
@@ -115,8 +115,8 @@ export class UserService {
 
       // add avatar url to user
       if (user.avatar) {
-        user['avatar_url'] = SojebStorage.url(
-          appConfig().storageUrl.avatar + user.avatar,
+        user['avatar_url'] = TanvirStorage.url(
+          appConfig().storageUrl.avatar + '/' + user.avatar,
         );
       }
 

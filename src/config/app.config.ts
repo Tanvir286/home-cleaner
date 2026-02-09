@@ -33,7 +33,7 @@ export default () => ({
 
   redis: {
     host: process.env.REDIS_HOST,
-    password: process.env.REDIS_PASSWORD,
+    password: process.env.REDIS_PASSWORD || '',
     port: process.env.REDIS_PORT,
   },
 
@@ -85,9 +85,11 @@ export default () => ({
     destination: '/destination',
     blog: '/blog',
     avatar: '/avatar',
+    portfolio: '/portfolio',
     websiteInfo: '/website-info',
     // chat
-    attachment: '/attachment',
+    attachment: 'attachment/',
+    jobPhoto: 'job-photo/',
   },
 
   defaultUser: {
