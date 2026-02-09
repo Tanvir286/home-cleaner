@@ -29,6 +29,9 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
 
+    console.log('Request user:', user);
+    console.log('User ID:', user?.userId);
+
     const userDetails = await this.userRepository.getUserDetails(user.userId);
 
     if (!userDetails) {
@@ -36,12 +39,17 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-   
+    console.log('User details from DB:', userDetails);
+    console.log('User type:', userDetails.type);
+    console.log('Required roles:', requiredRoles);
+
     const userType = userDetails.type;
     
     if (requiredRoles.some((role) => userType === role)) {
+      console.log('Access granted - role matched');
       return true;
     } else {
+      console.log('Access denied - role mismatch');
       throw new HttpException(
         'You do not have permission to access this resource',
         HttpStatus.FORBIDDEN,

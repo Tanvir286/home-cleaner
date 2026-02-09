@@ -25,6 +25,7 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
   
   // get profile details
+  @UseGuards(JwtAuthGuard)
   @Get('details')
   async getProfileDetails(@Req() req) {
     const userId = req.user.userId;
@@ -66,6 +67,7 @@ export class ProfileController {
     @Req() req,
     @UploadedFile() image?: Express.Multer.File,
   ) {
+    console.log('Homeowner route - User:', req.user);
     const userId = req.user.userId;
     return this.profileService.updateHomeowner(userId, updateProfileDto, image);
   }

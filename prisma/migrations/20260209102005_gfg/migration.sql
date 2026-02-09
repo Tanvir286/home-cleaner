@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "UserType" AS ENUM ('ADMIN', 'CLIENT', 'EDITOR', 'MAID');
+CREATE TYPE "UserType" AS ENUM ('ADMIN', 'HOMEOWNER', 'MAID');
 
 -- CreateEnum
 CREATE TYPE "serviceType" AS ENUM ('GENERAL_CLEANING', 'DEEP_CLEANING');
@@ -42,7 +42,7 @@ CREATE TABLE "users" (
     "email" TEXT,
     "address" TEXT,
     "password" VARCHAR(255),
-    "type" "UserType" DEFAULT 'CLIENT',
+    "type" "UserType" DEFAULT 'MAID',
     "name" VARCHAR(255),
     "location" VARCHAR(255),
     "language" VARCHAR(100),
