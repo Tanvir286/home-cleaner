@@ -35,7 +35,6 @@ model Account {
                       User Schema start
 ---------------------------------------------------------------------*/
 
-
 enum UserType {
   ADMIN
   HOMEOWNER 
@@ -87,22 +86,24 @@ model User {
 
   is_two_factor_enabled Int?      @default(0)
   two_factor_secret     String?
+
+  // Profil & account
   accounts              Account[]
-
-
   profiles             Profile[]
+  
+  // Booking
+  maidBookings Booking[] @relation("MaidBookings")
+  userBookings Booking[] @relation("UserBookings")
 
-  // --- Booking Relations ---
-
-
-  // --- Conversation & Messaging ---
+  // Conversation & Messaging 
   participants Participant[] @relation("participantUser")
   sentMessages Message[] @relation("messageSender")
 
-  // --- Notifications ---
+  // Notifications 
   receivedNotifications Notification[] @relation("notificationReceiver")
   sentNotifications Notification[] @relation("notificationSender")
 
+  // others 
   user_payment_methods UserPaymentMethod[]
   ucodes               Ucode[]
   role_users           RoleUser[]
@@ -164,6 +165,22 @@ enum PackageType {
   GLIDE
 }
 
+enum Slot {
+  A
+  B
+  C
+  D
+}
+
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+
 model GeneralCleaningPackage {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -197,7 +214,37 @@ model DeepCleaningPackage {
   duration    Int?     
 
   @@map("deep_cleaning_packages")
+  
 }
+
+
+
+
+model Booking {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  maid_id String
+  maid    User   @relation("MaidBookings", fields: [maid_id], references: [id], onDelete: Cascade)
+
+  user_id String
+  user    User   @relation("UserBookings", fields: [user_id], references: [id], onDelete: Cascade)
+
+  service_type serviceType
+  package_type PackageType
+  booking_date DateTime @db.Date
+  slot         Slot
+
+  total_price Decimal? @db.Decimal(10, 2)
+  status      BookingStatus @default(PENDING)
+
+  @@unique([maid_id, booking_date, slot])
+  @@map("bookings")
+}
+
+
 
 /*---------------------------------------------------------------------
                       project requirement Schema end
