@@ -1,10 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsDateString, IsNumber } from 'class-validator';
-
-export enum ServiceTypeEnum {
-  GENERAL_CLEANING = 'GENERAL_CLEANING',
-  DEEP_CLEANING = 'DEEP_CLEANING',
-}
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export enum SlotEnum {
   A = 'A',
@@ -14,14 +9,10 @@ export enum SlotEnum {
 }
 
 export class CreateBookingDto {
-
+  @ApiProperty({ description: 'Maid user ID', example: 'clxyz123' })
   @IsNotEmpty()
   @IsString()
   maid_id: string;
-
-  @IsNotEmpty()
-  @IsEnum(ServiceTypeEnum)
-  service_type: ServiceTypeEnum;
 
   @ApiProperty({ description: 'Package ID (general or deep cleaning)', example: 'clxyz456' })
   @IsNotEmpty()
