@@ -30,14 +30,15 @@ model Account {
   @@map("accounts")
 }
 
-
-/*---------------------------------------------------------------------
-                      User Schema start
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * User Schema start
+ * ---------------------------------------------------------------------
+ */
 
 enum UserType {
   ADMIN
-  HOMEOWNER 
+  HOMEOWNER
   MAID
 }
 
@@ -51,7 +52,7 @@ model User {
   first_name String?   @db.VarChar(255)
   last_name  String?   @db.VarChar(255)
   avatar     String?
-  bio           String?   @db.Text
+  bio        String?   @db.Text
   about_me   String?
   email      String?   @unique
   address    String?
@@ -84,24 +85,24 @@ model User {
   approved_at   DateTime?
   availability  String?
 
-  is_two_factor_enabled Int?      @default(0)
+  is_two_factor_enabled Int?    @default(0)
   two_factor_secret     String?
 
   // Profil & account
-  accounts              Account[]
-  profiles             Profile[]
-  
+  accounts Account[]
+  profiles Profile[]
+
   // Booking
   maidBookings Booking[] @relation("MaidBookings")
   userBookings Booking[] @relation("UserBookings")
 
   // Conversation & Messaging 
   participants Participant[] @relation("participantUser")
-  sentMessages Message[] @relation("messageSender")
+  sentMessages Message[]     @relation("messageSender")
 
   // Notifications 
   receivedNotifications Notification[] @relation("notificationReceiver")
-  sentNotifications Notification[] @relation("notificationSender")
+  sentNotifications     Notification[] @relation("notificationSender")
 
   // others 
   user_payment_methods UserPaymentMethod[]
@@ -129,7 +130,6 @@ model Ucode {
   @@map("ucodes")
 }
 
-
 model Profile {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -144,14 +144,17 @@ model Profile {
   @@map("profile")
 }
 
+/**
+ * ---------------------------------------------------------------------
+ * User Schema end
+ * ---------------------------------------------------------------------
+ */
 
-/*---------------------------------------------------------------------
-                      User Schema end
----------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------
-                      project requirement Schema 
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * project requirement Schema
+ * ---------------------------------------------------------------------
+ */
 
 enum serviceType {
   GENERAL_CLEANING
@@ -172,7 +175,6 @@ enum Slot {
   D
 }
 
-
 enum BookingStatus {
   PENDING
   CONFIRMED
@@ -180,24 +182,23 @@ enum BookingStatus {
   CANCELLED
 }
 
-
 model GeneralCleaningPackage {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
- 
   title       String?
   serviceType serviceType @default(GENERAL_CLEANING)
-  packageType PackageType 
+  packageType PackageType
   description String?
-  price       Decimal? @db.Decimal(10, 2)
-  duration    Int?     
+  price       Decimal?    @db.Decimal(10, 2)
+  duration    Int?
+
+  booking Booking[] @relation("GeneralCleaningPackageBookings")
 
   @@map("general_cleaning_packages")
 }
-
 
 model DeepCleaningPackage {
   id         String    @id @default(cuid())
@@ -205,20 +206,17 @@ model DeepCleaningPackage {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
- 
   title       String?
   serviceType serviceType @default(DEEP_CLEANING)
-  packageType PackageType 
+  packageType PackageType
   description String?
-  price       Decimal? @db.Decimal(10, 2)
-  duration    Int?     
+  price       Decimal?    @db.Decimal(10, 2)
+  duration    Int?
+
+  booking Booking[] @relation("DeepCleaningPackageBookings")
 
   @@map("deep_cleaning_packages")
-  
 }
-
-
-
 
 model Booking {
   id         String    @id @default(cuid())
@@ -232,28 +230,33 @@ model Booking {
   user_id String
   user    User   @relation("UserBookings", fields: [user_id], references: [id], onDelete: Cascade)
 
-  service_type serviceType
-  package_type PackageType
+  deep_cleaning_package_id String?
+  deep_cleaning_package    DeepCleaningPackage? @relation("DeepCleaningPackageBookings", fields: [deep_cleaning_package_id], references: [id], onDelete: Cascade)
+
+  general_cleaning_package_id String?
+  general_cleaning_package    GeneralCleaningPackage? @relation("GeneralCleaningPackageBookings", fields: [general_cleaning_package_id], references: [id], onDelete: Cascade)
+
   booking_date DateTime @db.Date
   slot         Slot
 
-  total_price Decimal? @db.Decimal(10, 2)
+  total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
 
   @@unique([maid_id, booking_date, slot])
   @@map("bookings")
 }
 
+/**
+ * ---------------------------------------------------------------------
+ * project requirement Schema end
+ * ---------------------------------------------------------------------
+ */
 
-
-/*---------------------------------------------------------------------
-                      project requirement Schema end
----------------------------------------------------------------------*/
-
-
-/*---------------------------------------------------------------------
-                      Chating and Notification Schema start
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * Chating and Notification Schema start
+ * ---------------------------------------------------------------------
+ */
 
 model Conversation {
   id           String        @id @default(cuid())
@@ -303,7 +306,6 @@ model Message {
   attachments String[] @db.Text
 }
 
-
 // -------------------------notification schema---------------------------------
 
 model NotificationEvent {
@@ -337,14 +339,17 @@ model Notification {
   entity_id String?
 }
 
+/**
+ * ---------------------------------------------------------------------
+ * Chating and Notification Schema end
+ * ---------------------------------------------------------------------
+ */
 
-/*---------------------------------------------------------------------
-                      Chating and Notification Schema end
----------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------
-                      Role and Permission Schema start
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * Role and Permission Schema start
+ * ---------------------------------------------------------------------
+ */
 
 model Role {
   id         String    @id @default(cuid())
@@ -410,15 +415,17 @@ model RoleUser {
   @@map("role_users")
 }
 
-/*---------------------------------------------------------------------
-                      Role and Permission Schema end
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * Role and Permission Schema end
+ * ---------------------------------------------------------------------
+ */
 
-
-
-/*---------------------------------------------------------------------
-                      Payment Schema start
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * Payment Schema start
+ * ---------------------------------------------------------------------
+ */
 
 model UserPaymentMethod {
   id         String    @id @default(cuid())
@@ -461,13 +468,17 @@ model PaymentTransaction {
   @@map("payment_transactions")
 }
 
-/*---------------------------------------------------------------------
-                      Payment Schema end
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * Payment Schema end
+ * ---------------------------------------------------------------------
+ */
 
-/*---------------------------------------------------------------------
-                      others Schema start
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * others Schema start
+ * ---------------------------------------------------------------------
+ */
 
 model Faq {
   id         String    @id @default(cuid())
@@ -498,6 +509,8 @@ model Contact {
   @@map("contacts")
 }
 
-/*---------------------------------------------------------------------
-                      others Schema end
----------------------------------------------------------------------*/
+/**
+ * ---------------------------------------------------------------------
+ * others Schema end
+ * ---------------------------------------------------------------------
+ */
