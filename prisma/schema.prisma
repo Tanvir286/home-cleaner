@@ -92,6 +92,8 @@ model User {
 
   profiles             Profile[]
 
+  // --- Booking Relations ---
+
 
   // --- Conversation & Messaging ---
   participants Participant[] @relation("participantUser")
@@ -127,19 +129,6 @@ model Ucode {
 }
 
 
-/*---------------------------------------------------------------------
-                      User Schema end
----------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------
-                      project requirement Schema 
----------------------------------------------------------------------*/
-
-enum serviceType {
-  GENERAL_CLEANING
-  DEEP_CLEANING
-}
-
 model Profile {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -155,14 +144,60 @@ model Profile {
 }
 
 
+/*---------------------------------------------------------------------
+                      User Schema end
+---------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------
+                      project requirement Schema 
+---------------------------------------------------------------------*/
+
+enum serviceType {
+  GENERAL_CLEANING
+  DEEP_CLEANING
+}
+
+enum PackageType {
+  ECO_SPARK
+  SPARK
+  GREENFLOW
+  GLIDE
+}
+
+model GeneralCleaningPackage {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+ 
+  title       String?
+  serviceType serviceType @default(GENERAL_CLEANING)
+  packageType PackageType 
+  description String?
+  price       Decimal? @db.Decimal(10, 2)
+  duration    Int?     
+
+  @@map("general_cleaning_packages")
+}
 
 
+model DeepCleaningPackage {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
 
+ 
+  title       String?
+  serviceType serviceType @default(DEEP_CLEANING)
+  packageType PackageType 
+  description String?
+  price       Decimal? @db.Decimal(10, 2)
+  duration    Int?     
 
-
-
-
-
+  @@map("deep_cleaning_packages")
+}
 
 /*---------------------------------------------------------------------
                       project requirement Schema end

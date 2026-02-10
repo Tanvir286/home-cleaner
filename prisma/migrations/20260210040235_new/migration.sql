@@ -5,6 +5,9 @@ CREATE TYPE "UserType" AS ENUM ('ADMIN', 'HOMEOWNER', 'MAID');
 CREATE TYPE "serviceType" AS ENUM ('GENERAL_CLEANING', 'DEEP_CLEANING');
 
 -- CreateEnum
+CREATE TYPE "PackageType" AS ENUM ('ECO_SPARK', 'SPARK', 'GREENFLOW', 'GLIDE');
+
+-- CreateEnum
 CREATE TYPE "MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ', 'PENDING');
 
 -- CreateTable
@@ -92,6 +95,38 @@ CREATE TABLE "profile" (
     "user_id" TEXT NOT NULL,
 
     CONSTRAINT "profile_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "general_cleaning_packages" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "title" TEXT,
+    "serviceType" "serviceType" NOT NULL DEFAULT 'GENERAL_CLEANING',
+    "packageType" "PackageType" NOT NULL,
+    "description" TEXT,
+    "price" DECIMAL(10,2),
+    "duration" INTEGER,
+
+    CONSTRAINT "general_cleaning_packages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "deep_cleaning_packages" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "title" TEXT,
+    "serviceType" "serviceType" NOT NULL DEFAULT 'DEEP_CLEANING',
+    "packageType" "PackageType" NOT NULL,
+    "description" TEXT,
+    "price" DECIMAL(10,2),
+    "duration" INTEGER,
+
+    CONSTRAINT "deep_cleaning_packages_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
