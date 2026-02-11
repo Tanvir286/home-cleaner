@@ -10,11 +10,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class BookingService {
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // resolve package type and price  
   private async resolvePackage(packageId: string) {
-  
+
     const [generalPkg, deepPkg] = await Promise.all([
       this.prisma.generalCleaningPackage.findUnique({ where: { id: packageId } }),
       this.prisma.deepCleaningPackage.findUnique({ where: { id: packageId } }),
@@ -66,9 +66,8 @@ export class BookingService {
     }
   }
 
-  
+
   //Create a new booking
-   
   async create(userId: string, dto: CreateBookingDto) {
     const { maid_id, package_id, booking_date, slot } = dto;
     const parsedDate = new Date(booking_date);
@@ -110,6 +109,89 @@ export class BookingService {
       data: booking,
     };
   }
+
+  // Get maid's available slots for a full month
+  async getMaidSlots(
+    maidId: string,
+    month: number,
+    year: number
+  ) {
+
+    const maid = await this.prisma.user.findUnique({
+      where: { id: maidId },
+    });
+
+    if (!maid) throw new NotFoundException('Maid not found');
+    if (maid.type !== 'MAID') throw new BadRequestException('Selected user is not a maid');
+
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        maid_id: maidId,
+        booking_date: {
+          gte: startDate,
+          lte: endDate,
+        },
+        status: { not: 'CANCELLED' },
+      },
+      select: { booking_date: true, slot: true },
+    });
+
+    const bookedMap = new Map<string, Set<string>>();
+    for (const b of bookings) {
+      const dateKey = b.booking_date.toLocaleDateString('en-CA');
+      if (!bookedMap.has(dateKey)) bookedMap.set(dateKey, new Set());
+      bookedMap.get(dateKey).add(b.slot);
+    }
+
+    const slotTimeMap = {
+      A: { start: '07:30', end: '10:00' },
+      B: { start: '11:00', end: '01:30' },
+      C: { start: '01:30', end: '04:00' },
+      D: { start: '04:00', end: '07:30' },
+    };
+
+    // Generate all dates in the month with slot availability
+    const totalDays = endDate.getDate();
+    const dates = [];
+
+    for (let day = 1; day <= totalDays; day++) {
+      const date = new Date(year, month - 1, day);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const bookedSlots = bookedMap.get(dateKey) || new Set();
+
+      const slots = Object.entries(slotTimeMap).map(([slot, time]) => ({
+        slot,
+        label: `${time.start} - ${time.end}`,
+        is_available: !bookedSlots.has(slot),
+      }));
+
+      const availableCount = slots.filter((s) => s.is_available).length;
+
+      dates.push({
+        date: dateKey,
+        has_available_slot: availableCount > 0,
+        available_count: availableCount,
+        slots,
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        maid_id: maidId,
+        month,
+        year,
+        dates,
+      },
+    };
+  }
+
+
+
+
 
 
 }

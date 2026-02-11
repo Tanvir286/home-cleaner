@@ -50,4 +50,7 @@ export class ServiceService {
       },
     };
   }
+
+  // get booking slots
+
 }

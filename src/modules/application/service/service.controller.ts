@@ -26,4 +26,8 @@ export class ServiceController {
   async getAllDeepCleaningPackage() {
     return await this.serviceService.getAllDeepCleaningPackage();
   }
+
+
+  
+
 }
