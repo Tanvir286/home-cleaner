@@ -24,6 +24,10 @@ export class DepositeService {
         throw new BadRequestException('Invalid user id for deposit');
       }
 
+      if(!Number.isFinite(amount)) {
+        throw new BadRequestException('Deposit amount must be a valid number');
+      }
+
       if(amount <= 0) {
         throw new BadRequestException('Deposit amount must be greater than zero');
       }

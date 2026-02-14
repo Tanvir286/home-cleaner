@@ -3,6 +3,7 @@ import { StripeService } from './stripe.service';
 import { Request } from 'express';
 import { TransactionRepository } from '../../../common/repository/transaction/transaction.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { Stripe } from 'stripe';
 
 @Controller('payment/stripe')
 export class StripeController {
@@ -22,6 +23,11 @@ export class StripeController {
       const payload = req.rawBody.toString();
       const event = await this.stripeService.handleWebhook(payload, signature);
 
+      if (!event.data || !event.data.object) return { received: true };
+
+      const pi = event.data.object as Stripe.PaymentIntent;
+      const meta = pi.metadata || {};
+     
       // Handle events
       switch (event.type) {
         case 'customer.created':
@@ -29,8 +35,27 @@ export class StripeController {
         case 'payment_intent.created':
           break;
         case 'payment_intent.succeeded': 
-          break;
   
+          if (meta.type === 'deposit' && meta.transaction_id) {
+            await this.prisma.paymentTransaction.update({
+              where: { id: meta.transaction_id },
+              data: {
+                status: 'succeeded',
+                reference_number: pi.id,
+              },
+            });
+          }
+
+          await this.prisma.user.update({
+            where: { id: meta.userId },
+            data: {
+              balance: {
+                increment: pi.amount_received / 100, 
+              },
+            },
+          });
+
+          break; 
         case 'payment_intent.canceled':
           
           break;

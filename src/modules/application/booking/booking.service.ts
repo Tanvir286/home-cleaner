@@ -9,14 +9,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class BookingService {
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(private readonly prisma: PrismaService) { }
-
-  // resolve package type and price  
+  // resolve package type and price
   private async resolvePackage(packageId: string) {
-
     const [generalPkg, deepPkg] = await Promise.all([
-      this.prisma.generalCleaningPackage.findUnique({ where: { id: packageId } }),
+      this.prisma.generalCleaningPackage.findUnique({
+        where: { id: packageId },
+      }),
       this.prisma.deepCleaningPackage.findUnique({ where: { id: packageId } }),
     ]);
 
@@ -45,12 +45,18 @@ export class BookingService {
     });
 
     if (!maid) throw new NotFoundException('Maid not found');
-    if (maid.type !== 'MAID') throw new BadRequestException('Selected user is not a maid');
-    if (maidId === userId) throw new BadRequestException('You cannot book yourself');
+    if (maid.type !== 'MAID')
+      throw new BadRequestException('Selected user is not a maid');
+    if (maidId === userId)
+      throw new BadRequestException('You cannot book yourself');
   }
 
   // maid is available for the given date and slot
-  private async checkSlotAvailability(maidId: string, bookingDate: Date, slot: string) {
+  private async checkSlotAvailability(
+    maidId: string,
+    bookingDate: Date,
+    slot: string,
+  ) {
     const existing = await this.prisma.booking.findUnique({
       where: {
         maid_id_booking_date_slot: {
@@ -62,10 +68,11 @@ export class BookingService {
     });
 
     if (existing) {
-      throw new BadRequestException('This maid is already booked for the selected date and slot');
+      throw new BadRequestException(
+        'This maid is already booked for the selected date and slot',
+      );
     }
   }
-
 
   //Create a new booking
   async create(userId: string, dto: CreateBookingDto) {
@@ -111,18 +118,14 @@ export class BookingService {
   }
 
   // Get maid's available slots for a full month
-  async getMaidSlots(
-    maidId: string,
-    month: number,
-    year: number
-  ) {
-
+  async getMaidSlots(maidId: string, month: number, year: number) {
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
 
     if (!maid) throw new NotFoundException('Maid not found');
-    if (maid.type !== 'MAID') throw new BadRequestException('Selected user is not a maid');
+    if (maid.type !== 'MAID')
+      throw new BadRequestException('Selected user is not a maid');
 
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
@@ -188,10 +191,4 @@ export class BookingService {
       },
     };
   }
-
-
-
-
-
-
 }
