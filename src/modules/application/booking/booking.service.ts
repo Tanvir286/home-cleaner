@@ -15,10 +15,8 @@ export class BookingService {
   private async resolvePackage(packageId: string) {
   
     const [generalPkg, deepPkg] = await Promise.all([
-      this.prisma.generalCleaningPackage.findUnique({
-        where: { id: packageId },
-      }),
-      this.prisma.deepCleaningPackage.findUnique({ where: { id: packageId } }),
+      this.prisma.generalCleaningPackage.findUnique({where: { id: packageId }}),
+      this.prisma.deepCleaningPackage.findUnique({ where: { id: packageId }}),
     ]);
 
     if (generalPkg) {
@@ -41,15 +39,19 @@ export class BookingService {
 
   // validate maid existence and type
   private async validateMaid(maidId: string, userId: string) {
+   
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
 
     if (!maid) throw new NotFoundException('Maid not found');
+
     if (maid.type !== 'MAID')
       throw new BadRequestException('Selected user is not a maid');
+
     if (maidId === userId)
       throw new BadRequestException('You cannot book yourself');
+
   }
 
   // maid is available for the given date and slot
@@ -125,13 +127,14 @@ export class BookingService {
 
   // Get maid's available slots for a full month
   async getMaidSlots(maidId: string, month: number, year: number) {
+    
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
 
     if (!maid) throw new NotFoundException('Maid not found');
-    if (maid.type !== 'MAID')
-      throw new BadRequestException('Selected user is not a maid');
+
+    if (maid.type !== 'MAID') throw new BadRequestException('Selected user is not a maid');
 
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
@@ -143,7 +146,7 @@ export class BookingService {
           gte: startDate,
           lte: endDate,
         },
-        status: { not: 'CANCELLED' },
+        status: { not: 'PENDING' }, 
       },
       select: { booking_date: true, slot: true },
     });
@@ -199,5 +202,5 @@ export class BookingService {
   }
 
 
-  
+
 }
