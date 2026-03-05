@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PaginationDto, paginateResponse } from 'src/common/pagination';
 
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
-import { PaginationDto, paginateResponse } from 'src/common/pagination';
 import { PaginationstausDto } from './dto/params-booking.dto';
 
 @Injectable()
