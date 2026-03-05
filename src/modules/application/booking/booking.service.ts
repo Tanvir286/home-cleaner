@@ -105,7 +105,10 @@ export class BookingService {
   ========================================================
   */
 
-  async create(userId: string, dto: CreateBookingDto) {
+  async create(
+    userId: string, 
+    dto: CreateBookingDto
+  ) {
     const { maid_id, package_id, booking_date, slot } = dto;
 
     const parsedDate = new Date(booking_date);
@@ -158,7 +161,10 @@ export class BookingService {
   ========================================================
   */
 
-  async getMaidSlots(maidId: string, month: number, year: number) {
+  async getMaidSlots(
+    maidId: string, 
+    month: number, 
+    year: number) {
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -249,7 +255,10 @@ export class BookingService {
   ========================================================
   */
 
-  async getMyBookings(userId: string, paginationDto: PaginationDto) {
+  async getMyBookings(
+    userId: string, 
+    paginationDto: PaginationDto
+  ) {
     const { page, perPage } = paginationDto;
 
     const skip = (page - 1) * perPage;
@@ -366,7 +375,10 @@ export class BookingService {
   ========================================================
   */
 
-  async getMaidBookings(userId: string, paginationDto: PaginationDto) {
+  async getMaidBookings(
+    userId: string, 
+    paginationDto: PaginationDto
+  ) {
     const { page, perPage } = paginationDto;
 
     const skip = (page - 1) * perPage;
@@ -439,5 +451,5 @@ export class BookingService {
   }
 
 
-  
+
 }
