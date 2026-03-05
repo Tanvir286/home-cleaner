@@ -13,6 +13,7 @@ export class BookingService {
 
   // resolve package type and price
   private async resolvePackage(packageId: string) {
+  
     const [generalPkg, deepPkg] = await Promise.all([
       this.prisma.generalCleaningPackage.findUnique({
         where: { id: packageId },
@@ -76,6 +77,7 @@ export class BookingService {
 
   //Create a new booking
   async create(userId: string, dto: CreateBookingDto) {
+   
     const { maid_id, package_id, booking_date, slot } = dto;
     const parsedDate = new Date(booking_date);
 
@@ -92,7 +94,7 @@ export class BookingService {
     const booking = await this.prisma.booking.create({
       data: {
         user_id: userId,
-        maid_id,
+        maid_id: maid_id,
         booking_date: parsedDate,
         slot,
         status: 'PENDING',
@@ -105,8 +107,12 @@ export class BookingService {
         user: {
           select: { id: true, name: true, email: true },
         },
-        general_cleaning_package: true,
-        deep_cleaning_package: true,
+        general_cleaning_package: {
+          select: { id: true, title: true, serviceType: true, packageType: true, price: true },
+        },
+        deep_cleaning_package: {
+          select: { id: true, title: true, serviceType: true, packageType: true, price: true },
+        },
       },
     });
 
@@ -191,4 +197,7 @@ export class BookingService {
       },
     };
   }
+
+
+  
 }

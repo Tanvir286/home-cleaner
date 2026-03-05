@@ -167,7 +167,7 @@ enum PackageType {
   GREENFLOW
   GLIDE
 }
-
+ 
 enum Slot {
   A
   B
@@ -181,6 +181,7 @@ enum BookingStatus {
   COMPLETED
   CANCELLED
 }
+
 
 model GeneralCleaningPackage {
   id         String    @id @default(cuid())
@@ -218,6 +219,7 @@ model DeepCleaningPackage {
   @@map("deep_cleaning_packages")
 }
 
+
 model Booking {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -245,6 +247,7 @@ model Booking {
   @@unique([maid_id, booking_date, slot])
   @@map("bookings")
 }
+
 
 /**
  * ---------------------------------------------------------------------
