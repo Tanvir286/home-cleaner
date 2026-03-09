@@ -11,10 +11,7 @@ export class UpdateProfileDto {
   location?: string;
 
   @IsOptional()
-  bio?: string;
-
-  @IsOptional()
-  about?: string;
+  about_me?: string;
 
   @IsOptional()
   @IsArray()

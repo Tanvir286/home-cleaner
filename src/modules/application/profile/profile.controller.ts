@@ -26,9 +26,12 @@ export class ProfileController {
 
   // topic: maid part  ---------->
 
+  // pending topic:  https://prnt.sc/0kwDP8pbRILy
+  // pending topic:  ui onno jai profile sajate hobe
+
   // get profile details
   @UseGuards(JwtAuthGuard)
-  @Get('details')
+  @Get('maid/details')
   async getProfileDetails(@Req() req) {
     const userId = req.user.userId;
     return this.profileService.getProfileDetails(userId);
@@ -49,29 +52,36 @@ export class ProfileController {
     @Req() req,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    console.log(req.user);
     const userId = req.user.userId;
     return this.profileService.updatemaid(userId, updateProfileDto, image);
   }
 
   // topic: homeowner part  ---------->
 
+  // get profile details
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.HOMEOWNER)
+  @Get('homeowner/details')
+  async getHomeownerProfileDetails(@Req() req) {
+    const userId = req.user.userId;
+    return this.profileService.getHomeownerProfileDetails(userId);
+  }
+
   // homeowner profile update
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
-  @Patch('homeowner/update')
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
+  @Patch('homeowner/update')
   async updateHomeowner(
     @Body() updateProfileDto: UpdateProfileDto,
     @Req() req,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    console.log('Homeowner route - User:', req.user);
     const userId = req.user.userId;
     return this.profileService.updateHomeowner(userId, updateProfileDto, image);
   }
