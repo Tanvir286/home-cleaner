@@ -9,6 +9,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 export class ProfileService {
   constructor(private prisma: PrismaService) {}
 
+  // topic: maid part)---------->
+
   // get profile details
   async getProfileDetails(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -20,11 +22,8 @@ export class ProfileService {
         avatar: true,
         location: true,
         bio: true,
-        profiles: {
-          select: {
-            service_type: true,
-          },
-        },
+        about_me: true,
+        service_type: true,
       },
     });
 
@@ -45,7 +44,8 @@ export class ProfileService {
           : null,
         location: user.location,
         bio: user.bio,
-        service_type: user.profiles?.[0]?.service_type || [],
+        about_me: user.about_me,
+        service_type: user.service_type,
       },
     };
   }
@@ -56,16 +56,13 @@ export class ProfileService {
     dto: UpdateProfileDto,
     image?: Express.Multer.File,
   ) {
+   
     const userData: any = {};
-    const profileData: any = {};
 
-    // -------- user fields --------
     if (dto.location !== undefined) userData.location = dto.location;
     if (dto.bio !== undefined) userData.bio = dto.bio;
-
-    // -------- profile fields --------
-    if (dto.service_type !== undefined)
-      profileData.service_type = dto.service_type;
+    if (dto.about !== undefined) userData.about = dto.about;
+    if (dto.service_type !== undefined) userData.service_type = dto.service_type;
 
     // -------- image --------
     if (image) {
@@ -81,17 +78,16 @@ export class ProfileService {
       }
 
       const fileName = `${StringHelper.randomString()}_${image.originalname}`;
-      await TanvirStorage.put(
-        appConfig().storageUrl.avatar + '/' + fileName,
-        image.buffer,
-      );
+        await TanvirStorage.put(
+          appConfig().storageUrl.avatar + '/' + fileName,
+          image.buffer,
+        );
 
       userData.avatar = fileName;
     }
 
     // -------- update user --------
-    const user =
-      Object.keys(userData).length > 0
+    const user = Object.keys(userData).length > 0
         ? await this.prisma.user.update({
             where: { id: userId },
             data: userData,
@@ -102,6 +98,8 @@ export class ProfileService {
               avatar: true,
               location: true,
               bio: true,
+              about_me: true,
+              service_type: true,
             },
           })
         : await this.prisma.user.findUnique({
@@ -113,103 +111,78 @@ export class ProfileService {
               avatar: true,
               location: true,
               bio: true,
+              about_me: true,
+              service_type: true,
             },
           });
-
-    // -------- profile (create or update) --------
-    let profile = await this.prisma.profile.findFirst({
-      where: { user_id: userId },
-    });
-
-    if (!profile) {
-      profile = await this.prisma.profile.create({
-        data: {
-          user_id: userId,
-          service_type: dto.service_type ?? [],
-        },
-      });
-    } else if (Object.keys(profileData).length > 0) {
-      profile = await this.prisma.profile.update({
-        where: { id: profile.id },
-        data: profileData,
-      });
-    }
-
+      
     return {
       success: true,
       message: 'Profile updated successfully',
       data: {
         user,
-        profile,
       },
     };
   }
+
+  // topic: homeowner part)---------->
 
   // homeowner profile update
-  async updateHomeowner(
-    userId: string,
-    dto: UpdateProfileDto,
-    image?: Express.Multer.File,
-  ) {
-    const userData: any = {};
+  // async updateHomeowner(
+  //   userId: string,
+  //   dto: UpdateProfileDto,
+  //   image?: Express.Multer.File,
+  // ) {
+  //   const userData: any = {};
 
-    if (dto.location !== undefined) userData.location = dto.location;
-    if (dto.bio !== undefined) userData.bio = dto.bio;
+  //   if (dto.location !== undefined) userData.location = dto.location;
+  //   if (dto.bio !== undefined) userData.bio = dto.bio;
 
-    // -------- image --------
-    if (image) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { avatar: true },
-      });
+  //   // -------- image --------
+  //   if (image) {
+  //     const user = await this.prisma.user.findUnique({
+  //       where: { id: userId },
+  //       select: { avatar: true },
+  //     });
 
-      if (user?.avatar) {
-        await TanvirStorage.delete(
-          appConfig().storageUrl.avatar + '/' + user.avatar,
-        );
-      }
+  //     if (user?.avatar) {
+  //       await TanvirStorage.delete(
+  //         appConfig().storageUrl.avatar + '/' + user.avatar,
+  //       );
+  //     }
 
-      const fileName = `${StringHelper.randomString()}_${image.originalname}`;
-      await TanvirStorage.put(
-        appConfig().storageUrl.avatar + '/' + fileName,
-        image.buffer,
-      );
-      userData.avatar = fileName;
-    }
+  //     const fileName = `${StringHelper.randomString()}_${image.originalname}`;
+  //     await TanvirStorage.put(
+  //       appConfig().storageUrl.avatar + '/' + fileName,
+  //       image.buffer,
+  //     );
+  //     userData.avatar = fileName;
+  //   }
 
-    // -------- update user --------
-    const user =
-      Object.keys(userData).length > 0
-        ? await this.prisma.user.update({
-            where: { id: userId },
-            data: userData,
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-              location: true,
-              bio: true,
-            },
-          })
-        : await this.prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-              location: true,
-              bio: true,
-            },
-          });
+  //   // -------- update user --------
+  //   const user =
+  //     Object.keys(userData).length > 0
+  //       ? await this.prisma.user.update({
+  //           where: { id: userId },
+  //           data: userData,
+  //           select: {
+  //             id: true,
+  //             name: true,
+  //             email: true,
+  //             avatar: true,
+  //             location: true,
+  //             bio: true,
+  //           },
+  //         })
+  //       : await this.prisma.user.findUnique({
 
-    return {
-      success: true,
-      message: 'Profile updated successfully',
-      data: {
-        user,
-      },
-    };
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Profile updated successfully',
+  //     data: {
+  //       user,
+  //     },
+  //   };
+  // }
+
 }

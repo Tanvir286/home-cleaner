@@ -42,6 +42,11 @@ enum UserType {
   MAID
 }
 
+enum ServiceType {
+  GENERAL_CLEANING
+  DEEP_CLEANING
+}
+
 model User {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -88,10 +93,11 @@ model User {
   is_two_factor_enabled Int?    @default(0)
   two_factor_secret     String?
 
+  service_type ServiceType[] 
+
   // Profil & account
   accounts Account[]
-  profiles Profile[]
-
+  
   // Booking
   maidBookings Booking[] @relation("MaidBookings")
   userBookings Booking[] @relation("UserBookings")
@@ -128,20 +134,6 @@ model Ucode {
   verified_at DateTime?
 
   @@map("ucodes")
-}
-
-model Profile {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  service_type serviceType[]
-
-  user_id String
-  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@map("profile")
 }
 
 /**

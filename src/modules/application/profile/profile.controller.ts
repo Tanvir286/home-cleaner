@@ -23,7 +23,9 @@ import { Role } from 'src/common/guard/role/role.enum';
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
-  
+
+  // topic: maid part  ---------->
+
   // get profile details
   @UseGuards(JwtAuthGuard)
   @Get('details')
@@ -31,9 +33,9 @@ export class ProfileController {
     const userId = req.user.userId;
     return this.profileService.getProfileDetails(userId);
   }
-  
+
   // maid profile update
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Patch('maid/update')
   @UseInterceptors(
@@ -47,13 +49,15 @@ export class ProfileController {
     @Req() req,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    console.log(req.user)
+    console.log(req.user);
     const userId = req.user.userId;
     return this.profileService.updatemaid(userId, updateProfileDto, image);
   }
-  
+
+  // topic: homeowner part  ---------->
+
   // homeowner profile update
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Patch('homeowner/update')
   @UseInterceptors(
