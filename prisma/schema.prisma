@@ -64,6 +64,7 @@ model User {
   password   String?   @db.VarChar(255)
   type       UserType? @default(MAID)
 
+  experience_years Float? @default(0.0)
   name     String? @db.VarChar(255)
   location String? @db.VarChar(255)
   language String? @db.VarChar(100)

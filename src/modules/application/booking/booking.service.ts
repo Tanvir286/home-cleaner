@@ -10,6 +10,8 @@ import { PaginationDto, paginateResponse } from 'src/common/pagination';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { PaginationstausDto } from './dto/params-booking.dto';
+import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
+import appConfig from 'src/config/app.config';
 
 @Injectable()
 export class BookingService {
@@ -17,13 +19,11 @@ export class BookingService {
 
   /*
   ========================================================
-  HELPER METHODS
+  HELPER METHODS start
   ========================================================
   */
 
-  /**
-   * Resolve package type (General / Deep Cleaning)
-   */
+  // Resolve package type (General / Deep Cleaning)
   private async resolvePackage(packageId: string) {
     const [generalPackage, deepPackage] = await Promise.all([
       this.prisma.generalCleaningPackage.findUnique({
@@ -38,9 +38,7 @@ export class BookingService {
       return {
         general_cleaning_package_id: generalPackage.id,
         deep_cleaning_package_id: null,
-        total_price: generalPackage.price
-          ? Number(generalPackage.price)
-          : null,
+        total_price: generalPackage.price ? Number(generalPackage.price) : null,
       };
     }
 
@@ -55,9 +53,7 @@ export class BookingService {
     throw new NotFoundException('Selected package not found');
   }
 
-  /**
-   * Validate maid existence and role
-   */
+  // Validate maid existence and type
   private async validateMaid(maidId: string, userId: string) {
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
@@ -74,9 +70,7 @@ export class BookingService {
     }
   }
 
-  /**
-   * Check if maid already booked on the selected slot
-   */
+  // Check if maid already booked on the selected slot
   private async checkSlotAvailability(
     maidId: string,
     bookingDate: Date,
@@ -101,70 +95,57 @@ export class BookingService {
 
   /*
   ========================================================
-  CREATE BOOKING
+  HELPER METHODS end
   ========================================================
   */
 
-  async create(
-    userId: string, 
-    dto: CreateBookingDto
-  ) {
-    const { maid_id, package_id, booking_date, slot } = dto;
+  // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
 
-    const parsedDate = new Date(booking_date);
+  // available maids list
+  async getAvailableMaids(paginationDto: PaginationDto) {
+    const { page, perPage } = paginationDto;
+    const skip = (page - 1) * perPage;
 
-    await this.validateMaid(maid_id, userId);
-
-    await this.checkSlotAvailability(maid_id, parsedDate, slot);
-
-    const packageData = await this.resolvePackage(package_id);
-
-    const booking = await this.prisma.booking.create({
-      data: {
-        user_id: userId,
-        maid_id,
-        booking_date: parsedDate,
-        slot,
-        status: 'PENDING',
-        ...packageData,
-      },
-      include: {
-        maid: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+    const [total, maids] = await this.prisma.$transaction([
+      this.prisma.user.count({ where: { type: 'MAID' } }),
+      this.prisma.user.findMany({
+        where: { type: 'MAID' },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+          location: true,
+          experience_years: true,
+          service_type: true,
         },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        general_cleaning_package: true,
-        deep_cleaning_package: true,
-      },
-    });
+        skip,
+        take: perPage,
+      }),
+    ]);
 
     return {
       success: true,
-      message: 'Booking created successfully',
-      data: booking,
+      message: 'Available maids retrieved successfully',
+      data: paginateResponse(
+        maids.map(maid => ({
+          id: maid.id,
+          name: maid.name,
+          email: maid.email,
+          avatar: maid.avatar ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + maid.avatar) : null,
+          location: maid.location,
+          experience_years: maid.experience_years,
+          service_type: maid.service_type,
+        })),
+        total,
+        page,
+        perPage,
+      ),
     };
   }
-
-  /*
-  ========================================================
-  MAID SLOT AVAILABILITY
-  ========================================================
-  */
-
-  async getMaidSlots(
-    maidId: string, 
-    month: number, 
-    year: number) {
+    
+  // available maids list
+  async getMaidSlots(maidId: string, month: number, year: number) {
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -249,16 +230,68 @@ export class BookingService {
     };
   }
 
+  // topic:﹝﹝﹝ homeowner part ﹞﹞﹞
+
+  async create(userId: string, dto: CreateBookingDto) {
+    const { maid_id, package_id, booking_date, slot } = dto;
+
+    const parsedDate = new Date(booking_date);
+
+    await this.validateMaid(maid_id, userId);
+
+    await this.checkSlotAvailability(maid_id, parsedDate, slot);
+
+    const packageData = await this.resolvePackage(package_id);
+
+    const booking = await this.prisma.booking.create({
+      data: {
+        user_id: userId,
+        maid_id,
+        booking_date: parsedDate,
+        slot,
+        status: 'PENDING',
+        ...packageData,
+      },
+      include: {
+        maid: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        general_cleaning_package: true,
+        deep_cleaning_package: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Booking created successfully',
+      data: booking,
+    };
+  }
+
+  /*
+  ========================================================
+  MAID SLOT AVAILABILITY
+  ========================================================
+  */
+
   /*
   ========================================================
   HOMEOWNER BOOKING APIS
   ========================================================
   */
 
-  async getMyBookings(
-    userId: string, 
-    paginationDto: PaginationDto
-  ) {
+  async getMyBookings(userId: string, paginationDto: PaginationDto) {
     const { page, perPage } = paginationDto;
 
     const skip = (page - 1) * perPage;
@@ -292,10 +325,7 @@ export class BookingService {
     };
   }
 
-  async getAllBookingsWithStatus(
-    userId: string,
-    query: PaginationstausDto,
-  ) {
+  async getAllBookingsWithStatus(userId: string, query: PaginationstausDto) {
     const { page, perPage, bookingStatus } = query;
 
     const skip = (page - 1) * perPage;
@@ -375,10 +405,7 @@ export class BookingService {
   ========================================================
   */
 
-  async getMaidBookings(
-    userId: string, 
-    paginationDto: PaginationDto
-  ) {
+  async getMaidBookings(userId: string, paginationDto: PaginationDto) {
     const { page, perPage } = paginationDto;
 
     const skip = (page - 1) * perPage;
@@ -449,7 +476,4 @@ export class BookingService {
       data: paginateResponse(bookings, total, page, perPage),
     };
   }
-
-
-
 }

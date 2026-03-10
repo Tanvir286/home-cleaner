@@ -29,27 +29,19 @@ import { ApiTags } from '@nestjs/swagger';
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
-  /**
-   * ------------------------------------------------
-   * Create Booking (Homeowner)
-   * ------------------------------------------------
-   */
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.HOMEOWNER)
-  @Post()
-  async createBooking(
-    @Body() createBookingDto: CreateBookingDto,
-    @Req() req,
+  // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
+
+
+  // available maids list
+  @Get('available-maidlist')
+  async getAvailableMaids(
+    @Query() paginationDto: PaginationDto,
   ) {
-    const userId = req.user.userId;
-    return this.bookingService.create(userId, createBookingDto);
+    return this.bookingService.getAvailableMaids(paginationDto);
   }
 
-  /**
-   * ------------------------------------------------
-   * Get Maid Monthly Slot Availability
-   * ------------------------------------------------
-   */
+
+  // maid individual details slot
   @Get('slots/:maidId')
   async getMaidSlots(
     @Param('maidId') maidId: string,
@@ -59,45 +51,36 @@ export class BookingController {
     return this.bookingService.getMaidSlots(maidId, +month, +year);
   }
 
-  /**
-   * ------------------------------------------------
-   * Homeowner Booking APIs
-   * ------------------------------------------------
-   */
+  // topic:﹝﹝﹝ homeowner part ﹞﹞﹞
 
-  /**
-   * Get All Bookings of Logged-in Homeowner
-   */
+  // create booking
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.HOMEOWNER)
+  @Post()
+  async createBooking(@Body() createBookingDto: CreateBookingDto, @Req() req) {
+    const userId = req.user.userId;
+    return this.bookingService.create(userId, createBookingDto);
+  }
+
+  // get homeowner bookings list
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Get('homeowner/my-bookings')
-  async getMyBookings(
-    @Req() req,
-    @Query() paginationDto: PaginationDto,
-  ) {
+  async getMyBookings(@Req() req, @Query() paginationDto: PaginationDto) {
     const userId = req.user.userId;
     return this.bookingService.getMyBookings(userId, paginationDto);
   }
 
-  /**
-   * Get Homeowner Bookings with Status Filter
-   */
+  // get homeowner bookings list with status filter
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Get('homeowner/bookings-by-status')
-  async getBookingsByStatus(
-    @Req() req,
-    @Query() query: PaginationstausDto,
-  ) {
+  async getBookingsByStatus(@Req() req, @Query() query: PaginationstausDto) {
     const userId = req.user.userId;
     return this.bookingService.getAllBookingsWithStatus(userId, query);
   }
 
-  /**
-   * ------------------------------------------------
-   * Update Booking Status
-   * ------------------------------------------------
-   */
+  // update booking status
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Patch(':id')
@@ -114,11 +97,7 @@ export class BookingController {
     );
   }
 
-  /**
-   * ------------------------------------------------
-   * Maid Booking APIs
-   * ------------------------------------------------
-   */
+  // topic:﹝﹝﹝ maid part ﹞﹞﹞
 
   /**
    * Get Bookings Assigned to Maid
@@ -126,10 +105,7 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Get('maid/my-bookings')
-  async getMaidBookings(
-    @Req() req,
-    @Query() paginationDto: PaginationDto,
-  ) {
+  async getMaidBookings(@Req() req, @Query() paginationDto: PaginationDto) {
     const userId = req.user.userId;
     return this.bookingService.getMaidBookings(userId, paginationDto);
   }

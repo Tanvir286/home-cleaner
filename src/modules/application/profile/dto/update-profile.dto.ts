@@ -14,6 +14,9 @@ export class UpdateProfileDto {
   about_me?: string;
 
   @IsOptional()
+  experience_years?: number;
+
+  @IsOptional()
   @IsArray()
   @IsEnum(ServiceType, { each: true })
   service_type?: ServiceType[];

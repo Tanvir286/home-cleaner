@@ -23,6 +23,7 @@ export class ProfileService {
         location: true,
         about_me: true,
         service_type: true,
+        experience_years: true,
       },
     });
 
@@ -34,6 +35,7 @@ export class ProfileService {
     }
     return {
       success: true,
+      message: 'Profile details retrieved successfully',
       data: {
         id: user.id,
         name: user.name,
@@ -44,6 +46,7 @@ export class ProfileService {
         location: user.location,
         about_me: user.about_me,
         service_type: user.service_type,
+        experience_years: user.experience_years,
       },
     };
   }
@@ -58,8 +61,8 @@ export class ProfileService {
 
     if (dto.location !== undefined) userData.location = dto.location;
     if (dto.about_me !== undefined) userData.about_me = dto.about_me;
-    if (dto.service_type !== undefined)
-      userData.service_type = dto.service_type;
+    if (dto.service_type !== undefined) userData.service_type = dto.service_type;
+    if (dto.experience_years !== undefined) userData.experience_years = dto.experience_years;
 
     // -------- image --------
 
@@ -98,6 +101,7 @@ export class ProfileService {
               location: true,
               about_me: true,
               service_type: true,
+              experience_years: true,
             },
           })
         : await this.prisma.user.findUnique({
@@ -110,6 +114,7 @@ export class ProfileService {
               location: true,
               about_me: true,
               service_type: true,
+              experience_years: true,
             },
           });
 
