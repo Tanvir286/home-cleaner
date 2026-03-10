@@ -76,24 +76,13 @@ export class BookingController {
     return this.bookingService.getAllBookingsWithStatus(userId, query);
   }
 
-  
-
-  // update booking status
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.HOMEOWNER)
-  @Patch(':id')
-  async updateBookingStatus(
-    @Param('id') id: string,
-    @Body() updateBookingDto: UpdateBookingDto,
-    @Req() req,
-  ) {
-    const userId = req.user.userId;
-    return this.bookingService.updateBookingStatus(
-      id,
-      userId,
-      updateBookingDto,
-    );
+  // get every booking details information
+  @Get('details/:id')
+  async getBookingDetails(@Param('id') id: string) {
+    return this.bookingService.getBookingDetails(id);
   }
+
+
 
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
 

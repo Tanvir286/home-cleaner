@@ -7,8 +7,57 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ServiceService {
   constructor(private readonly prisma: PrismaService) {}
 
+
+  // create service
+  async create(
+    dto: CreateServiceDto
+  ) {
+
+    const { 
+      serviceType, 
+      title,
+      packageType,
+      description,
+      price,
+    } = dto;
+
+    let service;
+
+     if (serviceType === 'GENERAL_CLEANING') {
+      service = await this.prisma.generalCleaningPackage.create({
+        data: {
+          title,
+          serviceType,
+          packageType,
+          description,
+          price,
+        },
+      });
+    }
+
+    if (serviceType === 'DEEP_CLEANING') {
+      service = await this.prisma.deepCleaningPackage.create({
+        data: {
+          title,
+          serviceType,
+          packageType,
+          description,
+          price,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Service created successfully',
+      data: {
+        service,
+      },
+    };
+  }
+
   // get all general-cleaning_package services
-  async getAll() {
+  async getAllGeneralCleaningPackages() {
     const services = await this.prisma.generalCleaningPackage.findMany({
       select: {
         id: true,

@@ -15,10 +15,22 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
+
+  // create service
+  @Post()
+  async create(@Body() createServiceDto: CreateServiceDto) {
+    return await this.serviceService.create(createServiceDto);
+  }
+
+  // update
+  
+
+  // delete
+
   // get all general_cleaning_package services
   @Get('general-cleaning-package')
   async getAll() {
-    return await this.serviceService.getAll();
+    return await this.serviceService.getAllGeneralCleaningPackages();
   }
 
   //Get all deep_cleaning_package services

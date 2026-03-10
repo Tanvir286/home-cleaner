@@ -382,45 +382,63 @@ export class BookingService {
     };
   }
 
-  /*
-  ========================================================
-  UPDATE BOOKING STATUS
-  ========================================================
-  */
+  async getBookingDetails(bookingId: string) {
+  const booking = await this.prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      maid: true,
+      user: true,
+      general_cleaning_package: true,
+      deep_cleaning_package: true,
+    },
+  });
 
-  async updateBookingStatus(
-    bookingId: string,
-    userId: string,
-    dto: UpdateBookingDto,
-  ) {
-    const booking = await this.prisma.booking.findUnique({
-      where: { id: bookingId },
-    });
-
-    if (!booking) {
-      throw new NotFoundException('Booking not found');
-    }
-
-    if (booking.user_id !== userId) {
-      throw new BadRequestException(
-        'You are not allowed to update this booking',
-      );
-    }
-
-    const updatedBooking = await this.prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        status: dto.status,
-      },
-    });
-
-    return {
-      success: true,
-      message: 'Booking status updated successfully',
-      data: updatedBooking,
-    };
+  if (!booking) {
+    throw new NotFoundException('Booking not found');
   }
 
+  const packageData =
+    booking.general_cleaning_package || booking.deep_cleaning_package;
+
+  const serviceType = booking.general_cleaning_package
+    ? 'General Cleaning'
+    : 'Deep Cleaning';
+
+  const slotTime = this.slotTimeMap[booking.slot];
+
+  return {
+    success: true,
+    message: 'Booking details retrieved successfully',
+    data: {
+      booking_id: booking.id,
+      service: serviceType,
+      package: packageData?.packageType,
+      slot: booking.slot,
+      address: booking.address,
+      date_time: `${this.formatDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
+      price: booking.total_price ? `$${booking.total_price}` : null,
+      maid: {
+        id: booking.maid.id,
+        name: booking.maid.name,
+        location: booking.maid.location,
+        avatar: booking.maid.avatar
+          ? TanvirStorage.url(
+              appConfig().storageUrl.avatar + '/' + booking.maid.avatar,
+            )
+          : null,
+        rating: 4.5, 
+      },
+      user: {
+        id: booking.user.id,
+        name: booking.user.name,
+        email: booking.user.email,
+      },
+      status: booking.status,
+    },
+  };
+}
+
+  
   /*
   ========================================================
   MAID BOOKING APIS
