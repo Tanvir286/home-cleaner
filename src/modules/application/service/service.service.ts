@@ -7,7 +7,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ServiceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // get all services by topic
+  // get all general-cleaning_package services
   async getAll() {
     const services = await this.prisma.generalCleaningPackage.findMany({
       select: {

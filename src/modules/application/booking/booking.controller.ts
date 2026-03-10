@@ -63,23 +63,20 @@ export class BookingController {
     return this.bookingService.create(userId, createBookingDto);
   }
 
-  // get homeowner bookings list()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.HOMEOWNER)
-  @Get('homeowner/my-bookings')
-  async getMyBookings(@Req() req, @Query() paginationDto: PaginationDto) {
-    const userId = req.user.userId;
-    return this.bookingService.getMyBookings(userId, paginationDto);
-  }
-
-  // get homeowner bookings list with status filter
+  // get homeowner bookings list
+  // * (pending,upcoming,completed,cancelled) status filter
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Get('homeowner/bookings-by-status')
-  async getBookingsByStatus(@Req() req, @Query() query: PaginationstausDto) {
+  async getBookingsByStatus(
+    @Req() req, 
+    @Query() query: PaginationstausDto)
+  {
     const userId = req.user.userId;
     return this.bookingService.getAllBookingsWithStatus(userId, query);
   }
+
+  
 
   // update booking status
   @UseGuards(JwtAuthGuard, RolesGuard)

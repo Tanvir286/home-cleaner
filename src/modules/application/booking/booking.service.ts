@@ -93,6 +93,23 @@ export class BookingService {
     }
   }
 
+  // slot time
+  private slotTimeMap = {
+    A: { start: '07:30am', end: '10:00am' },
+    B: { start: '11:00am', end: '01:30pm' },
+    C: { start: '01:30pm', end: '04:00pm' },
+    D: { start: '04:00pm', end: '07:30pm' },
+  };
+
+  // date format
+  private formatDate(date: Date) {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    });
+  }
+
   /*
   ========================================================
   HELPER METHODS end
@@ -236,15 +253,9 @@ export class BookingService {
 
   // topic:﹝﹝﹝ homeowner part ﹞﹞﹞
 
+  // create booking
   async create(userId: string, dto: CreateBookingDto) {
-  
-    const { 
-      maid_id, 
-      package_id, 
-      booking_date, 
-      address, 
-      slot 
-    } = dto;
+    const { maid_id, package_id, booking_date, address, slot } = dto;
 
     const parsedDate = new Date(booking_date);
 
@@ -299,41 +310,12 @@ export class BookingService {
     };
   }
 
-  async getMyBookings(userId: string, paginationDto: PaginationDto) {
-    const { page, perPage } = paginationDto;
+  // get homeowner bookings list
+  // * (pending,upcoming,completed,cancelled) status filter
 
-    const skip = (page - 1) * perPage;
-
-    const whereClause = {
-      user_id: userId,
-    };
-
-    const [total, bookings] = await this.prisma.$transaction([
-      this.prisma.booking.count({ where: whereClause }),
-
-      this.prisma.booking.findMany({
-        where: whereClause,
-        include: {
-          maid: true,
-          general_cleaning_package: true,
-          deep_cleaning_package: true,
-        },
-        orderBy: {
-          booking_date: 'desc',
-        },
-        skip,
-        take: perPage,
-      }),
-    ]);
-
-    return {
-      success: true,
-      message: 'Homeowner bookings retrieved successfully',
-      data: paginateResponse(bookings, total, page, perPage),
-    };
-  }
-
+  // service type,package type,price,address,booking date,slot
   async getAllBookingsWithStatus(userId: string, query: PaginationstausDto) {
+    
     const { page, perPage, bookingStatus } = query;
 
     const skip = (page - 1) * perPage;
@@ -361,10 +343,42 @@ export class BookingService {
       }),
     ]);
 
+    const formattedBookings = bookings.map((booking) => {
+    
+      const packageData =
+        booking.general_cleaning_package || booking.deep_cleaning_package;
+
+      const serviceType = booking.general_cleaning_package
+        ? 'General Cleaning'
+        : 'Deep Cleaning';
+
+      const slotTime = this.slotTimeMap[booking.slot];
+
+      return {
+        id: booking.id,
+        service: serviceType,
+        package: packageData?.packageType,
+        price: packageData?.price,
+        address: booking.address,
+        time: `${slotTime.start} - ${slotTime.end}`,
+        booking_date: this.formatDate(booking.booking_date),
+        status: booking.status,
+        maid: {
+          id: booking.maid.id,
+          name: booking.maid.name,
+          avatar: booking.maid.avatar ? TanvirStorage.url(
+                appConfig().storageUrl.avatar + '/' + booking.maid.avatar,
+              )
+            : null,
+        },
+      };
+
+    });
+
     return {
       success: true,
       message: 'Bookings retrieved successfully',
-      data: paginateResponse(bookings, total, page, perPage),
+      data: paginateResponse(formattedBookings, total, page, perPage),
     };
   }
 
