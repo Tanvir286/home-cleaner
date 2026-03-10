@@ -12,7 +12,6 @@ export class ServiceService {
   async create(
     dto: CreateServiceDto
   ) {
-
     const { 
       serviceType, 
       title,
@@ -52,6 +51,41 @@ export class ServiceService {
       message: 'Service created successfully',
       data: {
         service,
+      },
+    };
+  }
+
+  // update service
+  async update(
+    id: string,
+    dto: UpdateServiceDto  
+  ) {
+    const {
+      serviceType, 
+      ...updateData
+    } = dto;
+
+    let updatedService;
+
+    if (serviceType === 'GENERAL_CLEANING') {
+      updatedService = await this.prisma.generalCleaningPackage.update({
+        where: { id },
+        data: updateData,
+      });
+    }
+
+    if (serviceType === 'DEEP_CLEANING') {
+      updatedService = await this.prisma.deepCleaningPackage.update({
+        where: { id },
+        data: updateData,
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Service updated successfully',
+      data: {
+        service: updatedService,
       },
     };
   }

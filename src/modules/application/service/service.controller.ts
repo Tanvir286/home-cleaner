@@ -23,7 +23,14 @@ export class ServiceController {
   }
 
   // update
-  
+   @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateServiceDto: UpdateServiceDto,
+  ) {
+    return await this.serviceService.update(id, updateServiceDto);
+  }
+
 
   // delete
 
