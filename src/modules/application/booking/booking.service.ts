@@ -128,11 +128,15 @@ export class BookingService {
       success: true,
       message: 'Available maids retrieved successfully',
       data: paginateResponse(
-        maids.map(maid => ({
+        maids.map((maid) => ({
           id: maid.id,
           name: maid.name,
           email: maid.email,
-          avatar: maid.avatar ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + maid.avatar) : null,
+          avatar: maid.avatar
+            ? TanvirStorage.url(
+                appConfig().storageUrl.avatar + '/' + maid.avatar,
+              )
+            : null,
           location: maid.location,
           experience_years: maid.experience_years,
           service_type: maid.service_type,
@@ -143,7 +147,7 @@ export class BookingService {
       ),
     };
   }
-    
+
   // available maids list
   async getMaidSlots(maidId: string, month: number, year: number) {
     const maid = await this.prisma.user.findUnique({
@@ -233,9 +237,24 @@ export class BookingService {
   // topic:﹝﹝﹝ homeowner part ﹞﹞﹞
 
   async create(userId: string, dto: CreateBookingDto) {
-    const { maid_id, package_id, booking_date, slot } = dto;
+  
+    const { 
+      maid_id, 
+      package_id, 
+      booking_date, 
+      address, 
+      slot 
+    } = dto;
 
     const parsedDate = new Date(booking_date);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    parsedDate.setHours(0, 0, 0, 0);
+
+    if (parsedDate < today) {
+      throw new BadRequestException('You cannot book a date in the past');
+    }
 
     await this.validateMaid(maid_id, userId);
 
@@ -249,6 +268,7 @@ export class BookingService {
         maid_id,
         booking_date: parsedDate,
         slot,
+        address,
         status: 'PENDING',
         ...packageData,
       },
@@ -278,18 +298,6 @@ export class BookingService {
       data: booking,
     };
   }
-
-  /*
-  ========================================================
-  MAID SLOT AVAILABILITY
-  ========================================================
-  */
-
-  /*
-  ========================================================
-  HOMEOWNER BOOKING APIS
-  ========================================================
-  */
 
   async getMyBookings(userId: string, paginationDto: PaginationDto) {
     const { page, perPage } = paginationDto;

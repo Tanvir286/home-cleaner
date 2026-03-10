@@ -24,6 +24,12 @@ export class CreateBookingDto {
   @IsString()
   booking_date: string;
 
+
+  @IsNotEmpty()
+  @IsString()
+  address: string;
+
+
   @ApiProperty({ description: 'Time slot', enum: SlotEnum, example: 'A' })
   @IsNotEmpty()
   @IsEnum(SlotEnum)

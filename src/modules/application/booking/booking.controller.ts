@@ -40,7 +40,6 @@ export class BookingController {
     return this.bookingService.getAvailableMaids(paginationDto);
   }
 
-
   // maid individual details slot
   @Get('slots/:maidId')
   async getMaidSlots(
@@ -57,12 +56,14 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Post()
-  async createBooking(@Body() createBookingDto: CreateBookingDto, @Req() req) {
+  async createBooking(
+    @Body() createBookingDto: CreateBookingDto, 
+    @Req() req) {
     const userId = req.user.userId;
     return this.bookingService.create(userId, createBookingDto);
   }
 
-  // get homeowner bookings list
+  // get homeowner bookings list()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Get('homeowner/my-bookings')
