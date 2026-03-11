@@ -185,6 +185,7 @@ model GeneralCleaningPackage {
   title       String?
   serviceType serviceType @default(GENERAL_CLEANING)
   packageType PackageType
+  image      String?
   description String?
   price       Decimal?    @db.Decimal(10, 2)
   duration    Int?
@@ -203,6 +204,7 @@ model DeepCleaningPackage {
   title       String?
   serviceType serviceType @default(DEEP_CLEANING)
   packageType PackageType
+  image      String?
   description String?
   price       Decimal?    @db.Decimal(10, 2)
   duration    Int?
