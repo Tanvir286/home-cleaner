@@ -11,6 +11,27 @@ import { find } from 'rxjs';
 export class ServiceService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // helper
+  private async findServiceById(id: string) {
+    const general = await this.prisma.generalCleaningPackage.findUnique({
+      where: { id },
+    });
+
+    if (general) {
+      return { service: general, type: 'GENERAL' };
+    }
+
+    const deep = await this.prisma.deepCleaningPackage.findUnique({
+      where: { id },
+    });
+
+    if (deep) {
+      return { service: deep, type: 'DEEP' };
+    }
+
+    return null;
+  }
+
   // create service
   async create(dto: CreateServiceDto, image?: Express.Multer.File) {
     const { serviceType, title, packageType, description, price } = dto;
@@ -73,22 +94,13 @@ export class ServiceService {
       throw new BadGatewayException('Package type cannot be updated');
     }
 
-    // find service in both tables
-    const generalService = await this.prisma.generalCleaningPackage.findUnique({
-      where: { id },
-    });
+    const foundService = await this.findServiceById(id);
 
-    const deepService = !generalService
-      ? await this.prisma.deepCleaningPackage.findUnique({
-          where: { id },
-        })
-      : null;
-
-    const existingService = generalService || deepService;
-
-    if (!existingService) {
+    if (!foundService) {
       throw new BadGatewayException('Service not found');
     }
+
+    const { service, type } = foundService;
 
     const data: any = {};
 
@@ -123,7 +135,7 @@ export class ServiceService {
 
     let updatedService;
 
-    if (generalService) {
+    if (type === 'GENERAL') {
       updatedService = await this.prisma.generalCleaningPackage.update({
         where: { id },
         data,
@@ -134,6 +146,7 @@ export class ServiceService {
         data,
       });
     }
+
     return {
       success: true,
       message: 'Service updated successfully',
