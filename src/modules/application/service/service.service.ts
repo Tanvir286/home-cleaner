@@ -33,7 +33,10 @@ export class ServiceService {
   }
 
   // create service
-  async create(dto: CreateServiceDto, image?: Express.Multer.File) {
+  async create(
+    dto: CreateServiceDto, 
+    image?: Express.Multer.File
+  ) {
     const { serviceType, title, packageType, description, price } = dto;
 
     // upload image to storage
@@ -85,7 +88,9 @@ export class ServiceService {
   }
 
   // update service
-  async update(id: string, dto: UpdateServiceDto, image?: Express.Multer.File) {
+  async update(
+    id: string, 
+    dto: UpdateServiceDto, image?: Express.Multer.File) {
     if (dto.serviceType) {
       throw new BadGatewayException('Service type cannot be updated');
     }

@@ -17,6 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('service')
 export class ServiceController {
+  
   constructor(private readonly serviceService: ServiceService) {}
 
 
@@ -35,7 +36,7 @@ export class ServiceController {
     return await this.serviceService.create(createServiceDto, image);
   }
 
-  // update
+  // update service
   @Patch(':id')
   @UseInterceptors(
     FileInterceptor('image', {

@@ -31,12 +31,10 @@ export class BookingController {
 
   // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
 
-
   // available maids list
   @Get('available-maidlist')
   async getAvailableMaids(
-    @Query() paginationDto: PaginationDto,
-  ) {
+    @Query() paginationDto: PaginationDto) {
     return this.bookingService.getAvailableMaids(paginationDto);
   }
 
@@ -56,9 +54,7 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Post()
-  async createBooking(
-    @Body() createBookingDto: CreateBookingDto, 
-    @Req() req) {
+  async createBooking(@Body() createBookingDto: CreateBookingDto, @Req() req) {
     const userId = req.user.userId;
     return this.bookingService.create(userId, createBookingDto);
   }
@@ -70,8 +66,8 @@ export class BookingController {
   @Get('homeowner/bookings-by-status')
   async getBookingsByStatus(
     @Req() req, 
-    @Query() query: PaginationstausDto)
-  {
+    @Query() query: PaginationstausDto
+  ) {
     const userId = req.user.userId;
     return this.bookingService.getAllBookingsWithStatus(userId, query);
   }
@@ -82,32 +78,32 @@ export class BookingController {
     return this.bookingService.getBookingDetails(id);
   }
 
-
-
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
 
-  /**
-   * Get Bookings Assigned to Maid
-   */
+  //  booking list pending for maid 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
-  @Get('maid/my-bookings')
-  async getMaidBookings(@Req() req, @Query() paginationDto: PaginationDto) {
-    const userId = req.user.userId;
-    return this.bookingService.getMaidBookings(userId, paginationDto);
+  @Get('maid/pending-bookings')
+  async getPendingBookingsForMaid(
+    @Req() req, 
+    @Query() paginationDto: PaginationDto
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.getPendingBookingsForMaid(maidId, paginationDto);
   }
 
-  /**
-   * Get Maid Bookings with Status Filter
-   */
+  // booking list individual details for maid
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
-  @Get('maid/bookings-by-status')
-  async getMaidBookingsByStatus(
-    @Req() req,
-    @Query() query: PaginationstausDto,
+  @Get('maid/booking-details/:id')
+  async getBookingDetailsForMaid(
+    @Req() req, 
+    @Param('id') id: string
   ) {
-    const userId = req.user.userId;
-    return this.bookingService.getAllBookingsWithStatusMaid(userId, query);
-  }
+    return this.bookingService.getBookingDetailsForMaid(id);
+  }  
+
+
+
+  
 }

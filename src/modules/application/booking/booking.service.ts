@@ -12,6 +12,7 @@ import { UpdateBookingDto } from './dto/update-booking.dto';
 import { PaginationstausDto } from './dto/params-booking.dto';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
+import { BookingStatus } from '@prisma/client';
 
 @Injectable()
 export class BookingService {
@@ -130,7 +131,6 @@ export class BookingService {
         select: {
           id: true,
           name: true,
-          email: true,
           avatar: true,
           location: true,
           experience_years: true,
@@ -148,7 +148,6 @@ export class BookingService {
         maids.map((maid) => ({
           id: maid.id,
           name: maid.name,
-          email: maid.email,
           avatar: maid.avatar
             ? TanvirStorage.url(
                 appConfig().storageUrl.avatar + '/' + maid.avatar,
@@ -315,7 +314,6 @@ export class BookingService {
 
   // service type,package type,price,address,booking date,slot
   async getAllBookingsWithStatus(userId: string, query: PaginationstausDto) {
-    
     const { page, perPage, bookingStatus } = query;
 
     const skip = (page - 1) * perPage;
@@ -344,7 +342,6 @@ export class BookingService {
     ]);
 
     const formattedBookings = bookings.map((booking) => {
-    
       const packageData =
         booking.general_cleaning_package || booking.deep_cleaning_package;
 
@@ -358,6 +355,12 @@ export class BookingService {
         id: booking.id,
         service: serviceType,
         package: packageData?.packageType,
+        package_image: packageData?.image
+          ? TanvirStorage.url(
+              appConfig().storageUrl.package + '/' + packageData.image,
+            )
+          : null,
+        slot: booking.slot,
         price: packageData?.price,
         address: booking.address,
         time: `${slotTime.start} - ${slotTime.end}`,
@@ -366,13 +369,13 @@ export class BookingService {
         maid: {
           id: booking.maid.id,
           name: booking.maid.name,
-          avatar: booking.maid.avatar ? TanvirStorage.url(
+          avatar: booking.maid.avatar
+            ? TanvirStorage.url(
                 appConfig().storageUrl.avatar + '/' + booking.maid.avatar,
               )
             : null,
         },
       };
-
     });
 
     return {
@@ -382,119 +385,87 @@ export class BookingService {
     };
   }
 
+  // get every booking details information
   async getBookingDetails(bookingId: string) {
-  const booking = await this.prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: {
-      maid: true,
-      user: true,
-      general_cleaning_package: true,
-      deep_cleaning_package: true,
-    },
-  });
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        maid: true,
+        user: true,
+        general_cleaning_package: true,
+        deep_cleaning_package: true,
+      },
+    });
 
-  if (!booking) {
-    throw new NotFoundException('Booking not found');
-  }
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
 
-  const packageData =
-    booking.general_cleaning_package || booking.deep_cleaning_package;
+    const packageData =
+      booking.general_cleaning_package || booking.deep_cleaning_package;
 
-  const serviceType = booking.general_cleaning_package
-    ? 'General Cleaning'
-    : 'Deep Cleaning';
+    const serviceType = booking.general_cleaning_package
+      ? 'General Cleaning'
+      : 'Deep Cleaning';
 
-  const slotTime = this.slotTimeMap[booking.slot];
+    const slotTime = this.slotTimeMap[booking.slot];
 
-  return {
-    success: true,
-    message: 'Booking details retrieved successfully',
-    data: {
-      booking_id: booking.id,
-      service: serviceType,
-      package: packageData?.packageType,
-      slot: booking.slot,
-      address: booking.address,
-      date_time: `${this.formatDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
-      price: booking.total_price ? `$${booking.total_price}` : null,
-      maid: {
-        id: booking.maid.id,
-        name: booking.maid.name,
-        location: booking.maid.location,
-        avatar: booking.maid.avatar
+    return {
+      success: true,
+      message: 'Booking details retrieved successfully',
+      data: {
+        booking_id: booking.id,
+        service: serviceType,
+        package: packageData?.packageType,
+        package_image: packageData?.image
           ? TanvirStorage.url(
-              appConfig().storageUrl.avatar + '/' + booking.maid.avatar,
+              appConfig().storageUrl.package + '/' + packageData.image,
             )
           : null,
-        rating: 4.5, 
-      },
-      user: {
-        id: booking.user.id,
-        name: booking.user.name,
-        email: booking.user.email,
-      },
-      status: booking.status,
-    },
-  };
-}
-
-  
-  /*
-  ========================================================
-  MAID BOOKING APIS
-  ========================================================
-  */
-
-  async getMaidBookings(userId: string, paginationDto: PaginationDto) {
-    const { page, perPage } = paginationDto;
-
-    const skip = (page - 1) * perPage;
-
-    const whereClause = {
-      maid_id: userId,
-    };
-
-    const [total, bookings] = await this.prisma.$transaction([
-      this.prisma.booking.count({ where: whereClause }),
-
-      this.prisma.booking.findMany({
-        where: whereClause,
-        include: {
-          user: true,
-          general_cleaning_package: true,
-          deep_cleaning_package: true,
+        slot: booking.slot,
+        address: booking.address,
+        date_time: `${this.formatDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
+        price: booking.total_price ? `$${booking.total_price}` : null,
+        maid: {
+          id: booking.maid.id,
+          name: booking.maid.name,
+          location: booking.maid.location,
+          avatar: booking.maid.avatar
+            ? TanvirStorage.url(
+                appConfig().storageUrl.avatar + '/' + booking.maid.avatar,
+              )
+            : null,
+          rating: 4.5,
         },
-        orderBy: {
-          booking_date: 'desc',
+        user: {
+          id: booking.user.id,
+          name: booking.user.name,
+          email: booking.user.email,
         },
-        skip,
-        take: perPage,
-      }),
-    ]);
-
-    return {
-      success: true,
-      message: 'Maid bookings retrieved successfully',
-      data: paginateResponse(bookings, total, page, perPage),
+        status: booking.status,
+      },
     };
   }
 
-  async getAllBookingsWithStatusMaid(
-    userId: string,
-    query: PaginationstausDto,
-  ) {
-    const { page, perPage, bookingStatus } = query;
+  // topic:﹝﹝﹝ maid part ﹞﹞﹞
 
+  //  booking list pending for maid
+
+  // booking list individual details for maid
+  async getPendingBookingsForMaid(
+    maidId: string,
+    paginationDto: PaginationDto,
+  ) {
+    const { page, perPage } = paginationDto;
     const skip = (page - 1) * perPage;
 
     const whereClause = {
-      maid_id: userId,
-      status: bookingStatus as any,
+      maid_id: maidId,
+      status: BookingStatus.PENDING,
     };
 
     const [total, bookings] = await this.prisma.$transaction([
       this.prisma.booking.count({ where: whereClause }),
-
       this.prisma.booking.findMany({
         where: whereClause,
         include: {
@@ -503,17 +474,96 @@ export class BookingService {
           deep_cleaning_package: true,
         },
         orderBy: {
-          booking_date: 'desc',
+          booking_date: 'asc',
         },
         skip,
         take: perPage,
       }),
     ]);
 
+    const formattedBookings = bookings.map((booking) => {
+      const packageData =
+        booking.general_cleaning_package || booking.deep_cleaning_package;
+      const serviceType = booking.general_cleaning_package
+        ? 'General Cleaning'
+        : 'Deep Cleaning';
+      const slotTime = this.slotTimeMap[booking.slot];
+
+      return {
+        id: booking.id,
+        service: serviceType,
+        package: packageData?.packageType,
+        package_image: packageData?.image
+          ? TanvirStorage.url(
+              appConfig().storageUrl.package + '/' + packageData.image,
+            )
+          : null,
+        price: packageData?.price,
+        slot: booking.slot,
+        address: booking.address,
+        time: `${slotTime.start} - ${slotTime.end}`,
+        booking_date: this.formatDate(booking.booking_date),
+      };
+    });
+
     return {
       success: true,
-      message: 'Maid bookings retrieved successfully',
-      data: paginateResponse(bookings, total, page, perPage),
+      message: 'Pending bookings retrieved successfully',
+      data: paginateResponse(formattedBookings, total, page, perPage),
+    };
+  }
+
+
+  // booking list individual details for maid
+  async getBookingDetailsForMaid(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        user: true,
+        general_cleaning_package: true,
+        deep_cleaning_package: true,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    const packageData =
+      booking.general_cleaning_package || booking.deep_cleaning_package;
+    const serviceType = booking.general_cleaning_package
+      ? 'General Cleaning'
+      : 'Deep Cleaning';
+    const slotTime = this.slotTimeMap[booking.slot];
+
+    return {
+      success: true,
+      message: 'Booking details retrieved successfully',
+      data: {
+        id: booking.id,
+        service: serviceType,
+        package: packageData?.packageType,
+        package_image: packageData?.image
+          ? TanvirStorage.url(
+              appConfig().storageUrl.package + '/' + packageData.image,
+            )
+          : null,
+        price: packageData?.price,
+        slot: booking.slot,
+        address: booking.address,
+        time: `${slotTime.start} - ${slotTime.end}`,
+        booking_date: this.formatDate(booking.booking_date),
+        user: {
+          id: booking.user.id,
+          name: booking.user.name,
+          location: booking.user.location,
+          avatar: booking.user.avatar
+            ? TanvirStorage.url(
+                appConfig().storageUrl.avatar + '/' + booking.user.avatar,  
+              )
+            : null,
+        },
+      },
     };
   }
 }
