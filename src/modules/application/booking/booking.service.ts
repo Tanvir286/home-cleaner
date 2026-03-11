@@ -449,8 +449,6 @@ export class BookingService {
 
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
 
-  //  booking list pending for maid
-
   // booking list individual details for maid
   async getPendingBookingsForMaid(
     maidId: string,
@@ -513,7 +511,6 @@ export class BookingService {
     };
   }
 
-
   // booking list individual details for maid
   async getBookingDetailsForMaid(bookingId: string) {
     const booking = await this.prisma.booking.findUnique({
@@ -566,4 +563,43 @@ export class BookingService {
       },
     };
   }
+
+  // booking status update by maid (accept, reject)
+  async updateBookingStatusByMaid(
+    maidId: string,
+    bookingId: string,
+    dto: UpdateBookingDto,
+  ) {
+    const { status } = dto;
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+    if (booking.maid_id !== maidId) {
+      throw new BadRequestException('You are not authorized to update this booking');
+    }
+
+    if (booking.status !== BookingStatus.PENDING) {
+      throw new BadRequestException('Only pending bookings can be updated');
+    }
+
+    const updatedBooking = await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+    });
+
+    return {
+      success: true,
+      message: `Booking ${status.toLowerCase()} successfully`,
+      data: updatedBooking,
+    };
+  }
+  
+  
+
+
 }

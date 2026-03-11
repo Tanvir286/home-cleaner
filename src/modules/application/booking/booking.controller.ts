@@ -104,6 +104,22 @@ export class BookingController {
   }  
 
 
+  // booking status update by maid (accept, reject)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Patch('maid/update-booking-status/:id')
+  async updateBookingStatusByMaid(
+    @Req() req, 
+    @Param('id') id: string, 
+    @Body() updateBookingDto: UpdateBookingDto
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.updateBookingStatusByMaid(
+      maidId, 
+      id, 
+      updateBookingDto
+    );
+  }
 
   
 }

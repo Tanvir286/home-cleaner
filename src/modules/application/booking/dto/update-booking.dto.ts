@@ -1,11 +1,15 @@
 import { IsEnum } from "class-validator";
-import { Booking } from "../entities/booking.entity";
-import { BookingStatus } from "@prisma/client";
+
+enum AllowedBookingStatus {
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+}
 
 export class UpdateBookingDto {
 
-    @IsEnum(BookingStatus)
-    status: BookingStatus;
-
+  @IsEnum(AllowedBookingStatus, {
+    message: 'status must be either CONFIRMED or CANCELLED',
+  })
+  status: AllowedBookingStatus;
 
 }
