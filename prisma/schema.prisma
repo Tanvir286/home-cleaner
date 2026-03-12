@@ -235,7 +235,9 @@ model Booking {
 
   booking_date DateTime @db.Date
   slot         Slot
-  address      String
+
+  maid_location String
+  homeowner_location String
 
   total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)

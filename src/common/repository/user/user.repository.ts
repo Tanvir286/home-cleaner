@@ -594,4 +594,23 @@ export class UserRepository {
     });
     return user;
   }
+
+  // get user information
+  async getUserInfo(user_id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: user_id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        type: true,
+        location: true,
+      },
+    });
+    return user;
+  }
+
+
+
+
 }

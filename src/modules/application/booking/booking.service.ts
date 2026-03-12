@@ -120,6 +120,7 @@ export class BookingService {
   // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
 
   // available maids list
+
   async getAvailableMaids(paginationDto: PaginationDto) {
     const { page, perPage } = paginationDto;
     const skip = (page - 1) * perPage;
@@ -166,6 +167,8 @@ export class BookingService {
 
   // available maids list
   async getMaidSlots(maidId: string, month: number, year: number) {
+   
+   
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -254,7 +257,13 @@ export class BookingService {
 
   // create booking
   async create(userId: string, dto: CreateBookingDto) {
+  
     const { maid_id, package_id, booking_date, address, slot } = dto;
+
+   const maid_location = await this.prisma.user.findUnique({
+      where: { id: maid_id },
+      select: { location: true },
+    });
 
     const parsedDate = new Date(booking_date);
 
@@ -278,7 +287,8 @@ export class BookingService {
         maid_id,
         booking_date: parsedDate,
         slot,
-        address,
+        maid_location: maid_location.location,
+        homeowner_location: address,
         status: 'PENDING',
         ...packageData,
       },
@@ -362,7 +372,7 @@ export class BookingService {
           : null,
         slot: booking.slot,
         price: packageData?.price,
-        address: booking.address,
+        address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: this.formatDate(booking.booking_date),
         status: booking.status,
@@ -423,7 +433,7 @@ export class BookingService {
             )
           : null,
         slot: booking.slot,
-        address: booking.address,
+        address: booking.homeowner_location,
         date_time: `${this.formatDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
         price: booking.total_price ? `$${booking.total_price}` : null,
         maid: {
@@ -498,7 +508,7 @@ export class BookingService {
           : null,
         price: packageData?.price,
         slot: booking.slot,
-        address: booking.address,
+        address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: this.formatDate(booking.booking_date),
       };
@@ -547,7 +557,7 @@ export class BookingService {
           : null,
         price: packageData?.price,
         slot: booking.slot,
-        address: booking.address,
+        address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: this.formatDate(booking.booking_date),
         user: {
@@ -556,7 +566,7 @@ export class BookingService {
           location: booking.user.location,
           avatar: booking.user.avatar
             ? TanvirStorage.url(
-                appConfig().storageUrl.avatar + '/' + booking.user.avatar,  
+                appConfig().storageUrl.avatar + '/' + booking.user.avatar,
               )
             : null,
         },
@@ -580,7 +590,9 @@ export class BookingService {
       throw new NotFoundException('Booking not found');
     }
     if (booking.maid_id !== maidId) {
-      throw new BadRequestException('You are not authorized to update this booking');
+      throw new BadRequestException(
+        'You are not authorized to update this booking',
+      );
     }
 
     if (booking.status !== BookingStatus.PENDING) {
@@ -599,7 +611,4 @@ export class BookingService {
     };
   }
   
-  
-
-
 }
