@@ -124,5 +124,18 @@ export class BookingController {
     );
   }
 
+
+  // booking status (pending, upcoming, completed, cancelled)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Get('maid/booking-by-status')
+  async getBookingsByStatusForMaid(
+    @Req() req, 
+    @Query() query: PaginationstausDto
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.getBookingsByStatusForMaid(maidId, query);
+  }
+
   
 }

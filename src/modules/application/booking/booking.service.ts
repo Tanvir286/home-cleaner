@@ -167,8 +167,6 @@ export class BookingService {
 
   // available maids list
   async getMaidSlots(maidId: string, month: number, year: number) {
-   
-   
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -257,10 +255,9 @@ export class BookingService {
 
   // create booking
   async create(userId: string, dto: CreateBookingDto) {
-  
     const { maid_id, package_id, booking_date, address, slot } = dto;
 
-   const maid_location = await this.prisma.user.findUnique({
+    const maid_location = await this.prisma.user.findUnique({
       where: { id: maid_id },
       select: { location: true },
     });
@@ -330,7 +327,7 @@ export class BookingService {
 
     const whereClause = {
       user_id: userId,
-      status: bookingStatus as any,
+      status: BookingStatus[bookingStatus],
     };
 
     const [total, bookings] = await this.prisma.$transaction([
@@ -610,5 +607,80 @@ export class BookingService {
       data: updatedBooking,
     };
   }
+
+  //  booking status (pending, upcoming, completed, cancelled)
+  async getBookingsByStatusForMaid(
+    maidId: string, 
+    query: PaginationstausDto
+  ) {
+   
+    const { page, perPage, bookingStatus } = query;
+    const skip = (page - 1) * perPage;
+
+    const whereClause = {
+      maid_id: maidId,
+      status: BookingStatus[bookingStatus],
+    };
+
+    const [total, bookings] = await this.prisma.$transaction([
+      this.prisma.booking.count({ where: whereClause }),
+      this.prisma.booking.findMany({
+        where: whereClause,
+        include: {
+          user: true,
+          general_cleaning_package: true,
+          deep_cleaning_package: true,
+        },
+        orderBy: {
+          booking_date: 'asc',
+        },
+        skip,
+        take: perPage,
+      }),
+    ]);
+
+    const formattedBookings = bookings.map((booking) => {
+      const packageData =
+        booking.general_cleaning_package || booking.deep_cleaning_package;
+      const serviceType = booking.general_cleaning_package
+        ? 'General Cleaning'
+        : 'Deep Cleaning';
+      const slotTime = this.slotTimeMap[booking.slot];
+
+      return {
+        id: booking.id,
+        service: serviceType,
+        package: packageData?.packageType,
+        package_image: packageData?.image
+          ? TanvirStorage.url(
+              appConfig().storageUrl.package + '/' + packageData.image,
+            )
+          : null,
+        price: packageData?.price,
+        slot: booking.slot,
+        address: booking.homeowner_location,
+        time: `${slotTime.start} - ${slotTime.end}`,
+        booking_date: this.formatDate(booking.booking_date),
+        status: booking.status,
+        user: {
+          id: booking.user.id,
+          name: booking.user.name,
+          avatar: booking.user.avatar
+            ? TanvirStorage.url(
+                appConfig().storageUrl.avatar + '/' + booking.user.avatar,
+              )
+            : null,
+        },
+      };
+    });
+
+    return {
+      success: true,
+      message: `Bookings with status ${bookingStatus} retrieved successfully`,
+      data: paginateResponse(formattedBookings, total, page, perPage),
+    };
+  }
+
+
   
 }

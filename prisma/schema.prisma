@@ -247,6 +247,18 @@ model Booking {
 }
 
 
+model Destination {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  pickup_location  String
+  dropoff_location String
+  distance_km      Float?
+
+  @@map("destinations")
+}
+
 /**
  * ---------------------------------------------------------------------
  * project requirement Schema end

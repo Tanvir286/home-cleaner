@@ -41,7 +41,7 @@
     "@nestjs/websockets": "^11.1.9",
     "@prisma/client": "6.7",
     "aws-sdk": "^2.1692.0",
-    "axios": "^1.13.2",
+    "axios": "^1.13.6",
     "bcrypt": "5.1.1",
     "bullmq": "5.48.1",
     "class-transformer": "0.5.1",
