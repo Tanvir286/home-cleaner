@@ -46,6 +46,10 @@ export default () => ({
     expiry: process.env.JWT_EXPIRY,
   },
 
+  googleMaps: {
+    apiKey: process.env.GOOGLE_MAPS_API_KEY,
+  },
+
   mail: {
     host: process.env.MAIL_HOST || 'smtp.gmail.com',
     port: process.env.MAIL_PORT || 587,
