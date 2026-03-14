@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { CreateDestinationDto } from './dto/create-destination.dto';
 import { UpdateDestinationDto } from './dto/update-destination.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -17,11 +17,26 @@ export class DestinationService {
   // create destination
   async create(createDestinationDto: CreateDestinationDto) {
 
-    const { pickup_location, dropoff_location } = createDestinationDto;
+    const { 
+      booking_id
+    } = createDestinationDto;
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: booking_id },
+      select: {
+        maid_location: true,
+        homeowner_location: true,
+      },
+    });
+
+
+    if (!booking) {
+      throw new BadGatewayException("Booking not found");
+    }
 
     // address -> lat,lng
-    const pickupCoords = await geocodeAddress(pickup_location, this.apiKey);
-    const dropoffCoords = await geocodeAddress(dropoff_location, this.apiKey);
+    const pickupCoords = await geocodeAddress(booking.maid_location, this.apiKey);
+    const dropoffCoords = await geocodeAddress(booking.homeowner_location, this.apiKey);
 
 
     // distance + driving time
@@ -35,12 +50,11 @@ export class DestinationService {
     // save to db
     const destination = await this.prisma.destination.create({
       data: {
-        pickup_location: pickup_location,
-        dropoff_location: dropoff_location,
+        pickup_location: booking.maid_location,
+        dropoff_location: booking.homeowner_location,
         distance_km: distanceInfo.distance_km,
       },
     });
-
 
     return {
       id: destination.id,

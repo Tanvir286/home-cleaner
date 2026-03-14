@@ -3,7 +3,7 @@ import axios from "axios";
 export async function getDrivingDistance(origin, destination, apiKey: string) {
 
   const url =
-    `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin.lat},${origin.lng}&destinations=${destination.lat},${destination.lng}&mode=driving&key=${apiKey}`;
+  `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin.lat},${origin.lng}&destinations=${destination.lat},${destination.lng}&mode=driving&key=${apiKey}`;
 
   const res = await axios.get(url);
 

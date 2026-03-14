@@ -242,6 +242,9 @@ model Booking {
   total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
 
+  booking_destinations Destination[]
+  live_locations LiveLocation[]
+
   @@unique([maid_id, booking_date, slot])
   @@map("bookings")
 }
@@ -252,12 +255,31 @@ model Destination {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  booking_id String
+  booking    Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+
   pickup_location  String
   dropoff_location String
   distance_km      Float?
 
   @@map("destinations")
 }
+
+
+model LiveLocation {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  booking_id String
+  booking    Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+
+  latitude  Float
+  longitude Float
+
+  @@map("live_locations")
+}
+
 
 /**
  * ---------------------------------------------------------------------
