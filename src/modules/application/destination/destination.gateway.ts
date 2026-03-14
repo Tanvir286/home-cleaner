@@ -1,77 +1,79 @@
 import {
-	ConnectedSocket,
-	MessageBody,
-	OnGatewayConnection,
-	OnGatewayDisconnect,
-	SubscribeMessage,
-	WebSocketGateway,
-	WebSocketServer,
+  ConnectedSocket,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 type JoinDestinationRoomBody = {
-	booking_id: string;
+  booking_id: string;
 };
 
-type UpdateDestinationLocationBody = {
-	booking_id: string;
-	user_id?: string;
-	lat: number;
-	lng: number;
-	timestamp?: string;
+type LiveLocationPayload = {
+  booking_id: string;
+  lat: number;
+  lng: number;
+  timestamp?: string;
+  remaining?: {
+    distance_km: number;
+    distance_text: string;
+    duration_text: string;
+    duration_seconds: number;
+  } | null;
 };
 
 @WebSocketGateway({
-	cors: {
-		origin: '*',
-	},
+  cors: {
+    origin: '*',
+  },
 })
 export class DestinationGateway
-	implements OnGatewayConnection, OnGatewayDisconnect
+  implements OnGatewayConnection, OnGatewayDisconnect
 {
-	@WebSocketServer()
-	server: Server;
+  @WebSocketServer()
+  server: Server;
 
-	handleConnection(client: Socket) {
-		client.emit('destinationConnected', { connected: true });
-	}
+  handleConnection(client: Socket) {
+    console.log(`Client connected: ${client.id}`);
+  }
 
-	handleDisconnect(client: Socket) {
-		client.emit('destinationDisconnected', { connected: false });
-	}
+  handleDisconnect(client: Socket) {
+    console.log(`Client disconnected: ${client.id}`);
+  }
 
-	@SubscribeMessage('joinDestinationRoom')
-	joinRoom(
-		@ConnectedSocket() client: Socket,
-		@MessageBody() body: JoinDestinationRoomBody,
-	) {
-		const room = `booking_${body.booking_id}`;
-		client.join(room);
+  // client room join
+  @SubscribeMessage('joinDestinationRoom')
+  joinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: JoinDestinationRoomBody,
+  ) {
+    const room = `booking_${body.booking_id}`;
 
-		client.emit('joinedDestinationRoom', {
-			booking_id: body.booking_id,
-			room,
-		});
-	}
+    client.join(room);
 
-	@SubscribeMessage('updateLiveLocation')
-	updateLiveLocation(@MessageBody() body: UpdateDestinationLocationBody) {
-		const room = `booking_${body.booking_id}`;
+    return {
+      success: true,
+      room,
+      booking_id: body.booking_id,
+    };
+  }
 
-		const payload = {
-			booking_id: body.booking_id,
-			user_id: body.user_id ?? null,
-			lat: body.lat,
-			lng: body.lng,
-			timestamp: body.timestamp ?? new Date().toISOString(),
-		};
+  // broadcast live location
+  broadcastLiveLocation(data: LiveLocationPayload) {
+    const room = `booking_${data.booking_id}`;
 
-		this.server.to(room).emit('liveLocationUpdated', payload);
+    const payload = {
+      booking_id: data.booking_id,
+      lat: data.lat,
+      lng: data.lng,
+      timestamp: data.timestamp ?? new Date().toISOString(),
+      remaining: data.remaining ?? null,
+    };
 
-		return {
-			success: true,
-			room,
-		};
-	}
+    this.server.to(room).emit('liveLocationUpdated', payload);
+  }
 }
-
