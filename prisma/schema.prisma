@@ -64,10 +64,10 @@ model User {
   password   String?   @db.VarChar(255)
   type       UserType? @default(MAID)
 
-  experience_years Float? @default(0.0)
-  name     String? @db.VarChar(255)
-  location String? @db.VarChar(255)
-  language String? @db.VarChar(100)
+  experience_years Float?  @default(0.0)
+  name             String? @db.VarChar(255)
+  location         String? @db.VarChar(255)
+  language         String? @db.VarChar(100)
 
   // billing info  
   billing_id        String?
@@ -94,11 +94,11 @@ model User {
   is_two_factor_enabled Int?    @default(0)
   two_factor_secret     String?
 
-  service_type ServiceType[] 
+  service_type ServiceType[]
 
   // Profil & account
   accounts Account[]
-  
+
   // Booking
   maidBookings Booking[] @relation("MaidBookings")
   userBookings Booking[] @relation("UserBookings")
@@ -160,7 +160,7 @@ enum PackageType {
   GREENFLOW
   GLIDE
 }
- 
+
 enum Slot {
   A
   B
@@ -175,7 +175,6 @@ enum BookingStatus {
   CANCELLED
 }
 
-
 model GeneralCleaningPackage {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -185,7 +184,7 @@ model GeneralCleaningPackage {
   title       String?
   serviceType serviceType @default(GENERAL_CLEANING)
   packageType PackageType
-  image      String?
+  image       String?
   description String?
   price       Decimal?    @db.Decimal(10, 2)
   duration    Int?
@@ -204,7 +203,7 @@ model DeepCleaningPackage {
   title       String?
   serviceType serviceType @default(DEEP_CLEANING)
   packageType PackageType
-  image      String?
+  image       String?
   description String?
   price       Decimal?    @db.Decimal(10, 2)
   duration    Int?
@@ -213,7 +212,6 @@ model DeepCleaningPackage {
 
   @@map("deep_cleaning_packages")
 }
-
 
 model Booking {
   id         String    @id @default(cuid())
@@ -236,19 +234,18 @@ model Booking {
   booking_date DateTime @db.Date
   slot         Slot
 
-  maid_location String
+  maid_location      String
   homeowner_location String
 
   total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
 
   booking_destinations Destination[]
-  live_locations LiveLocation[]
+  live_locations       LiveLocation[]
 
   @@unique([maid_id, booking_date, slot])
   @@map("bookings")
 }
-
 
 model Destination {
   id         String   @id @default(cuid())
@@ -258,13 +255,19 @@ model Destination {
   booking_id String
   booking    Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
 
-  pickup_location  String
-  dropoff_location String
-  distance_km      Float?
+  pickup_lat Float?
+  pickup_lng Float?
+
+  dropoff_lat Float?
+  dropoff_lng Float?
+
+  distance_km   Float?
+  distance_text String?
+  duration_min  Float?
 
   @@map("destinations")
+  @@index([booking_id])
 }
-
 
 model LiveLocation {
   id         String   @id @default(cuid())
@@ -278,15 +281,14 @@ model LiveLocation {
   longitude Float
 
   @@map("live_locations")
+  @@index([booking_id])
 }
-
 
 /**
  * ---------------------------------------------------------------------
  * project requirement Schema end
  * ---------------------------------------------------------------------
  */
-
 /**
  * ---------------------------------------------------------------------
  * Chating and Notification Schema start

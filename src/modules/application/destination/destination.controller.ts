@@ -14,8 +14,7 @@ export class DestinationController {
     return this.destinationService.create(createDestinationDto);
   }
 
-
-  // live tracking with 
+  // live tracking with socket and redis
 
 
 
