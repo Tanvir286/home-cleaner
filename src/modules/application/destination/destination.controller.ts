@@ -21,8 +21,8 @@ export class DestinationController {
   }
 
  
-  // update live location
-  
+ 
+
 
 
 

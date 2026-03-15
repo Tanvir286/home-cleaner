@@ -50,9 +50,14 @@ export class DestinationService {
     });
 
     if (existingDestination) {
+      const mapLink = generateGoogleMapLink(
+        { lat: existingDestination.pickup_lat, lng: existingDestination.pickup_lng },
+        { lat: existingDestination.dropoff_lat, lng: existingDestination.dropoff_lng },
+      );
       return {
         message: 'Destination already exists for this booking',
-        destination: existingDestination
+        destination: existingDestination,
+        map_link: mapLink,
       };
     }
 
@@ -113,7 +118,7 @@ export class DestinationService {
     };
   }
 
-  // update live location
+  
   
 
 }
