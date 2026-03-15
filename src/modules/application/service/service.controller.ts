@@ -52,7 +52,6 @@ export class ServiceController {
     return await this.serviceService.update(id, updateServiceDto, image);
   }
 
-
   // get all general_cleaning_package services
   @Get('general-cleaning-package')
   async getAll() {

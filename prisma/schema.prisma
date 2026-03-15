@@ -178,6 +178,7 @@ enum Slot {
 enum BookingStatus {
   PENDING
   CONFIRMED
+  SUBMITTED
   COMPLETED
   CANCELLED
 }
@@ -246,6 +247,8 @@ model Booking {
 
   before_photos      String[]  
   after_photos       String[]  
+
+
 
 
   total_price Decimal?      @db.Decimal(10, 2)

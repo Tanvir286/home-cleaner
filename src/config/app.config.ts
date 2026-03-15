@@ -86,6 +86,7 @@ export default () => ({
     rootUrlPublic: '/public/storage',
     // storage directory
     package: '/package',
+    booking: '/booking',
     destination: '/destination',
     blog: '/blog',
     avatar: '/avatar',

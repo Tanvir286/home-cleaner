@@ -10,112 +10,23 @@ import { PaginationDto, paginateResponse } from 'src/common/pagination';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { PaginationstausDto } from './dto/params-booking.dto';
+import {
+  bookingSlotTimeMap,
+  checkSlotAvailability,
+  formatBookingDate,
+  resolvePackage,
+  uploadBookingImages,
+  validateMaid,
+} from './booking.utlis';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
 import { BookingStatus } from '@prisma/client';
 
 @Injectable()
 export class BookingService {
+ 
   constructor(private readonly prisma: PrismaService) {}
 
-  /*
-  ========================================================
-  HELPER METHODS start
-  ========================================================
-  */
-
-  // Resolve package type (General / Deep Cleaning)
-  private async resolvePackage(packageId: string) {
-    const [generalPackage, deepPackage] = await Promise.all([
-      this.prisma.generalCleaningPackage.findUnique({
-        where: { id: packageId },
-      }),
-      this.prisma.deepCleaningPackage.findUnique({
-        where: { id: packageId },
-      }),
-    ]);
-
-    if (generalPackage) {
-      return {
-        general_cleaning_package_id: generalPackage.id,
-        deep_cleaning_package_id: null,
-        total_price: generalPackage.price ? Number(generalPackage.price) : null,
-      };
-    }
-
-    if (deepPackage) {
-      return {
-        general_cleaning_package_id: null,
-        deep_cleaning_package_id: deepPackage.id,
-        total_price: deepPackage.price ? Number(deepPackage.price) : null,
-      };
-    }
-
-    throw new NotFoundException('Selected package not found');
-  }
-
-  // Validate maid existence and type
-  private async validateMaid(maidId: string, userId: string) {
-    const maid = await this.prisma.user.findUnique({
-      where: { id: maidId },
-    });
-
-    if (!maid) throw new NotFoundException('Maid not found');
-
-    if (maid.type !== 'MAID') {
-      throw new BadRequestException('Selected user is not a maid');
-    }
-
-    if (maidId === userId) {
-      throw new BadRequestException('You cannot book yourself');
-    }
-  }
-
-  // Check if maid already booked on the selected slot
-  private async checkSlotAvailability(
-    maidId: string,
-    bookingDate: Date,
-    slot: string,
-  ) {
-    const existingBooking = await this.prisma.booking.findUnique({
-      where: {
-        maid_id_booking_date_slot: {
-          maid_id: maidId,
-          booking_date: bookingDate,
-          slot: slot as any,
-        },
-      },
-    });
-
-    if (existingBooking) {
-      throw new BadRequestException(
-        'This maid is already booked for the selected date and slot',
-      );
-    }
-  }
-
-  // slot time
-  private slotTimeMap = {
-    A: { start: '07:30am', end: '10:00am' },
-    B: { start: '11:00am', end: '01:30pm' },
-    C: { start: '01:30pm', end: '04:00pm' },
-    D: { start: '04:00pm', end: '07:30pm' },
-  };
-
-  // date format
-  private formatDate(date: Date) {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-    });
-  }
-
-  /*
-  ========================================================
-  HELPER METHODS end
-  ========================================================
-  */
 
   // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
 
@@ -272,11 +183,11 @@ export class BookingService {
       throw new BadRequestException('You cannot book a date in the past');
     }
 
-    await this.validateMaid(maid_id, userId);
+    await validateMaid(this.prisma, maid_id, userId);
 
-    await this.checkSlotAvailability(maid_id, parsedDate, slot);
+    await checkSlotAvailability(this.prisma, maid_id, parsedDate, slot);
 
-    const packageData = await this.resolvePackage(package_id);
+    const packageData = await resolvePackage(this.prisma, package_id);
 
     const booking = await this.prisma.booking.create({
       data: {
@@ -356,7 +267,7 @@ export class BookingService {
         ? 'General Cleaning'
         : 'Deep Cleaning';
 
-      const slotTime = this.slotTimeMap[booking.slot];
+      const slotTime = bookingSlotTimeMap[booking.slot];
 
       return {
         id: booking.id,
@@ -371,7 +282,7 @@ export class BookingService {
         price: packageData?.price,
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
-        booking_date: this.formatDate(booking.booking_date),
+        booking_date: formatBookingDate(booking.booking_date),
         status: booking.status,
         maid: {
           id: booking.maid.id,
@@ -384,7 +295,6 @@ export class BookingService {
         },
       };
     });
-
     return {
       success: true,
       message: 'Bookings retrieved successfully',
@@ -415,7 +325,7 @@ export class BookingService {
       ? 'General Cleaning'
       : 'Deep Cleaning';
 
-    const slotTime = this.slotTimeMap[booking.slot];
+    const slotTime = bookingSlotTimeMap[booking.slot];
 
     return {
       success: true,
@@ -431,7 +341,7 @@ export class BookingService {
           : null,
         slot: booking.slot,
         address: booking.homeowner_location,
-        date_time: `${this.formatDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
+        date_time: `${formatBookingDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
         price: booking.total_price ? `$${booking.total_price}` : null,
         maid: {
           id: booking.maid.id,
@@ -492,7 +402,7 @@ export class BookingService {
       const serviceType = booking.general_cleaning_package
         ? 'General Cleaning'
         : 'Deep Cleaning';
-      const slotTime = this.slotTimeMap[booking.slot];
+      const slotTime = bookingSlotTimeMap[booking.slot];
 
       return {
         id: booking.id,
@@ -507,10 +417,9 @@ export class BookingService {
         slot: booking.slot,
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
-        booking_date: this.formatDate(booking.booking_date),
+        booking_date: formatBookingDate(booking.booking_date),
       };
     });
-
     return {
       success: true,
       message: 'Pending bookings retrieved successfully',
@@ -538,7 +447,7 @@ export class BookingService {
     const serviceType = booking.general_cleaning_package
       ? 'General Cleaning'
       : 'Deep Cleaning';
-    const slotTime = this.slotTimeMap[booking.slot];
+    const slotTime = bookingSlotTimeMap[booking.slot];
 
     return {
       success: true,
@@ -556,7 +465,7 @@ export class BookingService {
         slot: booking.slot,
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
-        booking_date: this.formatDate(booking.booking_date),
+        booking_date: formatBookingDate(booking.booking_date),
         user: {
           id: booking.user.id,
           name: booking.user.name,
@@ -609,11 +518,12 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
+
   async getBookingsByStatusForMaid(
     maidId: string, 
     query: PaginationstausDto
   ) {
-   
+    
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
@@ -645,7 +555,7 @@ export class BookingService {
       const serviceType = booking.general_cleaning_package
         ? 'General Cleaning'
         : 'Deep Cleaning';
-      const slotTime = this.slotTimeMap[booking.slot];
+      const slotTime = bookingSlotTimeMap[booking.slot];
 
       return {
         id: booking.id,
@@ -660,7 +570,7 @@ export class BookingService {
         slot: booking.slot,
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
-        booking_date: this.formatDate(booking.booking_date),
+        booking_date: formatBookingDate(booking.booking_date),
         status: booking.status,
         user: {
           id: booking.user.id,
@@ -681,12 +591,13 @@ export class BookingService {
     };
   }
 
-  // booking complete by maid 
+  // booking complete by maid
   async completeBookingByMaid(
-    maidId: string, 
-    bookingId: string
+    maidId: string,
+    bookingId: string,
+    beforeImageFiles: Express.Multer.File[] = [],
+    afterImageFiles: Express.Multer.File[] = [],
   ) {
-  
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
     });
@@ -701,24 +612,35 @@ export class BookingService {
       );
     }
 
-    if (booking.status !== BookingStatus.COMPLETED) {
-      throw new BadRequestException('Only upcoming bookings can be completed');
+    if (booking.status !== BookingStatus.SUBMITTED) {
+      throw new BadRequestException('Only submitted bookings can be completed');
     }
-    
+
+    const uploadedBeforePhotos = await uploadBookingImages(beforeImageFiles);
+    const uploadedAfterPhotos = await uploadBookingImages(afterImageFiles);
+
+  
     const updatedBooking = await this.prisma.booking.update({
       where: { id: bookingId },
       data: {
-         status: BookingStatus.COMPLETED 
-        },
+        status: BookingStatus.COMPLETED,
+        before_photos: uploadedBeforePhotos,
+        after_photos: uploadedAfterPhotos,
+      },
     });
 
     return {
       success: true,
       message: 'Booking completed successfully',
-      data: updatedBooking,
+      data: {
+        ...updatedBooking,
+        before_photos_url: uploadedBeforePhotos.map((fileName) =>
+          TanvirStorage.url(`${appConfig().storageUrl.booking}/${fileName}`),
+        ),
+        after_photos_url: uploadedAfterPhotos.map((fileName) =>
+          TanvirStorage.url(`${appConfig().storageUrl.booking}/${fileName}`),
+        ),
+      },
     };
-
   }
-
-  
 }

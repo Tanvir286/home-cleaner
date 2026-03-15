@@ -8,6 +8,8 @@ import {
   UseGuards,
   Req,
   Query,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 
 import { BookingService } from './booking.service';
@@ -23,6 +25,8 @@ import { PaginationDto } from 'src/common/pagination';
 import { PaginationstausDto } from './dto/params-booking.dto';
 
 import { ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @ApiTags('Booking')
 @Controller('booking')
@@ -138,15 +142,34 @@ export class BookingController {
   // booking complete by maid
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'before_photos', maxCount: 5 },
+        { name: 'after_photos', maxCount: 5 },
+      ],
+      {
+        storage: memoryStorage(),
+        limits: { fileSize: 5 * 1024 * 1024 },
+      },
+    ),
+  )
   @Patch('maid/complete-booking/:id')
   async completeBookingByMaid(
     @Req() req, 
-    @Param('id') id: string
+    @Param('id') id: string,
+    @UploadedFiles()
+    imageFiles?: {
+      before_photos?: Express.Multer.File[];
+      after_photos?: Express.Multer.File[];
+    },
   ) {
     const maidId = req.user.userId;
     return this.bookingService.completeBookingByMaid(
       maidId, 
-      id
+      id,
+      imageFiles?.before_photos ?? [],
+      imageFiles?.after_photos ?? [],
     );
   }
 
