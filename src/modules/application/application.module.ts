@@ -6,6 +6,7 @@ import { ProfileModule } from './profile/profile.module';
 import { BookingModule } from './booking/booking.module';
 import { ServiceModule } from './service/service.module';
 import { DestinationModule } from './destination/destination.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { DestinationModule } from './destination/destination.module';
     BookingModule,
     ServiceModule,
     DestinationModule,
+    ReviewModule,
   ],
 })
 export class ApplicationModule {}
