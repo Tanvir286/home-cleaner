@@ -158,6 +158,7 @@ export class BookingController {
   async completeBookingByMaid(
     @Req() req, 
     @Param('id') id: string,
+    @Body() updateBookingDto: UpdateBookingDto,
     @UploadedFiles()
     imageFiles?: {
       before_photos?: Express.Multer.File[];
@@ -168,6 +169,7 @@ export class BookingController {
     return this.bookingService.completeBookingByMaid(
       maidId, 
       id,
+      updateBookingDto,
       imageFiles?.before_photos ?? [],
       imageFiles?.after_photos ?? [],
     );

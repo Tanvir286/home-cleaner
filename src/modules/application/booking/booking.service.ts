@@ -24,9 +24,7 @@ import { BookingStatus } from '@prisma/client';
 
 @Injectable()
 export class BookingService {
- 
   constructor(private readonly prisma: PrismaService) {}
-
 
   // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
 
@@ -518,12 +516,10 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-
   async getBookingsByStatusForMaid(
     maidId: string, 
     query: PaginationstausDto
   ) {
-    
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
@@ -595,9 +591,13 @@ export class BookingService {
   async completeBookingByMaid(
     maidId: string,
     bookingId: string,
+    updateBookingDto: UpdateBookingDto,
     beforeImageFiles: Express.Multer.File[] = [],
     afterImageFiles: Express.Multer.File[] = [],
   ) {
+
+    const { status } = updateBookingDto;
+
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
     });
@@ -612,18 +612,17 @@ export class BookingService {
       );
     }
 
-    if (booking.status !== BookingStatus.SUBMITTED) {
-      throw new BadRequestException('Only submitted bookings can be completed');
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException('Only confirmed bookings can be completed');
     }
 
     const uploadedBeforePhotos = await uploadBookingImages(beforeImageFiles);
     const uploadedAfterPhotos = await uploadBookingImages(afterImageFiles);
 
-  
     const updatedBooking = await this.prisma.booking.update({
       where: { id: bookingId },
       data: {
-        status: BookingStatus.COMPLETED,
+        status: status,
         before_photos: uploadedBeforePhotos,
         after_photos: uploadedAfterPhotos,
       },

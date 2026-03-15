@@ -100,6 +100,9 @@ model User {
   // Profil & account
   accounts Account[]
   
+  // Review & Rating
+  homeownerReviews Review[] @relation("HomeownerReviews")
+  maidReviews     Review[] @relation("MaidReviews")
 
   // Booking
   maidBookings Booking[] @relation("MaidBookings")
@@ -248,14 +251,13 @@ model Booking {
   before_photos      String[]  
   after_photos       String[]  
 
-
-
-
   total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
 
   booking_destinations Destination[]
   live_locations       LiveLocation[]
+
+  booking_reviews Review[] @relation("BookingReviews")
 
   @@unique([maid_id, booking_date, slot])
   @@map("bookings")
@@ -303,6 +305,37 @@ model LiveLocation {
   @@map("live_locations")
   @@index([booking_id])
 }
+
+
+/**
+ * ---------------------------------------------------------------------
+ * review and rating Schema start
+ * ---------------------------------------------------------------------
+ */
+
+model Review {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+  deleted_at DateTime?
+
+  booking_id String
+  booking    Booking @relation("BookingReviews", fields: [booking_id], references: [id], onDelete: Cascade)
+
+  homeowner_id String
+  homeowner    User   @relation("HomeownerReviews", fields: [homeowner_id], references: [id], onDelete: Cascade)
+
+  maid_id String
+  maid    User   @relation("MaidReviews", fields: [maid_id], references: [id], onDelete: Cascade)
+
+  rating      Int?    @db.SmallInt
+  comment     String? @db.Text
+
+  @@map("reviews")
+  @@unique([booking_id, homeowner_id, maid_id])
+  @@index([booking_id])
+}
+
 
 /**
  * ---------------------------------------------------------------------
