@@ -20,29 +20,36 @@ import { Request } from 'express';
 
 @Controller('review')
 export class ReviewController {
+
   constructor(private readonly reviewService: ReviewService) {}
 
+  // Create a review for a booking
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Post()
-  create(@Body() createReviewDto: CreateReviewDto, @Req() req: Request) {
+  async create(
+    @Body() createReviewDto: CreateReviewDto, 
+    @Req() req: Request
+  ) {
     return this.reviewService.create(req.user.userId, createReviewDto);
   }
 
+  // Get all reviews 
   @Get()
-  findAll() {
+  async findAll() {
     return this.reviewService.findAll();
   }
 
+  // Get a single review by ID
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.reviewService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
     @Req() req: Request,
@@ -53,7 +60,7 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: Request) {
+  async remove(@Param('id') id: string, @Req() req: Request) {
     return this.reviewService.remove(id, req.user.userId);
   }
 }

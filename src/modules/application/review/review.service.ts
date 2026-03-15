@@ -13,6 +13,7 @@ import { Prisma } from '@prisma/client';
 export class ReviewService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Create a review for a booking
   async create(homeownerId: string, createReviewDto: CreateReviewDto) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: createReviewDto.booking_id },
@@ -28,54 +29,60 @@ export class ReviewService {
     }
 
     if (booking.user_id !== homeownerId) {
-      throw new ForbiddenException('You are not allowed to review this booking');
+      throw new ForbiddenException(
+        'You are not allowed to review this booking',
+      );
     }
 
-    try {
-      const review = await this.prisma.review.create({
-        data: {
-          booking_id: booking.id,
-          homeowner_id: homeownerId,
-          maid_id: booking.maid_id,
-          rating: createReviewDto.rating,
-          comment: createReviewDto.comment,
-        },
-        include: {
-          booking: true,
-          homeowner: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          maid: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-        },
-      });
+    const existingReview = await this.prisma.review.findFirst({
+      where: {
+        booking_id: booking.id,
+        homeowner_id: homeownerId,
+      },
+      select: { id: true },
+    });
 
-      return {
-        success: true,
-        message: 'Review created successfully',
-        data: review,
-      };
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException('Review already exists for this booking');
-      }
-
-      throw error;
+    if (existingReview) {
+      throw new ConflictException(
+        'You have already submitted a review for this booking',
+      );
     }
+
+    const review = await this.prisma.review.create({
+      data: {
+        booking_id: booking.id,
+        homeowner_id: homeownerId,
+        maid_id: booking.maid_id,
+        rating: createReviewDto.rating,
+        comment: createReviewDto.comment,
+      },
+      include: {
+        booking: true,
+        homeowner: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        maid: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Review created successfully',
+      data: review,
+    };
   }
 
+  // Get all reviews
   async findAll() {
     const reviews = await this.prisma.review.findMany({
       include: {
@@ -107,6 +114,7 @@ export class ReviewService {
     };
   }
 
+  // Get a single review by ID
   async findOne(id: string) {
     const review = await this.prisma.review.findUnique({
       where: { id },
@@ -140,7 +148,12 @@ export class ReviewService {
     };
   }
 
-  async update(id: string, homeownerId: string, updateReviewDto: UpdateReviewDto) {
+  // Update a review by ID
+  async update(
+    id: string,
+    homeownerId: string,
+    updateReviewDto: UpdateReviewDto,
+  ) {
     const existingReview = await this.prisma.review.findUnique({
       where: { id },
       select: {
@@ -190,6 +203,7 @@ export class ReviewService {
   }
 
   async remove(id: string, homeownerId: string) {
+    
     const existingReview = await this.prisma.review.findUnique({
       where: { id },
       select: {
@@ -216,4 +230,6 @@ export class ReviewService {
       data: deletedReview,
     };
   }
+
+  
 }
