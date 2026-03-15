@@ -106,7 +106,6 @@ export class BookingController {
     return this.bookingService.getBookingDetailsForMaid(id);
   }  
 
-
   // booking status update by maid (accept, reject)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
@@ -124,7 +123,6 @@ export class BookingController {
     );
   }
 
-
   // booking status (pending, upcoming, completed, cancelled)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
@@ -136,6 +134,24 @@ export class BookingController {
     const maidId = req.user.userId;
     return this.bookingService.getBookingsByStatusForMaid(maidId, query);
   }
+
+  // booking complete by maid
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Patch('maid/complete-booking/:id')
+  async completeBookingByMaid(
+    @Req() req, 
+    @Param('id') id: string
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.completeBookingByMaid(
+      maidId, 
+      id
+    );
+  }
+
+
+
 
   
 }

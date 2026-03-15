@@ -681,6 +681,44 @@ export class BookingService {
     };
   }
 
+  // booking complete by maid 
+  async completeBookingByMaid(
+    maidId: string, 
+    bookingId: string
+  ) {
+  
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.maid_id !== maidId) {
+      throw new BadRequestException(
+        'You are not authorized to update this booking',
+      );
+    }
+
+    if (booking.status !== BookingStatus.COMPLETED) {
+      throw new BadRequestException('Only upcoming bookings can be completed');
+    }
+    
+    const updatedBooking = await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+         status: BookingStatus.COMPLETED 
+        },
+    });
+
+    return {
+      success: true,
+      message: 'Booking completed successfully',
+      data: updatedBooking,
+    };
+
+  }
 
   
 }

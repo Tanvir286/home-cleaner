@@ -244,6 +244,10 @@ model Booking {
   maid_location      String
   homeowner_location String
 
+  before_photos      String[]  
+  after_photos       String[]  
+
+
   total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
 
