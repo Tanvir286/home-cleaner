@@ -19,6 +19,7 @@ export class ProfileService {
         id: true,
         name: true,
         email: true,
+        type: true,
         avatar: true,
         location: true,
         about_me: true,
@@ -33,6 +34,29 @@ export class ProfileService {
         message: 'User not found',
       };
     }
+
+    const reviewWhere =
+      user.type === 'HOMEOWNER'
+        ? { homeowner_id: user.id }
+        : { maid_id: user.id };
+
+    const [reviewAggregate, totalReviews] = await this.prisma.$transaction([
+      this.prisma.review.aggregate({
+        where: reviewWhere,
+        _avg: {
+          rating: true,
+        },
+      }),
+      this.prisma.review.count({
+        where: reviewWhere,
+      }),
+    ]);
+
+    const average_rating =
+      reviewAggregate._avg.rating !== null
+        ? Math.round(Number(reviewAggregate._avg.rating) * 10) / 10
+        : 0;
+
     return {
       success: true,
       message: 'Profile details retrieved successfully',
@@ -47,6 +71,8 @@ export class ProfileService {
         about_me: user.about_me,
         service_type: user.service_type,
         experience_years: user.experience_years,
+        average_rating,
+        total_reviews: totalReviews,
       },
     };
   }
@@ -61,8 +87,10 @@ export class ProfileService {
 
     if (dto.location !== undefined) userData.location = dto.location;
     if (dto.about_me !== undefined) userData.about_me = dto.about_me;
-    if (dto.service_type !== undefined) userData.service_type = dto.service_type;
-    if (dto.experience_years !== undefined) userData.experience_years = dto.experience_years;
+    if (dto.service_type !== undefined)
+      userData.service_type = dto.service_type;
+    if (dto.experience_years !== undefined)
+      userData.experience_years = dto.experience_years;
 
     // -------- image --------
 
@@ -233,4 +261,6 @@ export class ProfileService {
       },
     };
   }
+
+  
 }
