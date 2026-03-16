@@ -29,23 +29,12 @@ export class ReviewController {
   @Post()
   async create(
     @Body() createReviewDto: CreateReviewDto, 
-    @Req() req: Request
+    @Req() req
   ) {
     return this.reviewService.create(req.user.userId, createReviewDto);
   }
 
-  // Get all reviews 
-  @Get()
-  async findAll() {
-    return this.reviewService.findAll();
-  }
-
-  // Get a single review by ID
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.reviewService.findOne(id);
-  }
-
+  
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Patch(':id')

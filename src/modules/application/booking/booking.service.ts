@@ -248,6 +248,12 @@ export class BookingService {
           maid: true,
           general_cleaning_package: true,
           deep_cleaning_package: true,
+          booking_reviews: {
+            select: {
+              rating: true,
+              comment: true,
+            },
+          },
         },
         orderBy: {
           booking_date: 'desc',
@@ -267,21 +273,26 @@ export class BookingService {
 
       const slotTime = bookingSlotTimeMap[booking.slot];
 
+      const hasReview = booking.booking_reviews.length > 0;
+
       return {
         id: booking.id,
         service: serviceType,
         package: packageData?.packageType,
+
         package_image: packageData?.image
           ? TanvirStorage.url(
               appConfig().storageUrl.package + '/' + packageData.image,
             )
           : null,
+
         slot: booking.slot,
         price: packageData?.price,
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
         status: booking.status,
+
         maid: {
           id: booking.maid.id,
           name: booking.maid.name,
@@ -291,6 +302,15 @@ export class BookingService {
               )
             : null,
         },
+
+        is_reviewed: hasReview,
+
+        review: hasReview
+          ? {
+              rating: booking.booking_reviews[0].rating,
+              comment: booking.booking_reviews[0].comment,
+            }
+          : null,
       };
     });
     return {
@@ -516,10 +536,7 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-  async getBookingsByStatusForMaid(
-    maidId: string, 
-    query: PaginationstausDto
-  ) {
+  async getBookingsByStatusForMaid(maidId: string, query: PaginationstausDto) {
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
@@ -536,6 +553,12 @@ export class BookingService {
           user: true,
           general_cleaning_package: true,
           deep_cleaning_package: true,
+          booking_reviews: {
+            select: {
+              rating: true,
+              comment: true,
+            },
+          },
         },
         orderBy: {
           booking_date: 'asc',
@@ -548,26 +571,33 @@ export class BookingService {
     const formattedBookings = bookings.map((booking) => {
       const packageData =
         booking.general_cleaning_package || booking.deep_cleaning_package;
+
       const serviceType = booking.general_cleaning_package
         ? 'General Cleaning'
         : 'Deep Cleaning';
+
       const slotTime = bookingSlotTimeMap[booking.slot];
+
+      const hasReview = booking.booking_reviews.length > 0;
 
       return {
         id: booking.id,
         service: serviceType,
         package: packageData?.packageType,
+
         package_image: packageData?.image
           ? TanvirStorage.url(
               appConfig().storageUrl.package + '/' + packageData.image,
             )
           : null,
+
         price: packageData?.price,
         slot: booking.slot,
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
         status: booking.status,
+
         user: {
           id: booking.user.id,
           name: booking.user.name,
@@ -577,6 +607,15 @@ export class BookingService {
               )
             : null,
         },
+
+        is_reviewed: hasReview,
+
+        review: hasReview
+          ? {
+              rating: booking.booking_reviews[0].rating,
+              comment: booking.booking_reviews[0].comment,
+            }
+          : null,
       };
     });
 
@@ -595,7 +634,6 @@ export class BookingService {
     beforeImageFiles: Express.Multer.File[] = [],
     afterImageFiles: Express.Multer.File[] = [],
   ) {
-
     const { status } = updateBookingDto;
 
     const booking = await this.prisma.booking.findUnique({
