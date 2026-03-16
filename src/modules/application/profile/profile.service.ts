@@ -40,7 +40,7 @@ export class ProfileService {
         ? { homeowner_id: user.id }
         : { maid_id: user.id };
 
-    const [reviewAggregate, totalReviews] = await this.prisma.$transaction([
+    const [reviewAggregate, totalReviews, recentJobs] = await this.prisma.$transaction([
       this.prisma.review.aggregate({
         where: reviewWhere,
         _avg: {
@@ -50,12 +50,50 @@ export class ProfileService {
       this.prisma.review.count({
         where: reviewWhere,
       }),
+      this.prisma.booking.findMany({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+        include: {
+          general_cleaning_package: {
+            select: {
+              title: true,
+              image: true,
+            },
+          },
+          deep_cleaning_package: {
+            select: {
+              title: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: {
+          booking_date: 'desc',
+        },
+        take: 2,
+      }),
     ]);
 
     const average_rating =
       reviewAggregate._avg.rating !== null
         ? Math.round(Number(reviewAggregate._avg.rating) * 10) / 10
         : 0;
+
+    const recent_jobs = recentJobs.map((job) => {
+      const pkg = job.general_cleaning_package || job.deep_cleaning_package;
+
+      return {
+        id: job.id,
+        title: pkg?.title || 'Cleaning Service',
+        image_url: pkg?.image
+          ? TanvirStorage.url(appConfig().storageUrl.package + '/' + pkg.image)
+          : null,
+        booking_date: job.booking_date,
+        status: job.status,
+      };
+    });
 
     return {
       success: true,
@@ -73,6 +111,7 @@ export class ProfileService {
         experience_years: user.experience_years,
         average_rating,
         total_reviews: totalReviews,
+        recent_jobs,
       },
     };
   }
