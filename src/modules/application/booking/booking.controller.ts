@@ -25,12 +25,13 @@ import { PaginationDto } from 'src/common/pagination';
 import { PaginationstausDto } from './dto/params-booking.dto';
 
 import { ApiTags } from '@nestjs/swagger';
-import { FileFieldsInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 
 @ApiTags('Booking')
 @Controller('booking')
 export class BookingController {
+ 
   constructor(private readonly bookingService: BookingService) {}
 
   // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
@@ -176,7 +177,17 @@ export class BookingController {
   }
 
 
-
+  // dashboard data for maid
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Get('maid/dashboard')
+  async getMaidDashboardData(
+    @Req() req
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.getMaidDashboardData(maidId);
+  }
+ 
 
   
 }

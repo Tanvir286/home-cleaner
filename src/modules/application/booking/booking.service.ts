@@ -680,4 +680,66 @@ export class BookingService {
       },
     };
   }
+
+  // dashboard data for maid
+  async getMaidDashboardData(maidId: string) {
+ 
+    const now = new Date();
+  
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const [monthlyEarningAgg, thisMonthCompletedJobsCount, totalCompletedJobsCount, reviewStats] =
+      await this.prisma.$transaction([
+        this.prisma.booking.aggregate({
+          where: {
+            maid_id: maidId,
+            status: BookingStatus.COMPLETED,
+            booking_date: {
+              gte: startOfMonth,
+              lt: endOfMonth,
+            },
+          },
+          _sum: {
+            total_price: true,
+          },
+        }),
+        this.prisma.booking.count({
+          where: {
+            maid_id: maidId,
+            status: BookingStatus.COMPLETED,
+            booking_date: {
+              gte: startOfMonth,
+              lt: endOfMonth,
+            },
+          },
+        }),
+        this.prisma.booking.count({
+          where: {
+            maid_id: maidId,
+            status: BookingStatus.COMPLETED,
+          },
+        }),
+        this.prisma.review.aggregate({
+          where: { maid_id: maidId },
+          _avg: { rating: true },
+        }),
+      ]);
+
+    const monthlyEarnings = Number(monthlyEarningAgg._sum.total_price ?? 0);
+    const averageRating = Number(reviewStats._avg.rating ?? 0);
+
+    return {
+      success: true,
+      message: 'Maid dashboard data retrieved successfully',
+      data: {
+        monthlyEarnings,
+        jobsCompleted: totalCompletedJobsCount,
+        thisMonthJobsCompleted: thisMonthCompletedJobsCount,
+        rating: Number(averageRating.toFixed(1)),
+      },
+    };
+  }
+
+
 }
