@@ -40,45 +40,86 @@ export class ProfileService {
         ? { homeowner_id: user.id }
         : { maid_id: user.id };
 
-    const [reviewAggregate, totalReviews, recentJobs] = await this.prisma.$transaction([
-      this.prisma.review.aggregate({
-        where: reviewWhere,
-        _avg: {
-          rating: true,
-        },
-      }),
-      this.prisma.review.count({
-        where: reviewWhere,
-      }),
-      this.prisma.booking.findMany({
-        where: {
-          maid_id: user.id,
-          status: 'COMPLETED',
-        },
-        include: {
-          general_cleaning_package: {
-            select: {
-              title: true,
-              image: true,
+    const [reviewAggregate, totalReviews, jobsDone, earningsAggregate, completedBookingClients, recentJobs] =
+      await this.prisma.$transaction([
+        this.prisma.review.aggregate({
+          where: reviewWhere,
+          _avg: {
+            rating: true,
+          },
+        }),
+        this.prisma.review.count({
+          where: reviewWhere,
+        }),
+        this.prisma.booking.count({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+        }),
+        this.prisma.booking.aggregate({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+          _sum: {
+            total_price: true,
+          },
+        }),
+        this.prisma.booking.findMany({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+          select: {
+            user_id: true,
+          },
+        }),
+        this.prisma.booking.findMany({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+          include: {
+            general_cleaning_package: {
+              select: {
+                title: true,
+                image: true,
+              },
+            },
+            deep_cleaning_package: {
+              select: {
+                title: true,
+                image: true,
+              },
             },
           },
-          deep_cleaning_package: {
-            select: {
-              title: true,
-              image: true,
-            },
+          orderBy: {
+            booking_date: 'desc',
           },
-        },
-        orderBy: {
-          booking_date: 'desc',
-        },
-        take: 2,
-      }),
-    ]);
+          take: 2,
+        }),
+      ]);
 
-    const average_rating =
-      reviewAggregate._avg.rating !== null
-        ? Math.round(Number(reviewAggregate._avg.rating) * 10) / 10
+    const average_rating = Number(reviewAggregate._avg.rating ?? 0);
+    const total_earnings = Number(earningsAggregate._sum.total_price ?? 0);
+    const clientBookingCount = new Map<string, number>();
+
+    completedBookingClients.forEach((booking) => {
+      clientBookingCount.set(
+        booking.user_id,
+        (clientBookingCount.get(booking.user_id) ?? 0) + 1,
+      );
+    });
+
+    const totalClients = clientBookingCount.size;
+    const repeatedClients = Array.from(clientBookingCount.values()).filter(
+      (count) => count > 1,
+    ).length;
+
+    const repeat_client_rate =
+      totalClients > 0
+        ? Number(((repeatedClients / totalClients) * 100).toFixed(2))
         : 0;
 
     const recent_jobs = recentJobs.map((job) => {
@@ -109,6 +150,10 @@ export class ProfileService {
         about_me: user.about_me,
         service_type: user.service_type,
         experience_years: user.experience_years,
+        jobs_done: jobsDone,
+        total_earnings,
+        repeat_client_rate,
+        last_active: '2 hour',
         average_rating,
         total_reviews: totalReviews,
         recent_jobs,
@@ -193,6 +238,86 @@ export class ProfileService {
       },
     };
   }
+
+  // review maid
+  async reviewMaid(
+    maidId: string,
+  ) {
+   
+    const maid = await this.prisma.user.findUnique({
+      where: { id: maidId },
+      select: { id: true },
+    });
+
+    if (!maid) {
+      return {
+        success: false,
+        message: 'Maid not found',
+      };
+    }
+
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        maid_id: maidId,
+      },
+      include: {
+        homeowner: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        booking: {
+          include: {
+            general_cleaning_package: {
+              select: {
+                title: true,
+              },
+            },
+            deep_cleaning_package: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    const data = reviews.map((review) => {
+    
+      const serviceTitle =
+        review.booking.general_cleaning_package?.title ||
+        review.booking.deep_cleaning_package?.title ||
+        'Cleaning Service';
+
+      return {
+        id: review.id,
+        reviewer_name: review.homeowner?.name,
+        reviewer_avatar_url: review.homeowner?.avatar
+          ? TanvirStorage.url(
+              appConfig().storageUrl.avatar + '/' + review.homeowner.avatar,
+            )
+          : null,
+        service_title: serviceTitle,
+        review_date: review.created_at,
+        rating: review.rating ?? 0,
+        comment: review.comment,
+      };
+    });
+
+    return {
+      success: true,
+      message: 'Reviews retrieved successfully',
+      data,
+    };
+  }
+
+  
 
   // topic: homeowner part)---------->
 
@@ -300,6 +425,4 @@ export class ProfileService {
       },
     };
   }
-
-  
 }

@@ -26,9 +26,6 @@ export class ProfileController {
 
   // topic: maid part  ---------->
 
-  // pending topic:  https://prnt.sc/0kwDP8pbRILy
-  // pending topic:  ui onno jai profile sajate hobe
-
   // get profile details
   @UseGuards(JwtAuthGuard)
   @Get('maid/details')
@@ -56,6 +53,16 @@ export class ProfileController {
     return this.profileService.updatemaid(userId, updateProfileDto, image);
   }
 
+  // review maid by homeowner
+  @Get('maid/review/:maidId')
+  async reviewMaid(
+    @Param('maidId') maidId: string
+  ) {
+    return this.profileService.reviewMaid(
+      maidId
+    );
+  }
+ 
   // topic: homeowner part  ---------->
 
   // get profile details
