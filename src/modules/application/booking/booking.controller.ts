@@ -188,6 +188,17 @@ export class BookingController {
     return this.bookingService.getMaidDashboardData(maidId);
   }
  
+  // weekly statistics for maid
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Get('maid/weekly-statistics')
+  async getMaidWeeklyStatistics(
+    @Req() req
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.getMaidWeeklyStatistics(maidId);
+  }
+
 
   
 }
