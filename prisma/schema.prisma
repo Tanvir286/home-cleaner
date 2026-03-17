@@ -93,10 +93,10 @@ model User {
 
   // Profil & account
   accounts Account[]
-  
+
   // Review & Rating
   homeownerReviews Review[] @relation("HomeownerReviews")
-  maidReviews     Review[] @relation("MaidReviews")
+  maidReviews      Review[] @relation("MaidReviews")
 
   // Booking
   maidBookings Booking[] @relation("MaidBookings")
@@ -117,7 +117,7 @@ model User {
   payment_transactions PaymentTransaction[]
 
   //destination with user
-  destinations Destination[]
+  destinations   Destination[]
   //live location with user
   live_locations LiveLocation[]
 
@@ -140,18 +140,6 @@ model Ucode {
 
   @@map("ucodes")
 }
-
-/**
- * ---------------------------------------------------------------------
- * User Schema end
- * ---------------------------------------------------------------------
- */
-
-/**
- * ---------------------------------------------------------------------
- * project requirement Schema
- * ---------------------------------------------------------------------
- */
 
 enum serviceType {
   GENERAL_CLEANING
@@ -242,8 +230,8 @@ model Booking {
   maid_location      String
   homeowner_location String
 
-  before_photos      String[]  
-  after_photos       String[]  
+  before_photos String[]
+  after_photos  String[]
 
   total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
@@ -278,8 +266,8 @@ model Destination {
   distance_text String?
   duration_min  Float?
 
-  @@map("destinations")
   @@index([booking_id])
+  @@map("destinations")
 }
 
 model LiveLocation {
@@ -288,7 +276,7 @@ model LiveLocation {
   updated_at DateTime @updatedAt
 
   user_id String
-  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade) 
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   booking_id String
   booking    Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
@@ -296,16 +284,9 @@ model LiveLocation {
   latitude  Float
   longitude Float
 
-  @@map("live_locations")
   @@index([booking_id])
+  @@map("live_locations")
 }
-
-
-/**
- * ---------------------------------------------------------------------
- * review and rating Schema start
- * ---------------------------------------------------------------------
- */
 
 model Review {
   id         String    @id @default(cuid())
@@ -322,25 +303,13 @@ model Review {
   maid_id String
   maid    User   @relation("MaidReviews", fields: [maid_id], references: [id], onDelete: Cascade)
 
-  rating      Int?    @db.SmallInt
-  comment     String? @db.Text
+  rating  Int?    @db.SmallInt
+  comment String? @db.Text
 
-  @@map("reviews")
   @@unique([booking_id, homeowner_id, maid_id])
   @@index([booking_id])
+  @@map("reviews")
 }
-
-
-/**
- * ---------------------------------------------------------------------
- * project requirement Schema end
- * ---------------------------------------------------------------------
- */
-/**
- * ---------------------------------------------------------------------
- * Chating and Notification Schema start
- * ---------------------------------------------------------------------
- */
 
 model Conversation {
   id           String        @id @default(cuid())
@@ -390,8 +359,6 @@ model Message {
   attachments String[] @db.Text
 }
 
-// -------------------------notification schema---------------------------------
-
 model NotificationEvent {
   id            String         @id @default(uuid())
   created_at    DateTime       @default(now())
@@ -422,18 +389,6 @@ model Notification {
 
   entity_id String?
 }
-
-/**
- * ---------------------------------------------------------------------
- * Chating and Notification Schema end
- * ---------------------------------------------------------------------
- */
-
-/**
- * ---------------------------------------------------------------------
- * Role and Permission Schema start
- * ---------------------------------------------------------------------
- */
 
 model Role {
   id         String    @id @default(cuid())
@@ -499,18 +454,6 @@ model RoleUser {
   @@map("role_users")
 }
 
-/**
- * ---------------------------------------------------------------------
- * Role and Permission Schema end
- * ---------------------------------------------------------------------
- */
-
-/**
- * ---------------------------------------------------------------------
- * Payment Schema start
- * ---------------------------------------------------------------------
- */
-
 model UserPaymentMethod {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -552,18 +495,6 @@ model PaymentTransaction {
   @@map("payment_transactions")
 }
 
-/**
- * ---------------------------------------------------------------------
- * Payment Schema end
- * ---------------------------------------------------------------------
- */
-
-/**
- * ---------------------------------------------------------------------
- * others Schema start
- * ---------------------------------------------------------------------
- */
-
 model Faq {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -592,9 +523,3 @@ model Contact {
 
   @@map("contacts")
 }
-
-/**
- * ---------------------------------------------------------------------
- * others Schema end
- * ---------------------------------------------------------------------
- */
