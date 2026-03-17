@@ -317,8 +317,6 @@ export class ProfileService {
     };
   }
 
-  
-
   // topic: homeowner part)---------->
 
   // get profile details
@@ -425,4 +423,6 @@ export class ProfileService {
       },
     };
   }
+
+  
 }

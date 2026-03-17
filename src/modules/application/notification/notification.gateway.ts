@@ -33,8 +33,7 @@ export class NotificationGateway
   private redisPubClient: Redis;
   private redisSubClient: Redis;
 
-  // Map to store connected clients
-  private clients = new Map<string, string>(); // userId -> socketId
+  private clients = new Map<string, string>(); 
 
   constructor(private readonly notificationService: NotificationService) {}
 
@@ -51,7 +50,8 @@ export class NotificationGateway
       password: appConfig().redis.password,
     });
 
-    this.redisSubClient.subscribe('notification', (err, message: string) => {
+    this.redisSubClient.subscribe('notification');
+    this.redisSubClient.on('message', (channel, message) => {
       const data = JSON.parse(message);
       this.server.emit('receiveNotification', data);
     });
@@ -62,16 +62,14 @@ export class NotificationGateway
   }
 
   async handleConnection(client: Socket, ...args: any[]) {
-    // console.log('new connection!', client.id);
-    const userId = client.handshake.query.userId as string; // User ID passed as query parameter
+    const userId = client.handshake.query.userId as string; 
     if (userId) {
       this.clients.set(userId, client.id);
       console.log(`User ${userId} connected with socket ${client.id}`);
     }
   }
 
-  handleDisconnect(client: Socket) {
-    // console.log('client disconnected!', client.id);
+  async handleDisconnect(client: Socket) {
     const userId = [...this.clients.entries()].find(
       ([, socketId]) => socketId === client.id,
     )?.[0];
@@ -81,26 +79,16 @@ export class NotificationGateway
     }
   }
 
-  // @SubscribeMessage('joinRoom')
-  // handleRoomJoin(client: Socket, room: string) {
-  //   client.join(room);
-  //   client.emit('joinedRoom', room);
-  // }
-
+  
   @SubscribeMessage('sendNotification')
-  async handleNotification(@MessageBody() data: any) {
-    console.log(`Received notification: ${JSON.stringify(data)}`);
-    // Broadcast notification to all clients
-    // this.server.emit('receiveNotification', data);
+  async handleNotification(
+    @MessageBody() data: any) {
 
-    // Emit notification to specific client
     const targetSocketId = this.clients.get(data.userId);
+
     if (targetSocketId) {
       await this.redisPubClient.publish('notification', JSON.stringify(data));
-
-      // console.log(`Notification sent to user ${data.userId}`);
     } else {
-      // console.log(`User ${data.userId} not connected`);
     }
   }
 
