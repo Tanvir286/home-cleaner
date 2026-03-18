@@ -523,3 +523,47 @@ model Contact {
 
   @@map("contacts")
 }
+
+
+// General application settings, such as site title, contact info, etc.
+
+model Setting {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  key   String? @unique
+  value String?
+
+  @@map("settings")
+}
+
+model Slider {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  title       String?
+  description String?
+  image       String?
+  link        String?
+
+  @@map("sliders")
+}
+
+
+model Testimonial {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  name    String?
+  quote   String?
+  avatar  String?
+
+  @@map("testimonials")
+}
+
