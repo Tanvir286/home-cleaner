@@ -35,8 +35,6 @@ export class UserRepository {
     return user;
   }
 
- 
-
   /**
    * get user details
    * @returns
@@ -611,6 +609,20 @@ export class UserRepository {
   }
 
 
+  // get admin users
+  async getAdminUser() {
+    const users = await this.prisma.user.findFirst({
+      where: {
+        type: UserType.ADMIN,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+    return users;
+  }
 
 
 }

@@ -116,14 +116,18 @@ export class NotificationRepository {
       console.error("❌ Error sending FCM:", error);
     }
   }
-
+ 
+  // get notification title based on type
   private static getNotificationTitle(type: string): string {
     const titles: Record<string, string> = {
       new_user: "New User Registration",
-      Review_Product: "Product Review",
-      user_approval: "User Approved",
-      disposal: "Disposal Alert",
-      Boost_Product: "Product Boosted",
+      profile_update: "Profile Updated",
+      create_booking: "Booking Created",
+      approve_booking: "Booking Approved",
+      complete_booking: "Booking Completed",
+      cancel_booking: "Booking Cancelled",
+      review_booking: "Booking Reviewed",
+      update_booking: "Booking Updated",
     };
     return titles[type] || "New Notification";
   }

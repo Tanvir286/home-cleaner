@@ -15,6 +15,7 @@ import appConfig from '../../config/app.config';
 import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from '../admin/user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -157,6 +158,7 @@ export class AuthService {
         otp: token,
       });
 
+    
       return {
         success: true,
         message: 'We have sent an OTP code to your email',
