@@ -1,5 +1,7 @@
 import * as admin from "firebase-admin";
-import { prisma } from "../prisma";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 const firebasePrivateKey = process.env.FIREBASE_PRIVATE_KEY;
 const firebaseProjectId = process.env.FIREBASE_PROJECT_ID;
