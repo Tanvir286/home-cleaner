@@ -364,11 +364,14 @@ model NotificationEvent {
   created_at    DateTime       @default(now())
   updated_at    DateTime       @default(now()) @updatedAt
   deleted_at    DateTime?
+
   status        Int?           @default(1) @db.SmallInt
   type          String?
   text          String?
   notifications Notification[]
 }
+
+
 
 model Notification {
   id         String    @id @default(cuid())
@@ -526,7 +529,6 @@ model Contact {
 
 
 // General application settings, such as site title, contact info, etc.
-
 model Setting {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
