@@ -30,6 +30,7 @@ if (!admin.apps.length) {
 
 type NotificationType =
   | "new_user"
+  | "profile_update"
   | "create_booking"
   | "approve_booking"
   | "complete_booking"
