@@ -17,7 +17,7 @@ if (!admin.apps.length) {
           privateKey: firebasePrivateKey.replace(/\\n/g, "\n"),
         }),
       });
-      console.log("✅ Firebase initialized successfully.");
+      console.log("💯💯💯 Firebase initialized successfully. 💯💯💯");
     } catch (error) {
       console.error("❌ Firebase initialization failed:", error);
     }
@@ -30,16 +30,16 @@ if (!admin.apps.length) {
 
 type NotificationType =
   | "new_user"
-  | "Review_Product"
-  | "user_approval"
-  | "disposal"
-  | "Boost_Product"
-  | "bid_approved"
-  | "bid_rejected"
-  | "order_delivered"
-  | "order_cancelled";
+  | "create_booking"
+  | "approve_booking"
+  | "complete_booking"
+  | "cancel_booking"
+  | "review_booking"
+  | "update_booking" ;
 
 export class NotificationRepository {
+  
+  // create notification 
   static async createNotification(payload: {
     sender_id: string;
     receiver_id: string;
@@ -77,7 +77,8 @@ export class NotificationRepository {
       throw error;
     }
   }
-
+ 
+  // send push notification using firebase 
   private static async sendPushNotification(
     receiverId: string,
     type: string,
