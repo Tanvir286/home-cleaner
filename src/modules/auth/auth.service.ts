@@ -9,6 +9,7 @@ import { DateHelper } from '../../common/helper/date.helper';
 import { StringHelper } from '../../common/helper/string.helper';
 import { TanvirStorage } from '../../common/lib/Disk/TanvirStorage';
 import { StripePayment } from '../../common/lib/Payment/stripe/StripePayment';
+import { NotificationRepository } from '../../common/repository/notification/notification.repository';
 import { UcodeRepository } from '../../common/repository/ucode/ucode.repository';
 import { UserRepository } from '../../common/repository/user/user.repository';
 import appConfig from '../../config/app.config';
@@ -26,9 +27,9 @@ export class AuthService {
     private userRepository: UserRepository,
     private ucodeRepository: UcodeRepository,
     @InjectRedis() private readonly redis: Redis,
-  ) { }
+  ) {}
 
-  //
+  // done
   async me(userId: string) {
     try {
       const user = await this.prisma.user.findFirst({
@@ -158,7 +159,19 @@ export class AuthService {
         otp: token,
       });
 
-    
+      // notification with admin
+      const adminuser = await this.userRepository.getAdminUser();
+
+      if (adminuser?.id) {
+        await NotificationRepository.createNotification({
+          sender_id: user.data.id,
+          receiver_id: adminuser.id,
+          text: `${name} has registered a new account`,
+          type: 'new_user',
+          entity_id: user.data.id,
+        });
+      }
+
       return {
         success: true,
         message: 'We have sent an OTP code to your email',
@@ -171,15 +184,21 @@ export class AuthService {
     }
   }
   // done
-  async login({ email, userId }) {
+  async login({ email, userId, fcm_token, device_type }) {
     try {
       const user = await this.userRepository.getUserDetails(userId);
 
-      console.log('Login - User details:', user);
-      console.log('Login - User type:', user?.type);
-
       const payload = { email: email, sub: userId, type: user?.type };
 
+      if (fcm_token) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            fcm_token: fcm_token,
+            device_type: device_type ?? null,
+          },
+        });
+      }
 
       const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
       const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
@@ -210,7 +229,45 @@ export class AuthService {
     }
   }
 
-  // update user 
+  async saveFcmToken({
+    user_id,
+    fcm_token,
+    device_type,
+  }: {
+    user_id: string;
+    fcm_token: string;
+    device_type?: string;
+  }) {
+    try {
+      const user = await this.userRepository.getUserDetails(user_id);
+
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found',
+        };
+      }
+
+      await this.prisma.user.update({
+        where: { id: user_id },
+        data: {
+          fcm_token: fcm_token,
+          device_type: device_type ?? null,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'FCM token saved successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+  // update user
   async updateUser(
     userId: string,
     updateUserDto: UpdateUserDto,
@@ -248,7 +305,7 @@ export class AuthService {
 
         data.avatar = fileName;
       }
-      
+
       const user = await this.userRepository.getUserDetails(userId);
       if (user) {
         await this.prisma.user.update({
@@ -275,7 +332,6 @@ export class AuthService {
       };
     }
   }
-
   // done
   async forgotPassword(email) {
     try {
@@ -313,7 +369,6 @@ export class AuthService {
       };
     }
   }
-
   // done
   async resendToken(email: string) {
     try {
@@ -351,7 +406,6 @@ export class AuthService {
       };
     }
   }
-
   // done
   async verifyToken({ email, token }) {
     try {
@@ -391,7 +445,6 @@ export class AuthService {
       };
     }
   }
-
   //done
   async verifyEmail({ email, token }) {
     try {
@@ -475,7 +528,7 @@ export class AuthService {
       };
     }
   }
-
+  //
   async resetPassword({ email, token, password }) {
     try {
       const user = await this.userRepository.exist({

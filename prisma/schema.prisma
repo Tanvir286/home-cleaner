@@ -374,8 +374,6 @@ model NotificationEvent {
   notifications Notification[]
 }
 
-
-
 model Notification {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -529,7 +527,6 @@ model Contact {
 
   @@map("contacts")
 }
-
 
 // General application settings, such as site title, contact info, etc.
 model Setting {

@@ -70,7 +70,7 @@ export class NotificationRepository {
         },
       });
 
-      this.sendPushNotification(receiver_id, type, text, entity_id);
+      await this.sendPushNotification(receiver_id, type, text, entity_id);
 
       return newNotification;
     } catch (error) {
@@ -86,7 +86,10 @@ export class NotificationRepository {
     text: string,
     entityId: string,
   ) {
-    if (!admin.apps.length) return;
+    if (!admin.apps.length) {
+      console.warn("⚠️ Firebase app is not initialized. Push notification skipped.");
+      return;
+    }
 
     try {
       const user = await prisma.user.findUnique({
@@ -111,6 +114,9 @@ export class NotificationRepository {
 
         await admin.messaging().send(message);
       } else {
+        console.warn(
+          `⚠️ FCM token missing for user ${receiverId}. Push notification skipped.`,
+        );
       }
     } catch (error) {
       console.error("❌ Error sending FCM:", error);

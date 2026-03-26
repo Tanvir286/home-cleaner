@@ -608,7 +608,6 @@ export class UserRepository {
     return user;
   }
 
-
   // get admin users
   async getAdminUser() {
     const users = await this.prisma.user.findFirst({
@@ -623,6 +622,4 @@ export class UserRepository {
     });
     return users;
   }
-
-
 }

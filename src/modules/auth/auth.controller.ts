@@ -103,7 +103,8 @@ export class AuthController {
   @Post('login')
   async login(
     @Req() req: Request, 
-    @Res() res: Response
+    @Res() res: Response,
+    @Body() data: { fcm_token?: string; device_type?: string },
   ) {
     try {
       const user_id = req.user.id;
@@ -112,6 +113,8 @@ export class AuthController {
       const response = await this.authService.login({
         userId: user_id,
         email: user_email,
+        fcm_token: data?.fcm_token,
+        device_type: data?.device_type,
       });
 
       // store to secure cookies
@@ -357,6 +360,36 @@ export class AuthController {
       );
 
       return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('save-fcm-token')
+  async saveFcmToken(
+    @Req() req: Request,
+    @Body() data: { fcm_token: string; device_type?: string },
+  ) {
+    try {
+      const user_id = req.user.userId;
+
+      if (!data?.fcm_token) {
+        throw new HttpException(
+          'FCM token not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      return await this.authService.saveFcmToken({
+        user_id: user_id,
+        fcm_token: data.fcm_token,
+        device_type: data.device_type,
+      });
     } catch (error) {
       return {
         success: false,
