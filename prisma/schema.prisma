@@ -569,3 +569,42 @@ model Testimonial {
   @@map("testimonials")
 }
 
+// extra 
+
+model NewsletterSubscriber {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  email String? @unique
+
+  @@map("newsletter_subscribers")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  name   String?
+  key    String? @unique
+  secret String?
+
+  @@map("api_keys")
+}
+
+// to track
+
+model MaidLocationHistory {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+  deleted_at DateTime?
+
+  latitude  Float
+  longitude Float
+
+  @@map("maid_location_history")
+}
