@@ -70,7 +70,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -176,7 +176,7 @@ export class AuthService {
         success: true,
         message: 'We have sent an OTP code to your email',
       };
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -221,7 +221,7 @@ export class AuthService {
         },
         type: user.type,
       };
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -260,7 +260,7 @@ export class AuthService {
         success: true,
         message: 'FCM token saved successfully',
       };
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -325,7 +325,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -362,7 +362,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -399,7 +399,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -438,7 +438,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -485,7 +485,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -521,7 +521,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -570,7 +570,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -609,7 +609,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -659,7 +659,7 @@ export class AuthService {
           access_token: accessToken,
         },
       };
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -683,7 +683,7 @@ export class AuthService {
         success: true,
         message: 'Refresh token revoked successfully',
       };
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -717,7 +717,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -772,7 +772,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -844,7 +844,7 @@ export class AuthService {
   async generate2FASecret(user_id: string) {
     try {
       return await this.userRepository.generate2FASecret(user_id);
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -865,7 +865,7 @@ export class AuthService {
         success: true,
         message: '2FA verified successfully',
       };
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -888,7 +888,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,
@@ -911,7 +911,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error) {
+    } catch (error:any) {
       return {
         success: false,
         message: error.message,

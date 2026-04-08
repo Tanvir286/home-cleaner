@@ -7,50 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/**
- * ------------------------------------------
- * Enum List Start
- * -------------------------------------------
- */
-
-enum UserType {
-  ADMIN
-  HOMEOWNER
-  MAID
-}
-
-enum ServiceType {
-  GENERAL_CLEANING
-  DEEP_CLEANING
-}
-
-enum serviceType {
-  GENERAL_CLEANING
-  DEEP_CLEANING
-}
-
-enum PackageType {
-  ECO_SPARK
-  SPARK
-  GREENFLOW
-  GLIDE
-}
-
-enum Slot {
-  A
-  B
-  C
-  D
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  SUBMITTED
-  COMPLETED
-  CANCELLED
-}
-
 model Account {
   id         String   @id @default(cuid())
   created_at DateTime @default(now())
@@ -72,6 +28,17 @@ model Account {
 
   @@unique([provider, provider_account_id])
   @@map("accounts")
+}
+
+enum UserType {
+  ADMIN
+  HOMEOWNER
+  MAID
+}
+
+enum ServiceType {
+  GENERAL_CLEANING
+  DEEP_CLEANING
 }
 
 model User {
@@ -97,7 +64,7 @@ model User {
   language         String? @db.VarChar(100)
 
   fcm_token   String?
-  device_type String?
+  device_type String? 
 
   // billing info  
   billing_id        String?
@@ -175,6 +142,33 @@ model Ucode {
   verified_at DateTime?
 
   @@map("ucodes")
+}
+
+enum serviceType {
+  GENERAL_CLEANING
+  DEEP_CLEANING
+}
+
+enum PackageType {
+  ECO_SPARK
+  SPARK
+  GREENFLOW
+  GLIDE
+}
+
+enum Slot {
+  A
+  B
+  C
+  D
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  SUBMITTED
+  COMPLETED
+  CANCELLED
 }
 
 model GeneralCleaningPackage {
@@ -344,6 +338,13 @@ model Participant {
   @@unique([conversationId, userId])
 }
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  PENDING
+}
+
 model Message {
   id        String   @id @default(cuid())
   text      String?
@@ -362,10 +363,10 @@ model Message {
 }
 
 model NotificationEvent {
-  id         String    @id @default(uuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now()) @updatedAt
-  deleted_at DateTime?
+  id            String         @id @default(uuid())
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @default(now()) @updatedAt
+  deleted_at    DateTime?
 
   status        Int?           @default(1) @db.SmallInt
   type          String?
@@ -554,54 +555,16 @@ model Slider {
   @@map("sliders")
 }
 
+
 model Testimonial {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  name   String?
-  quote  String?
-  avatar String?
+  name    String?
+  quote   String?
+  avatar  String?
 
   @@map("testimonials")
-}
-
-// extra 
-
-model NewsletterSubscriber {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  email String? @unique
-
-  @@map("newsletter_subscribers")
-}
-
-model ApiKey {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  name   String?
-  key    String? @unique
-  secret String?
-
-  @@map("api_keys")
-}
-
-// to track
-model MaidLocationHistory {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now()) @updatedAt
-  deleted_at DateTime?
-
-  latitude  Float
-  longitude Float
-
-  @@map("maid_location_history")
 }
