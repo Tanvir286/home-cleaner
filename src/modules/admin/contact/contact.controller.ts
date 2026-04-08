@@ -32,7 +32,7 @@ export class ContactController {
     try {
       const contact = await this.contactService.create(createContactDto);
       return contact;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -52,7 +52,7 @@ export class ContactController {
         status: status,
       });
       return contacts;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -66,7 +66,7 @@ export class ContactController {
     try {
       const contact = await this.contactService.findOne(id);
       return contact;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -83,7 +83,7 @@ export class ContactController {
     try {
       const contact = await this.contactService.update(id, updateContactDto);
       return contact;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -97,7 +97,7 @@ export class ContactController {
     try {
       const contact = await this.contactService.remove(id);
       return contact;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

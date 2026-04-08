@@ -32,7 +32,7 @@ export class UserController {
     try {
       const user = await this.userService.create(createUserDto);
       return user;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -52,7 +52,7 @@ export class UserController {
 
       const users = await this.userService.findAll({ q, type, approved });
       return users;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -68,7 +68,7 @@ export class UserController {
     try {
       const user = await this.userService.approve(id);
       return user;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -84,7 +84,7 @@ export class UserController {
     try {
       const user = await this.userService.reject(id);
       return user;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -98,7 +98,7 @@ export class UserController {
     try {
       const user = await this.userService.findOne(id);
       return user;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -111,7 +111,7 @@ export class UserController {
     try {
       const user = await this.userService.update(id, updateUserDto);
       return user;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -124,7 +124,7 @@ export class UserController {
     try {
       const user = await this.userService.remove(id);
       return user;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

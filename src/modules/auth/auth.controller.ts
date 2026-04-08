@@ -41,6 +41,7 @@ export class AuthController {
 
       return response;
     } catch (error:any) {
+      // console.error('Error fetching user details:', error);
       return {
         success: false,
         message: 'Failed to fetch user details',
@@ -51,6 +52,7 @@ export class AuthController {
   // *register user
   @Post('register')
   async create(@Body() data: CreateUserDto) {
+    
     try {
       const first_name = data.first_name;
       const last_name = data.last_name;
