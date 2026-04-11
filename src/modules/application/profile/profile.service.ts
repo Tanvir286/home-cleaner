@@ -40,7 +40,13 @@ export class ProfileService {
         ? { homeowner_id: user.id }
         : { maid_id: user.id };
 
-    const [reviewAggregate, totalReviews, jobsDone, earningsAggregate, completedBookingClients, recentJobs] =
+    const [
+      reviewAggregate, 
+      totalReviews, 
+      jobsDone, 
+      earningsAggregate, 
+      completedBookingClients,
+      recentJobs] =
       await this.prisma.$transaction([
         this.prisma.review.aggregate({
           where: reviewWhere,
