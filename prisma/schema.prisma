@@ -182,8 +182,8 @@ model GeneralCleaningPackage {
   packageType PackageType
   image       String?
   description String?
-  price       Decimal?    @db.Decimal(10, 2)
   duration    String?
+  price       Decimal?    @db.Decimal(10, 2)
 
   booking Booking[] @relation("GeneralCleaningPackageBookings")
 
@@ -201,8 +201,8 @@ model DeepCleaningPackage {
   packageType PackageType
   image       String?
   description String?
+  duration    String?
   price       Decimal?    @db.Decimal(10, 2)
-  duration    Int?
 
   booking Booking[] @relation("DeepCleaningPackageBookings")
 

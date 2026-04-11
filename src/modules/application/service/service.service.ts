@@ -37,7 +37,7 @@ export class ServiceService {
     dto: CreateServiceDto, 
     image?: Express.Multer.File
   ) {
-    const { serviceType, title, packageType, description, price } = dto;
+    const { serviceType, title, packageType, description, price, duration } = dto;
 
     // upload image to storage
     let fileName: string | undefined;
@@ -60,6 +60,7 @@ export class ServiceService {
           packageType,
           image: fileName,
           description,
+          duration,
           price,
         },
       });
@@ -73,6 +74,7 @@ export class ServiceService {
           packageType,
           image: fileName,
           description,
+          duration,
           price,
         },
       });
@@ -112,6 +114,7 @@ export class ServiceService {
     if (dto.title) data.title = dto.title;
     if (dto.description) data.description = dto.description;
     if (dto.price) data.price = dto.price;
+    if (dto.duration) data.duration = dto.duration;
 
     if (image) {
       // delete old image

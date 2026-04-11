@@ -14,6 +14,9 @@ export class CreateServiceDto {
   @IsString()
   description: string;
 
+  @IsString()
+  duration: string;
+
   @IsNumber()
   price: number;
 }
