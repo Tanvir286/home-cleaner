@@ -51,6 +51,29 @@ export class BookingService {
       }),
     ]);
 
+    const reviews = await this.prisma.review.groupBy({
+      by: ['maid_id'],
+      where: {
+        maid_id: { in: maids.map((maid) => maid.id) },
+      },
+      _avg: {
+        rating: true,
+      },
+      _count: {
+        rating: true,
+      },
+    });
+
+    const reviewMap = new Map(
+      reviews.map((review) => [
+        review.maid_id,
+        {
+          average_rating: Number((review._avg.rating ?? 0).toFixed(1)),
+          total_reviews: review._count.rating,
+        },
+      ]),
+    );
+
     return {
       success: true,
       message: 'Available maids retrieved successfully',
@@ -66,6 +89,8 @@ export class BookingService {
           location: maid.location,
           experience_years: maid.experience_years,
           service_type: maid.service_type,
+          average_rating: reviewMap.get(maid.id)?.average_rating ?? 0,
+          total_reviews: reviewMap.get(maid.id)?.total_reviews ?? 0,
         })),
         total,
         page,

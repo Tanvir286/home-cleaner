@@ -34,7 +34,7 @@ export class ReviewController {
     return this.reviewService.create(req.user.userId, createReviewDto);
   }
 
-  
+  // Update a review
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Patch(':id')
@@ -46,9 +46,11 @@ export class ReviewController {
     return this.reviewService.update(id, req.user.userId, updateReviewDto);
   }
 
+
+  // Delete a review
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
-  @Delete(':id')
+  @Delete('delete/:id')
   async remove(@Param('id') id: string, @Req() req: Request) {
     return this.reviewService.remove(id, req.user.userId);
   }
