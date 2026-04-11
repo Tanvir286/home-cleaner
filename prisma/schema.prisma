@@ -183,7 +183,7 @@ model GeneralCleaningPackage {
   image       String?
   description String?
   price       Decimal?    @db.Decimal(10, 2)
-  duration    Int?
+  duration    String?
 
   booking Booking[] @relation("GeneralCleaningPackageBookings")
 
