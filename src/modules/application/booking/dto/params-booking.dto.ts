@@ -4,7 +4,11 @@ import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 
 
 enum BookingStatus2 {
-    COMPLETED = 'COMPLETED',  
+    PENDING = 'PENDING',
+    CONFIRMED = 'CONFIRMED',
+    COMPLETED = 'COMPLETED',
+    SUBMITTED = 'SUBMITTED',
+    CANCELLED = 'CANCELLED'
 }
 
 export class PaginationstausDto {

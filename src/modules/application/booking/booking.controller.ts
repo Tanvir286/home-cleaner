@@ -79,7 +79,10 @@ export class BookingController {
     @Req() req, 
     @Query() query: PaginationstausDto) {
     const userId = req.user.userId;
-    return this.bookingService.getAllBookingsWithStatus(userId, query);
+    return this.bookingService.getAllBookingsWithStatus(
+      userId, 
+      query
+    );
   }
 
   // get every booking details information
@@ -206,5 +209,5 @@ export class BookingController {
     return this.bookingService.getMaidWeeklyStatistics(maidId);
   }
 
-  
+
 }

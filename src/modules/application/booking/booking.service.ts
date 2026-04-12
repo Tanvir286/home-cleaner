@@ -304,7 +304,10 @@ export class BookingService {
   // * (pending,upcoming,completed,cancelled) status filter
 
   // service type,package type,price,address,booking date,slot
-  async getAllBookingsWithStatus(userId: string, query: PaginationstausDto) {
+  async getAllBookingsWithStatus(
+    userId: string, 
+    query: PaginationstausDto
+  ) {
     const { page, perPage, bookingStatus } = query;
 
     const skip = (page - 1) * perPage;
