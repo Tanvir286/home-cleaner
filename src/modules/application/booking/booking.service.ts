@@ -22,6 +22,7 @@ import {
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
 import { BookingStatus } from '@prisma/client';
+import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 
 @Injectable()
 export class BookingService {
@@ -302,7 +303,6 @@ export class BookingService {
 
   // get homeowner bookings list
   // * (pending,upcoming,completed,cancelled) status filter
-
   // service type,package type,price,address,booking date,slot
   async getAllBookingsWithStatus(
     userId: string, 
@@ -457,6 +457,44 @@ export class BookingService {
         },
         status: booking.status,
       },
+    };
+  }
+
+  // booking status update by homeowner
+  // working
+  async updateBookingStatusByHomeowner(
+    userId: string,
+    bookingId: string,
+    updateBookingDto: HomeownerUpdateBookingDto,
+  ) {
+
+    const { status } = updateBookingDto;
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.user_id !== userId) {
+      throw new BadRequestException("You are not authorized to cancel this booking");
+    }
+
+    if (booking.status !== BookingStatus.PENDING) {
+      throw new BadRequestException('Only pending bookings can be cancelled');
+    }
+
+    const updatedBooking = await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+    });
+
+    return {
+      success: true,
+      message: 'Booking cancelled successfully',
+      data: updatedBooking,
     };
   }
 

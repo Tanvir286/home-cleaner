@@ -27,6 +27,7 @@ import { PaginationstausDto } from './dto/params-booking.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 
 @ApiTags('Booking')
 @Controller('booking')
@@ -90,6 +91,24 @@ export class BookingController {
   async getBookingDetails(
     @Param('id') id: string) {
     return this.bookingService.getBookingDetails(id);
+  }
+
+
+  // booking cancel by homeowner  @UseGuards(JwtAuthGuard, RolesGuard)
+  // working
+  @Roles(Role.HOMEOWNER)
+  @Patch('homeowner/cancel-booking/:id')
+  async cancelBooking(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() updateBookingDto: HomeownerUpdateBookingDto,
+  ) {
+    const userId = req.user.userId; 
+    return this.bookingService.updateBookingStatusByHomeowner(
+      userId, 
+      id, 
+      updateBookingDto
+    );
   }
 
   /*----------------------------------------
