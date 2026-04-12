@@ -9,6 +9,7 @@ export enum SlotEnum {
 }
 
 export class CreateBookingDto {
+ 
   @ApiProperty({ description: 'Maid user ID', example: 'clxyz123' })
   @IsNotEmpty()
   @IsString()
@@ -24,14 +25,14 @@ export class CreateBookingDto {
   @IsString()
   booking_date: string;
 
-
-  @IsNotEmpty()
-  @IsString()
-  address: string;
-
-
   @ApiProperty({ description: 'Time slot', enum: SlotEnum, example: 'A' })
   @IsNotEmpty()
   @IsEnum(SlotEnum)
   slot: SlotEnum;
+
+  @ApiProperty({ description: 'Service address', example: '123 Main St, Cityville' })
+  @IsNotEmpty()
+  @IsString()
+  address: string;
+
 }

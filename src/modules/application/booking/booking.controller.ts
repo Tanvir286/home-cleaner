@@ -33,7 +33,9 @@ import { memoryStorage } from 'multer';
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
+  /*-------------------------------------------------
   // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
+  --------------------------------------------------*/
 
   // available maids list
   @Get('available-maidlist')
@@ -53,7 +55,9 @@ export class BookingController {
     return this.bookingService.getMaidSlots(maidId, +month, +year);
   }
 
+  /*-------------------------------------------------
   // topic:﹝﹝﹝ homeowner part ﹞﹞﹞
+  --------------------------------------------------*/
 
   // create booking
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -85,7 +89,9 @@ export class BookingController {
     return this.bookingService.getBookingDetails(id);
   }
 
+  /*----------------------------------------
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
+  -----------------------------------------*/
 
   //  booking list pending for maid
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -103,7 +109,10 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Get('maid/booking-details/:id')
-  async getBookingDetailsForMaid(@Req() req, @Param('id') id: string) {
+  async getBookingDetailsForMaid(
+    @Req() req, 
+    @Param('id') id: string
+  ) {
     return this.bookingService.getBookingDetailsForMaid(id);
   }
 
@@ -133,7 +142,10 @@ export class BookingController {
     @Query() query: PaginationstausDto,
   ) {
     const maidId = req.user.userId;
-    return this.bookingService.getBookingsByStatusForMaid(maidId, query);
+    return this.bookingService.getBookingsByStatusForMaid(
+      maidId,
+       query
+    );
   }
 
   // booking complete by maid
@@ -176,7 +188,9 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Get('maid/dashboard')
-  async getMaidDashboardData(@Req() req) {
+  async getMaidDashboardData(
+    @Req() req
+  ) {
     const maidId = req.user.userId;
     return this.bookingService.getMaidDashboardData(maidId);
   }
@@ -185,8 +199,12 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Get('maid/weekly-statistics')
-  async getMaidWeeklyStatistics(@Req() req) {
+  async getMaidWeeklyStatistics(
+    @Req() req
+  ) {
     const maidId = req.user.userId;
     return this.bookingService.getMaidWeeklyStatistics(maidId);
   }
+
+  
 }

@@ -12,6 +12,7 @@ import { UpdateBookingDto } from './dto/update-booking.dto';
 import { PaginationstausDto } from './dto/params-booking.dto';
 import {
   bookingSlotTimeMap,
+  checkBalance,
   checkSlotAvailability,
   formatBookingDate,
   resolvePackage,
@@ -26,10 +27,11 @@ import { BookingStatus } from '@prisma/client';
 export class BookingService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /*-------------------------------------------------
   // topic:﹝﹝﹝ available maid and  maid deatils ﹞﹞﹞
+  --------------------------------------------------*/
 
   // available maids list
-
   async getAvailableMaids(paginationDto: PaginationDto) {
     const { page, perPage } = paginationDto;
     const skip = (page - 1) * perPage;
@@ -100,7 +102,12 @@ export class BookingService {
   }
 
   // available maids list
-  async getMaidSlots(maidId: string, month: number, year: number) {
+  async getMaidSlots(
+    maidId: string, 
+    month: number, 
+    year: number
+  ) {
+
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -185,11 +192,20 @@ export class BookingService {
     };
   }
 
+  /*-------------------------------------------------
   // topic:﹝﹝﹝ homeowner part ﹞﹞﹞
+  --------------------------------------------------*/
 
   // create booking
   async create(userId: string, dto: CreateBookingDto) {
-    const { maid_id, package_id, booking_date, address, slot } = dto;
+    
+    const { 
+      maid_id, 
+      package_id, 
+      booking_date, 
+      slot, 
+      address
+    } = dto;
 
     const maid_location = await this.prisma.user.findUnique({
       where: { id: maid_id },
@@ -210,37 +226,71 @@ export class BookingService {
 
     await checkSlotAvailability(this.prisma, maid_id, parsedDate, slot);
 
+    const balance = await checkBalance(this.prisma, userId);
+
     const packageData = await resolvePackage(this.prisma, package_id);
 
-    const booking = await this.prisma.booking.create({
-      data: {
-        user_id: userId,
-        maid_id,
-        booking_date: parsedDate,
-        slot,
-        maid_location: maid_location.location,
-        homeowner_location: address,
-        status: 'PENDING',
-        ...packageData,
-      },
-      include: {
-        maid: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const totalPrice = Number(packageData.total_price ?? 0);
+    const currentBalance = Number(balance ?? 0);
+
+    if (totalPrice <= 0) {
+      throw new BadRequestException('Invalid package price');
+    }
+
+    if (currentBalance < totalPrice) {
+      throw new BadRequestException('Insufficient balance for this booking');
+    }
+
+    const booking = await this.prisma.$transaction(async (tx) => {
+  
+      const deducted = await tx.user.updateMany({
+        where: {
+          id: userId,
+          balance: {
+            gte: totalPrice,
           },
         },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+        data: {
+          balance: {
+            decrement: totalPrice,
           },
         },
-        general_cleaning_package: true,
-        deep_cleaning_package: true,
-      },
+      });
+
+      if (deducted.count === 0) {
+        throw new BadRequestException('Insufficient balance for this booking');
+      }
+
+      return tx.booking.create({
+        data: {
+          user_id: userId,
+          maid_id,
+          booking_date: parsedDate,
+          slot,
+          maid_location: maid_location.location,
+          homeowner_location: address,
+          status: 'PENDING',
+          ...packageData,
+        },
+        include: {
+          maid: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          general_cleaning_package: true,
+          deep_cleaning_package: true,
+        },
+      });
     });
 
     return {
@@ -407,7 +457,9 @@ export class BookingService {
     };
   }
 
+  /*-------------------------------------------------
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
+  --------------------------------------------------*/
 
   // booking list individual details for maid
   async getPendingBookingsForMaid(

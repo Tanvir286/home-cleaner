@@ -112,3 +112,14 @@ export async function uploadBookingImages(
 
   return uploadedFiles;
 }
+
+export async function checkBalance(prisma: PrismaService, userId: string) {
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { balance: true },
+  });
+
+  return user?.balance ?? 0;
+  
+}
