@@ -166,6 +166,167 @@ export class ProfileService {
       },
     };
   }
+  
+
+  // get maid profile details
+  async getMaidProfileDetails(maidId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: maidId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        type: true,
+        avatar: true,
+        location: true,
+        about_me: true,
+        service_type: true,
+        experience_years: true,
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    const reviewWhere =
+      user.type === 'HOMEOWNER'
+        ? { homeowner_id: user.id }
+        : { maid_id: user.id };
+
+    const [
+      reviewAggregate, 
+      totalReviews, 
+      jobsDone, 
+      earningsAggregate, 
+      completedBookingClients,
+      recentJobs] =
+      await this.prisma.$transaction([
+        this.prisma.review.aggregate({
+          where: reviewWhere,
+          _avg: {
+            rating: true,
+          },
+        }),
+        this.prisma.review.count({
+          where: reviewWhere,
+        }),
+        this.prisma.booking.count({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+        }),
+        this.prisma.booking.aggregate({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+          _sum: {
+            total_price: true,
+          },
+        }),
+        this.prisma.booking.findMany({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+          select: {
+            user_id: true,
+          },
+        }),
+        this.prisma.booking.findMany({
+          where: {
+            maid_id: user.id,
+            status: 'COMPLETED',
+          },
+          include: {
+            general_cleaning_package: {
+              select: {
+                title: true,
+                image: true,
+              },
+            },
+            deep_cleaning_package: {
+              select: {
+                title: true,
+                image: true,
+              },
+            },
+          },
+          orderBy: {
+            booking_date: 'desc',
+          },
+          take: 2,
+        }),
+      ]);
+
+    const average_rating = Number(reviewAggregate._avg.rating ?? 0);
+    const total_earnings = Number(earningsAggregate._sum.total_price ?? 0);
+   
+    const clientBookingCount = new Map<string, number>();
+
+    completedBookingClients.forEach((booking) => {
+      clientBookingCount.set(
+        booking.user_id,
+        (clientBookingCount.get(booking.user_id) ?? 0) + 1,
+      );
+    });
+
+    const totalClients = clientBookingCount.size;
+    const repeatedClients = Array.from(clientBookingCount.values()).filter(
+      (count) => count > 1,
+    ).length;
+
+    const repeat_client_rate =
+      totalClients > 0
+        ? Number(((repeatedClients / totalClients) * 100).toFixed(2))
+        : 0;
+
+    const recent_jobs = recentJobs.map((job) => {
+     
+      const pkg = job.general_cleaning_package || job.deep_cleaning_package;
+
+      return {
+        id: job.id,
+        title: pkg?.title || 'Cleaning Service',
+        image_url: pkg?.image
+          ? TanvirStorage.url(appConfig().storageUrl.package + '/' + pkg.image)
+          : null,
+        booking_date: job.booking_date,
+        status: job.status,
+      };
+    });
+
+    return {
+      success: true,
+      message: 'Profile details retrieved successfully',
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avater_url: user.avatar
+          ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + user.avatar)
+          : null,
+        location: user.location,
+        about_me: user.about_me,
+        service_type: user.service_type,
+        experience_years: user.experience_years,
+        jobs_done: jobsDone,
+        total_earnings,
+        repeat_client_rate,
+        last_active: '2 hour',
+        average_rating,
+        total_reviews: totalReviews,
+        recent_jobs,
+      },
+    };
+  }
+
+  
 
   // maid profile update
   async updatemaid(

@@ -28,11 +28,22 @@ export class ProfileController {
 
   // get profile details
   @UseGuards(JwtAuthGuard)
-  @Get('maid/details')
+  @Get('me/details')
   async getProfileDetails(@Req() req) {
     const userId = req.user.userId;
     return this.profileService.getProfileDetails(userId);
   }
+
+  
+  // maid profile details
+  @Get('maid/details/:maidId')
+  async getMaidProfileDetails(
+    @Param('maidId') maidId: string
+  ) {
+    return this.profileService.getProfileDetails(maidId);
+  }
+
+
 
   // maid profile update
   @UseGuards(JwtAuthGuard, RolesGuard)

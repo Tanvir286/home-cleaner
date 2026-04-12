@@ -124,6 +124,9 @@ model User {
   //live location with user
   live_locations LiveLocation[]
 
+  // recods created by user
+
+
   @@map("users")
 }
 
@@ -568,3 +571,7 @@ model Testimonial {
 
   @@map("testimonials")
 }
+
+
+
+
