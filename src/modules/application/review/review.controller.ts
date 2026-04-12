@@ -54,4 +54,15 @@ export class ReviewController {
   async remove(@Param('id') id: string, @Req() req: Request) {
     return this.reviewService.remove(id, req.user.userId);
   }
+
+
+  // get review list for maid
+  @Get('maid/:maidId')
+  async getReviewsForMaid(
+    @Param('maidId') maidId: string
+  ) {
+    return this.reviewService.getReviewsForMaid(maidId);
+  }    
+
+
 }

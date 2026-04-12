@@ -7,7 +7,9 @@ import {
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+
+import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
+import appConfig from 'src/config/app.config';
 
 @Injectable()
 export class ReviewService {
@@ -15,7 +17,10 @@ export class ReviewService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Create a review for a booking
-  async create(homeownerId: string, createReviewDto: CreateReviewDto) {
+  async create(
+    homeownerId: string, 
+    createReviewDto: CreateReviewDto
+  ) {
    
    const booking = await this.prisma.booking.findUnique({
       where: { id: createReviewDto.booking_id },
@@ -104,6 +109,7 @@ export class ReviewService {
     };
   }
 
+  // Delete a review  
   async remove(id: string, homeownerId: string) {
     
     const existingReview = await this.prisma.review.findUnique({
@@ -133,5 +139,68 @@ export class ReviewService {
     };
   }
 
+  // get reviews for a maid
+  async getReviewsForMaid(maidId: string) {
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        maid_id: maidId,
+      },
+      include: {
+        homeowner: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        booking: {
+          include: {
+            general_cleaning_package: {
+              select: {
+                title: true,
+              },
+            },
+            deep_cleaning_package: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    const data = reviews.map((review) => {
+      const serviceTitle =
+        review.booking.general_cleaning_package?.title ||
+        review.booking.deep_cleaning_package?.title ||
+        'Cleaning Service';
+
+      return {
+        id: review.id,
+        reviewer_name: review.homeowner?.name,
+        reviewer_avatar_url: review.homeowner?.avatar
+          ? TanvirStorage.url(
+              appConfig().storageUrl.avatar + '/' + review.homeowner.avatar,
+            )
+          : null,
+        service_title: serviceTitle,
+        review_date: review.created_at,
+        rating: review.rating ?? 0,
+        comment: review.comment,
+      };
+    });
+
+    return {
+      success: true,
+      message: 'Reviews retrieved successfully',
+      data,
+    };
+  }
+
   
+
 }
