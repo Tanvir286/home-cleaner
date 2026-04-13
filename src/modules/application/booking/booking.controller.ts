@@ -95,7 +95,7 @@ export class BookingController {
 
 
   // booking cancel by homeowner  @UseGuards(JwtAuthGuard, RolesGuard)
-  // working
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Patch('homeowner/cancel-booking/:id')
   async cancelBooking(

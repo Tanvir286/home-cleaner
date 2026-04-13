@@ -1,23 +1,53 @@
-import { Command, CommandRunner } from 'nest-commander';
+import { Command, CommandRunner, Option } from 'nest-commander';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+
+interface SeedCommandOptions {
+  usersOnly?: boolean;
+  packagesOnly?: boolean;
+}
 
 @Command({
   name: 'seed',
   description: 'Seed database with initial data',
 })
 export class SeedCommand extends CommandRunner {
-  
+
   private readonly prisma = new PrismaClient();
 
-  async run() {
-    await this.main();
+  async run(_: string[], options?: SeedCommandOptions) {
+    const usersOnly = options?.usersOnly ?? false;
+    const packagesOnly = options?.packagesOnly ?? false;
+
+    if (usersOnly && packagesOnly) {
+      throw new Error('Use either --users-only or --packages-only, not both');
+    }
+
+    await this.main({ usersOnly, packagesOnly });
   }
 
-  private async main() {
+  @Option({
+    flags: '--users-only',
+    description: 'Seed only users and skip cleaning packages',
+  })
+  parseUsersOnly(): boolean {
+    return true;
+  }
+
+  @Option({
+    flags: '--packages-only',
+    description: 'Seed only cleaning packages and skip users',
+  })
+  parsePackagesOnly(): boolean {
+    return true;
+  }
+
+  private async main({ usersOnly = false, packagesOnly = false }: SeedCommandOptions) {
     const password = await bcrypt.hash('123456', 10);
 
     /* ================= USERS ================= */
+
+    if (!packagesOnly) {
 
     // ---------- ADMIN ----------
     await this.prisma.user.upsert({
@@ -63,6 +93,13 @@ export class SeedCommand extends CommandRunner {
         email_verified_at: new Date(),
       },
     });
+    }
+
+    if (usersOnly) {
+      console.log('Seed completed: Users created/updated only');
+      await this.prisma.$disconnect();
+      return;
+    }
 
     /* ================= GENERAL CLEANING PACKAGES ================= */
 
@@ -115,6 +152,11 @@ export class SeedCommand extends CommandRunner {
       ],
     });
 
-    console.log('✅ Seed completed: Users + Cleaning Packages created');
+    console.log(
+      packagesOnly
+        ? 'Seed completed: Cleaning Packages created/updated only'
+        : 'Seed completed: Users + Cleaning Packages created',
+    );
+    await this.prisma.$disconnect();
   }
 }

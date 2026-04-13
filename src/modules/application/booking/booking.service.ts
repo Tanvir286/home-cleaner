@@ -461,7 +461,6 @@ export class BookingService {
   }
 
   // booking status update by homeowner
-  // working
   async updateBookingStatusByHomeowner(
     userId: string,
     bookingId: string,
@@ -486,9 +485,30 @@ export class BookingService {
       throw new BadRequestException('Only pending bookings can be cancelled');
     }
 
-    const updatedBooking = await this.prisma.booking.update({
-      where: { id: bookingId },
-      data: { status },
+    if (status !== BookingStatus.CANCELLED) {
+      throw new BadRequestException('Status must be CANCELLED');
+    }
+
+    const refundAmount = Number(booking.total_price ?? 0);
+
+    const updatedBooking = await this.prisma.$transaction(async (tx) => {
+      const cancelledBooking = await tx.booking.update({
+        where: { id: bookingId },
+        data: { status },
+      });
+
+      if (refundAmount > 0) {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            balance: {
+              increment: refundAmount,
+            },
+          },
+        });
+      }
+
+      return cancelledBooking;
     });
 
     return {
