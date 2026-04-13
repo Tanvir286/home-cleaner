@@ -492,10 +492,12 @@ export class BookingService {
     const refundAmount = Number(booking.total_price ?? 0);
 
     const updatedBooking = await this.prisma.$transaction(async (tx) => {
+   
       const cancelledBooking = await tx.booking.update({
         where: { id: bookingId },
         data: { status },
       });
+      
 
       if (refundAmount > 0) {
         await tx.user.update({

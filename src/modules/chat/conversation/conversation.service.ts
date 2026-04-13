@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -20,15 +21,41 @@ export class ConversationService {
   ) { }
 
   // *create conversation
-  async create(createConversationDto: CreateConversationDto, sender: string) {
+  async create(
+    createConversationDto: CreateConversationDto,
+    sender: string
+  ) {
 
-    const { participant_id } = createConversationDto;
+    const participant_id = createConversationDto.participant_id?.trim();0
+
+    if (!participant_id) {
+      throw new BadRequestException('participant_id is required');
+    }
 
     if (participant_id === sender) {
       throw new ConflictException('Cannot create conversation with yourself');
     }
 
-    // check if conversation already exists between the two users
+    const [senderUser, participantUser] = await this.prisma.$transaction([
+      this.prisma.user.findUnique({
+        where: { id: sender },
+        select: { id: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: participant_id },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!senderUser) {
+      throw new NotFoundException('Authenticated user not found');
+    }
+
+    if (!participantUser) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    // check if conversation already exists
     const existingConversation = await this.prisma.conversation.findFirst({
       where: {
         AND: [

@@ -31,7 +31,11 @@ export class ConversationController {
     @Req() req,
   ) {
     const user = req.user.userId;
-    return this.conversationService.create(createConversationDto, user);
+    console.log(user);
+    return this.conversationService.create(
+      createConversationDto, 
+      user
+    );
   }
 
   //  *conversation list of user
