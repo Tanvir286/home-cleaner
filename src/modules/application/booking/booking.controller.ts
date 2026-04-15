@@ -141,6 +141,11 @@ export class BookingController {
   // booking status update by maid (accept, reject)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
+  @UseInterceptors(
+    FileFieldsInterceptor([], {
+      storage: memoryStorage(),
+    }),
+  )
   @Patch('maid/update-booking-status/:id')
   async updateBookingStatusByMaid(
     @Req() req,

@@ -31,7 +31,7 @@ export class FaqController {
     try {
       const faq = await this.faqService.create(createFaqDto);
       return faq;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -45,7 +45,7 @@ export class FaqController {
     try {
       const faq = await this.faqService.batchCreate(batchCreateFaqDto);
       return faq;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -59,7 +59,7 @@ export class FaqController {
     try {
       const faqs = await this.faqService.findAll();
       return faqs;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -73,7 +73,7 @@ export class FaqController {
     try {
       const faq = await this.faqService.findOne(id);
       return faq;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -87,7 +87,7 @@ export class FaqController {
     try {
       const faq = await this.faqService.update(id, updateFaqDto);
       return faq;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -101,7 +101,7 @@ export class FaqController {
     try {
       const faq = await this.faqService.remove(id);
       return faq;
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

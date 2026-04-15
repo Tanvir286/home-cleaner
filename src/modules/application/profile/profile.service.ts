@@ -11,10 +11,8 @@ export class ProfileService {
 
   // topic: maid part)---------->
 
-
   // maid availability toggle
   async toggleAvailability(userId: string) {
-    
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { availability: true },
@@ -38,10 +36,7 @@ export class ProfileService {
       success: true,
       message: `Availability toggled to ${newAvailability}`,
     };
-
-
   }
-
 
   // get profile details
   async getProfileDetails(userId: string) {
@@ -73,71 +68,71 @@ export class ProfileService {
         : { maid_id: user.id };
 
     const [
-      reviewAggregate, 
-      totalReviews, 
-      jobsDone, 
-      earningsAggregate, 
+      reviewAggregate,
+      totalReviews,
+      jobsDone,
+      earningsAggregate,
       completedBookingClients,
-      recentJobs] =
-      await this.prisma.$transaction([
-        this.prisma.review.aggregate({
-          where: reviewWhere,
-          _avg: {
-            rating: true,
-          },
-        }),
-        this.prisma.review.count({
-          where: reviewWhere,
-        }),
-        this.prisma.booking.count({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-        }),
-        this.prisma.booking.aggregate({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-          _sum: {
-            total_price: true,
-          },
-        }),
-        this.prisma.booking.findMany({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-          select: {
-            user_id: true,
-          },
-        }),
-        this.prisma.booking.findMany({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-          include: {
-            general_cleaning_package: {
-              select: {
-                title: true,
-                image: true,
-              },
-            },
-            deep_cleaning_package: {
-              select: {
-                title: true,
-                image: true,
-              },
+      recentJobs,
+    ] = await this.prisma.$transaction([
+      this.prisma.review.aggregate({
+        where: reviewWhere,
+        _avg: {
+          rating: true,
+        },
+      }),
+      this.prisma.review.count({
+        where: reviewWhere,
+      }),
+      this.prisma.booking.count({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+      }),
+      this.prisma.booking.aggregate({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+        _sum: {
+          total_price: true,
+        },
+      }),
+      this.prisma.booking.findMany({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+        select: {
+          user_id: true,
+        },
+      }),
+      this.prisma.booking.findMany({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+        include: {
+          general_cleaning_package: {
+            select: {
+              title: true,
+              image: true,
             },
           },
-          orderBy: {
-            booking_date: 'desc',
+          deep_cleaning_package: {
+            select: {
+              title: true,
+              image: true,
+            },
           },
-          take: 2,
-        }),
-      ]);
+        },
+        orderBy: {
+          booking_date: 'desc',
+        },
+        take: 2,
+      }),
+    ]);
 
     const average_rating = Number(reviewAggregate._avg.rating ?? 0);
     const total_earnings = Number(earningsAggregate._sum.total_price ?? 0);
@@ -198,7 +193,7 @@ export class ProfileService {
       },
     };
   }
-  
+
   // get maid profile details
   async getMaidProfileDetails(maidId: string) {
     const user = await this.prisma.user.findUnique({
@@ -229,75 +224,75 @@ export class ProfileService {
         : { maid_id: user.id };
 
     const [
-      reviewAggregate, 
-      totalReviews, 
-      jobsDone, 
-      earningsAggregate, 
+      reviewAggregate,
+      totalReviews,
+      jobsDone,
+      earningsAggregate,
       completedBookingClients,
-      recentJobs] =
-      await this.prisma.$transaction([
-        this.prisma.review.aggregate({
-          where: reviewWhere,
-          _avg: {
-            rating: true,
-          },
-        }),
-        this.prisma.review.count({
-          where: reviewWhere,
-        }),
-        this.prisma.booking.count({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-        }),
-        this.prisma.booking.aggregate({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-          _sum: {
-            total_price: true,
-          },
-        }),
-        this.prisma.booking.findMany({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-          select: {
-            user_id: true,
-          },
-        }),
-        this.prisma.booking.findMany({
-          where: {
-            maid_id: user.id,
-            status: 'COMPLETED',
-          },
-          include: {
-            general_cleaning_package: {
-              select: {
-                title: true,
-                image: true,
-              },
-            },
-            deep_cleaning_package: {
-              select: {
-                title: true,
-                image: true,
-              },
+      recentJobs,
+    ] = await this.prisma.$transaction([
+      this.prisma.review.aggregate({
+        where: reviewWhere,
+        _avg: {
+          rating: true,
+        },
+      }),
+      this.prisma.review.count({
+        where: reviewWhere,
+      }),
+      this.prisma.booking.count({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+      }),
+      this.prisma.booking.aggregate({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+        _sum: {
+          total_price: true,
+        },
+      }),
+      this.prisma.booking.findMany({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+        select: {
+          user_id: true,
+        },
+      }),
+      this.prisma.booking.findMany({
+        where: {
+          maid_id: user.id,
+          status: 'COMPLETED',
+        },
+        include: {
+          general_cleaning_package: {
+            select: {
+              title: true,
+              image: true,
             },
           },
-          orderBy: {
-            booking_date: 'desc',
+          deep_cleaning_package: {
+            select: {
+              title: true,
+              image: true,
+            },
           },
-          take: 2,
-        }),
-      ]);
+        },
+        orderBy: {
+          booking_date: 'desc',
+        },
+        take: 2,
+      }),
+    ]);
 
     const average_rating = Number(reviewAggregate._avg.rating ?? 0);
     const total_earnings = Number(earningsAggregate._sum.total_price ?? 0);
-   
+
     const clientBookingCount = new Map<string, number>();
 
     completedBookingClients.forEach((booking) => {
@@ -318,7 +313,6 @@ export class ProfileService {
         : 0;
 
     const recent_jobs = recentJobs.map((job) => {
-     
       const pkg = job.general_cleaning_package || job.deep_cleaning_package;
 
       return {
@@ -436,10 +430,7 @@ export class ProfileService {
   }
 
   // review maid
-  async reviewMaid(
-    maidId: string,
-  ) {
-   
+  async reviewMaid(maidId: string) {
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
       select: { id: true },
@@ -485,7 +476,6 @@ export class ProfileService {
     });
 
     const data = reviews.map((review) => {
-    
       const serviceTitle =
         review.booking.general_cleaning_package?.title ||
         review.booking.deep_cleaning_package?.title ||
@@ -619,6 +609,4 @@ export class ProfileService {
       },
     };
   }
-
-  
 }
