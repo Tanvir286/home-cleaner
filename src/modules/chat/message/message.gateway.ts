@@ -14,8 +14,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import appConfig from '../../../config/app.config';
 
-
-// Temporary enum 
+// Temporary enum
 enum MessageStatus {
   SENT = 'SENT',
   DELIVERED = 'DELIVERED',
@@ -27,33 +26,31 @@ enum MessageStatus {
   cors: {
     origin: '*',
   },
-  maxHttpBufferSize: 1e8, 
+  maxHttpBufferSize: 1e8,
 })
-
 export class MessageGateway
   implements
-  OnGatewayInit,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  OnModuleInit {
-
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleInit
+{
   @WebSocketServer()
   server: Server;
 
-  public clients = new Map<string, string>(); 
-  private activeUsers = new Map<string, string>(); 
+  public clients = new Map<string, string>();
+  private activeUsers = new Map<string, string>();
 
-  onModuleInit() { }
+  onModuleInit() {}
 
   afterInit(server: Server) {
     console.log('Websocket server started');
   }
 
   async handleConnection(client: Socket, ...args: any[]) {
-
     try {
       const authHeader = client.handshake.headers.authorization;
-    
+
       if (!authHeader) {
         client.disconnect();
         return;
@@ -70,32 +67,27 @@ export class MessageGateway
 
       const { sub: userId } = decoded;
 
-      
       if (!userId) {
         client.disconnect();
         return;
       }
 
-      
       this.clients.set(userId, client.id);
 
       client.join(`user_${userId}`);
 
-      console.log(`User joined room: user_${userId}`);   
-
+      console.log(`User joined room: user_${userId}`);
     } catch (error: any) {
-      
-      console.error('Error handling connection:', error.message); 
+      console.error('Error handling connection:', error.message);
       client.disconnect();
     }
-  }  
+  }
 
   async handleDisconnect(client: Socket) {
-  
     const userId = [...this.clients.entries()].find(
       ([, socketId]) => socketId === client.id,
     )?.[0];
-    
+
     if (userId) {
       this.clients.delete(userId);
 
@@ -115,16 +107,13 @@ export class MessageGateway
     }
   }
 
-
-
   @SubscribeMessage('joinroom')
   handleRoomJoin(client: Socket, body: { room_id: string }) {
     const room_id = body.room_id;
-    console.log('room connected', room_id); 
-    client.join(room_id); 
+    console.log('room connected', room_id);
+    client.join(room_id);
     client.emit('joinedRoom', { room_id: room_id });
   }
-
 
   @SubscribeMessage('sendMessage')
   async listenForMessages(
@@ -145,47 +134,10 @@ export class MessageGateway
     client: Socket,
     @MessageBody() body: { message_id: string; status: MessageStatus },
   ) {
-  
     this.server.emit('messageStatusUpdated', {
       message_id: body.message_id,
       status: body.status,
     });
   }
-
-  
-
- 
-
-
-
-  
-
-  
-  
-
-  
- 
 }
-
-
-
-
-/*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*/
 

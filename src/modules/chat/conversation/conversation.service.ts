@@ -344,7 +344,6 @@ export class ConversationService {
     };
   }
 
-
   // user information
   async findAllUserInfo(userId: string) {
     

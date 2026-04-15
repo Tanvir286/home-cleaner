@@ -222,6 +222,7 @@ export class MessageService {
                 `${appConfig().storageUrl.avatar}/${receiverParticipant.user.avatar}`,
               )
             : null,
+          isOnline: this.messageGateway.clients.has(oppositeUserId),
           averageReview:
             avgreview?._avg.rating !== null &&
             avgreview?._avg.rating !== undefined
@@ -270,8 +271,7 @@ export class MessageService {
               `${appConfig().storageUrl.avatar}/${msg.sender.avatar}`,
             )
           : null,
-      },
-      receiver: formattedReceiver,
+      }
     }));
 
     const paginationResult = paginateResponse(
