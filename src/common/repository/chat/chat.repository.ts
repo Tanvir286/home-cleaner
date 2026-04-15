@@ -43,7 +43,7 @@ export class ChatRepository {
    * Update user status
    * @returns
    */
-  async updateUserStatus(user_id: string, status: string) {
+  async updateUserStatus(user_id: string, availability: boolean) {
     // if user exist
     const user = await this.prisma.user.findFirst({
       where: {
@@ -57,7 +57,7 @@ export class ChatRepository {
     return await this.prisma.user.update({
       where: { id: user_id },
       data: {
-        availability: status,
+        availability,
       },
     });
   }

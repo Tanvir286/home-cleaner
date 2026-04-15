@@ -87,8 +87,7 @@ model User {
   gender        String?
   date_of_birth DateTime? @db.Date
   approved_at   DateTime?
-  availability  String?
-
+  availability  Boolean   @default(true)
   is_two_factor_enabled Int?    @default(0)
   two_factor_secret     String?
 

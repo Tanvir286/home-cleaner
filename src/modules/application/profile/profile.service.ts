@@ -11,6 +11,38 @@ export class ProfileService {
 
   // topic: maid part)---------->
 
+
+  // maid availability toggle
+  async toggleAvailability(userId: string) {
+    
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { availability: true },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    const newAvailability = !user.availability;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { availability: newAvailability },
+    });
+
+    return {
+      success: true,
+      message: `Availability toggled to ${newAvailability}`,
+    };
+
+
+  }
+
+
   // get profile details
   async getProfileDetails(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -167,7 +199,6 @@ export class ProfileService {
     };
   }
   
-
   // get maid profile details
   async getMaidProfileDetails(maidId: string) {
     const user = await this.prisma.user.findUnique({
@@ -325,8 +356,6 @@ export class ProfileService {
       },
     };
   }
-
-  
 
   // maid profile update
   async updatemaid(

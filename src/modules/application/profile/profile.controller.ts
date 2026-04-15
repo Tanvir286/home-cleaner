@@ -23,8 +23,21 @@ import { Role } from 'src/common/guard/role/role.enum';
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
-
+  
+  /*----------------------------------------------
   // topic: maid part  ---------->
+  -----------------------------------------------*/
+
+
+  // maid availability toggle
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Patch('maid/availability')
+  async toggleAvailability(@Req() req) {
+    const userId = req.user.userId;
+    return this.profileService.toggleAvailability(userId);
+  }
+
 
   // get profile details
   @UseGuards(JwtAuthGuard)
@@ -34,16 +47,13 @@ export class ProfileController {
     return this.profileService.getProfileDetails(userId);
   }
 
-  
-  // maid profile details
+  // get maid profile details
   @Get('maid/details/:maidId')
   async getMaidProfileDetails(
     @Param('maidId') maidId: string
   ) {
     return this.profileService.getProfileDetails(maidId);
   }
-
-
 
   // maid profile update
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -64,6 +74,7 @@ export class ProfileController {
     return this.profileService.updatemaid(userId, updateProfileDto, image);
   }
 
+
   // review maid by homeowner
   @Get('maid/review/:maidId')
   async reviewMaid(
@@ -74,7 +85,9 @@ export class ProfileController {
     );
   }
  
+  /*----------------------------------------------
   // topic: homeowner part  ---------->
+  -----------------------------------------------*/
 
   // get profile details
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -92,7 +105,7 @@ export class ProfileController {
     FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
-    }),
+  }),
   )
   @Patch('homeowner/update')
   async updateHomeowner(
@@ -103,4 +116,8 @@ export class ProfileController {
     const userId = req.user.userId;
     return this.profileService.updateHomeowner(userId, updateProfileDto, image);
   }
+
+
+
+
 }
