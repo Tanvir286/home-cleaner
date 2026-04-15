@@ -188,6 +188,9 @@ export class ConversationService {
         (p) => p.userId !== userId,
       );
 
+      const opponentUserId = opponentParticipant?.user.id;
+
+
       const opponentData = opponentParticipant ? {
         userId: opponentParticipant.user.id,
         name: opponentParticipant.user.name,
@@ -197,6 +200,9 @@ export class ConversationService {
             `${appConfig().storageUrl.avatar}/${opponentParticipant.user.avatar}`,
           )
           : null,
+
+          isOnline: this.messageGateway.clients.has(opponentUserId)
+
       }
         : null;
 
