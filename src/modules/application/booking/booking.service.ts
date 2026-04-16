@@ -23,6 +23,7 @@ import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
 import { BookingStatus } from '@prisma/client';
 import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
+import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
 
 @Injectable()
 export class BookingService {
@@ -789,11 +790,12 @@ export class BookingService {
   }
 
   // booking status update by maid (accept, reject)
-  async updateBookingStatusByMaid(
+  async updateBookingStatusAcceptOrRejectByMaid(
     maidId: string,
     bookingId: string,
-    dto: UpdateBookingDto,
+    dto: UpdateBookingAcceptOrRejectDto,
   ) {
+    
     const { status } = dto;
 
     const booking = await this.prisma.booking.findUnique({

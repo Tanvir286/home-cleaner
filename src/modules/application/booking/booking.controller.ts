@@ -28,6 +28,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
+import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
 
 @ApiTags('Booking')
 @Controller('booking')
@@ -147,7 +148,10 @@ export class BookingController {
     @Query() paginationDto: PaginationDto,
   ) {
     const maidId = req.user.userId;
-    return this.bookingService.getPendingBookingsForMaid(maidId, paginationDto);
+    return this.bookingService.getPendingBookingsForMaid(
+      maidId, 
+      paginationDto
+    );
   }
 
   // booking list individual details for maid
@@ -173,13 +177,13 @@ export class BookingController {
   async updateBookingStatusByMaid(
     @Req() req,
     @Param('id') id: string,
-    @Body() updateBookingDto: UpdateBookingDto,
+    @Body() UpdateBookingAcceptOrRejectDto: UpdateBookingAcceptOrRejectDto,
   ) {
     const maidId = req.user.userId;
-    return this.bookingService.updateBookingStatusByMaid(
+    return this.bookingService.updateBookingStatusAcceptOrRejectByMaid(
       maidId,
       id,
-      updateBookingDto,
+      UpdateBookingAcceptOrRejectDto,
     );
   }
 
