@@ -1,10 +1,11 @@
 import { IsEnum } from "class-validator";
 
 enum AllowedBookingStatus {
-  SUBMITTED = 'SUBMITTED',
+  CONFIRMED = 'CONFIRMED',
+
 }
 
-export class UpdateBookingDto {
+export class UpdateBookingAcceptOrRejectDto {
 
   @IsEnum(AllowedBookingStatus, {
     message: 'status must be either SUBMITTED',

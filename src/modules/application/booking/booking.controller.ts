@@ -115,6 +115,29 @@ export class BookingController {
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
   -----------------------------------------*/
 
+
+  // dashboard data for maid
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Get('maid/dashboard')
+  async getMaidDashboardData(
+    @Req() req
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.getMaidDashboardData(maidId);
+  }
+
+  // weekly statistics for maid
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Get('maid/weekly-statistics')
+  async getMaidWeeklyStatistics(
+    @Req() req
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.getMaidWeeklyStatistics(maidId);
+  }
+
   //  booking list pending for maid
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
@@ -211,27 +234,7 @@ export class BookingController {
     );
   }
 
-  // dashboard data for maid
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MAID)
-  @Get('maid/dashboard')
-  async getMaidDashboardData(
-    @Req() req
-  ) {
-    const maidId = req.user.userId;
-    return this.bookingService.getMaidDashboardData(maidId);
-  }
-
-  // weekly statistics for maid
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MAID)
-  @Get('maid/weekly-statistics')
-  async getMaidWeeklyStatistics(
-    @Req() req
-  ) {
-    const maidId = req.user.userId;
-    return this.bookingService.getMaidWeeklyStatistics(maidId);
-  }
+  
 
 
 }

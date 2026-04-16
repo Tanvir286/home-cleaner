@@ -524,6 +524,156 @@ export class BookingService {
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
   --------------------------------------------------*/
 
+  // dashboard data for maid
+  async getMaidDashboardData(maidId: string) {
+    const now = new Date();
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const [
+      monthlyEarningAgg,
+      thisMonthCompletedJobsCount,
+      totalCompletedJobsCount,
+      reviewStats,
+    ] = await this.prisma.$transaction([
+      this.prisma.booking.aggregate({
+        where: {
+          maid_id: maidId,
+          status: BookingStatus.COMPLETED,
+          booking_date: {
+            gte: startOfMonth,
+            lt: endOfMonth,
+          },
+        },
+        _sum: {
+          total_price: true,
+        },
+      }),
+      this.prisma.booking.count({
+        where: {
+          maid_id: maidId,
+          status: BookingStatus.COMPLETED,
+          booking_date: {
+            gte: startOfMonth,
+            lt: endOfMonth,
+          },
+        },
+      }),
+      this.prisma.booking.count({
+        where: {
+          maid_id: maidId,
+          status: BookingStatus.COMPLETED,
+        },
+      }),
+      this.prisma.review.aggregate({
+        where: { maid_id: maidId },
+        _avg: { rating: true },
+      }),
+    ]);
+
+    const monthlyEarnings = Number(monthlyEarningAgg._sum.total_price ?? 0);
+    const averageRating = Number(reviewStats._avg.rating ?? 0);
+
+    return {
+      success: true,
+      message: 'Maid dashboard data retrieved successfully',
+      data: {
+        monthlyEarnings,
+        jobsCompleted: totalCompletedJobsCount,
+        thisMonthJobsCompleted: thisMonthCompletedJobsCount,
+        rating: Number(averageRating.toFixed(1)),
+      },
+    };
+  }
+
+  // weekly statistics for maid
+  async getMaidWeeklyStatistics(maidId: string) {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+    const completedBookings = await this.prisma.booking.findMany({
+      where: {
+        maid_id: maidId,
+        status: BookingStatus.COMPLETED,
+        booking_date: {
+          gte: startOfWeek,
+          lt: endOfWeek,
+        },
+      },
+      select: {
+        booking_date: true,
+        slot: true,
+      },
+    });
+
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const fullWeekDayNames = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+
+    const slotDurationByHours = {
+      A: 2.5,
+      B: 2.5,
+      C: 2.5,
+      D: 3.5,
+    } as const;
+
+    const jobsByDay = Array(7).fill(0);
+    const hoursByDay = Array(7).fill(0);
+
+    for (const booking of completedBookings) {
+      const jsDay = booking.booking_date.getDay();
+      const mondayIndex = (jsDay + 6) % 7;
+      jobsByDay[mondayIndex] += 1;
+      hoursByDay[mondayIndex] += slotDurationByHours[booking.slot] ?? 0;
+    }
+
+    const jobsCompleted = completedBookings.length;
+
+    let longestDayIndex = -1;
+    let maxHours = 0;
+    for (let i = 0; i < hoursByDay.length; i++) {
+      if (hoursByDay[i] > maxHours) {
+        maxHours = hoursByDay[i];
+        longestDayIndex = i;
+      }
+    }
+
+    const insightText =
+      longestDayIndex === -1
+        ? 'No completed jobs this week yet.'
+        : `${fullWeekDayNames[longestDayIndex]} had your longest job!`;
+
+    return {
+      success: true,
+      message: 'Maid weekly statistics retrieved successfully',
+      data: {
+        title: jobsCompleted > 0 ? 'Great week!' : 'New week!',
+        jobsCompleted,
+        insightText,
+        weekChart: weekDays.map((day, index) => ({
+          day,
+          completedJobs: jobsByDay[index],
+        })),
+      },
+    };
+  }
+
   // booking list individual details for maid
   async getPendingBookingsForMaid(
     maidId: string,
@@ -821,153 +971,5 @@ export class BookingService {
     };
   }
 
-  // dashboard data for maid
-  async getMaidDashboardData(maidId: string) {
-    const now = new Date();
-
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-    const [
-      monthlyEarningAgg,
-      thisMonthCompletedJobsCount,
-      totalCompletedJobsCount,
-      reviewStats,
-    ] = await this.prisma.$transaction([
-      this.prisma.booking.aggregate({
-        where: {
-          maid_id: maidId,
-          status: BookingStatus.COMPLETED,
-          booking_date: {
-            gte: startOfMonth,
-            lt: endOfMonth,
-          },
-        },
-        _sum: {
-          total_price: true,
-        },
-      }),
-      this.prisma.booking.count({
-        where: {
-          maid_id: maidId,
-          status: BookingStatus.COMPLETED,
-          booking_date: {
-            gte: startOfMonth,
-            lt: endOfMonth,
-          },
-        },
-      }),
-      this.prisma.booking.count({
-        where: {
-          maid_id: maidId,
-          status: BookingStatus.COMPLETED,
-        },
-      }),
-      this.prisma.review.aggregate({
-        where: { maid_id: maidId },
-        _avg: { rating: true },
-      }),
-    ]);
-
-    const monthlyEarnings = Number(monthlyEarningAgg._sum.total_price ?? 0);
-    const averageRating = Number(reviewStats._avg.rating ?? 0);
-
-    return {
-      success: true,
-      message: 'Maid dashboard data retrieved successfully',
-      data: {
-        monthlyEarnings,
-        jobsCompleted: totalCompletedJobsCount,
-        thisMonthJobsCompleted: thisMonthCompletedJobsCount,
-        rating: Number(averageRating.toFixed(1)),
-      },
-    };
-  }
-
-  // weekly statistics for maid
-  async getMaidWeeklyStatistics(maidId: string) {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + diffToMonday);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
-
-    const completedBookings = await this.prisma.booking.findMany({
-      where: {
-        maid_id: maidId,
-        status: BookingStatus.COMPLETED,
-        booking_date: {
-          gte: startOfWeek,
-          lt: endOfWeek,
-        },
-      },
-      select: {
-        booking_date: true,
-        slot: true,
-      },
-    });
-
-    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const fullWeekDayNames = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-
-    const slotDurationByHours = {
-      A: 2.5,
-      B: 2.5,
-      C: 2.5,
-      D: 3.5,
-    } as const;
-
-    const jobsByDay = Array(7).fill(0);
-    const hoursByDay = Array(7).fill(0);
-
-    for (const booking of completedBookings) {
-      const jsDay = booking.booking_date.getDay();
-      const mondayIndex = (jsDay + 6) % 7;
-      jobsByDay[mondayIndex] += 1;
-      hoursByDay[mondayIndex] += slotDurationByHours[booking.slot] ?? 0;
-    }
-
-    const jobsCompleted = completedBookings.length;
-
-    let longestDayIndex = -1;
-    let maxHours = 0;
-    for (let i = 0; i < hoursByDay.length; i++) {
-      if (hoursByDay[i] > maxHours) {
-        maxHours = hoursByDay[i];
-        longestDayIndex = i;
-      }
-    }
-
-    const insightText =
-      longestDayIndex === -1
-        ? 'No completed jobs this week yet.'
-        : `${fullWeekDayNames[longestDayIndex]} had your longest job!`;
-
-    return {
-      success: true,
-      message: 'Maid weekly statistics retrieved successfully',
-      data: {
-        title: jobsCompleted > 0 ? 'Great week!' : 'New week!',
-        jobsCompleted,
-        insightText,
-        weekChart: weekDays.map((day, index) => ({
-          day,
-          completedJobs: jobsByDay[index],
-        })),
-      },
-    };
-  }
+  
 }
