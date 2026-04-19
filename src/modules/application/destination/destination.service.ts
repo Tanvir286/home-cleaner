@@ -15,6 +15,7 @@ import { UpdateLiveLocationDto } from './dto/update-live-location.dto';
 import { DestinationGateway } from './destination.gateway';
 import { Redis } from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
+import { title } from 'node:process';
 
 @Injectable()
 export class DestinationService {
@@ -27,10 +28,7 @@ export class DestinationService {
   private apiKey = appConfig().googleMaps.apiKey;
 
   // create destination for booking
-  async create(
-    createDestinationDto: CreateDestinationDto,
-    user_id: string
-  ) {
+  async create(createDestinationDto: CreateDestinationDto, user_id: string) {
     if (!this.apiKey) {
       throw new BadRequestException('Google Maps API key is not configured');
     }
@@ -40,8 +38,12 @@ export class DestinationService {
     const booking = await this.prisma.booking.findUnique({
       where: { id: booking_id },
       select: {
+        id: true,
         maid_location: true,
         homeowner_location: true,
+        general_cleaning_package_id: true,
+        deep_cleaning_package_id: true,
+        slot: true,
       },
     });
 
@@ -59,12 +61,28 @@ export class DestinationService {
 
     if (existingDestination) {
       const mapLink = generateGoogleMapLink(
-        { lat: existingDestination.pickup_lat, lng: existingDestination.pickup_lng },
-        { lat: existingDestination.dropoff_lat, lng: existingDestination.dropoff_lng },
+        {
+          lat: existingDestination.pickup_lat,
+          lng: existingDestination.pickup_lng,
+        },
+        {
+          lat: existingDestination.dropoff_lat,
+          lng: existingDestination.dropoff_lng,
+        },
       );
+
       return {
         message: 'Destination already exists for this booking',
         destination: existingDestination,
+        booking: {
+          id: booking.id,
+          title: booking.general_cleaning_package_id
+            ? 'General Cleaning'
+            : booking.deep_cleaning_package_id
+              ? 'Deep Cleaning'
+              : 'Unknown Service',
+          slot: booking.slot,
+        },
         map_link: mapLink,
       };
     }
@@ -132,6 +150,19 @@ export class DestinationService {
         pickup: pickupCoords,
         dropoff: dropoffCoords,
       },
+      location: {
+        pickup: booking.maid_location,
+        dropoff: booking.homeowner_location,
+      },
+      booking: {
+        id: booking.id,
+        title: booking.general_cleaning_package_id
+          ? 'General Cleaning'
+          : booking.deep_cleaning_package_id
+            ? 'Deep Cleaning'
+            : 'Unknown Service',
+        slot: booking.slot,
+      },
       distance_km: distanceInfo.distance_km,
       distance_text: distanceInfo.distance_text,
       duration: distanceInfo.duration_seconds,
@@ -139,8 +170,4 @@ export class DestinationService {
       map_link: mapLink,
     };
   }
-
-  
-  
-
 }

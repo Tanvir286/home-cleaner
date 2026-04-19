@@ -123,6 +123,9 @@ model User {
   //live location with user
   live_locations LiveLocation[]
 
+  // Danger notifications
+  danger_notifications DangerNotification[] @relation("DangerNotificationToUser")
+
   // recods created by user
 
 
@@ -229,6 +232,10 @@ model Booking {
 
   general_cleaning_package_id String?
   general_cleaning_package    GeneralCleaningPackage? @relation("GeneralCleaningPackageBookings", fields: [general_cleaning_package_id], references: [id], onDelete: Cascade)
+
+  // link to danger notification
+  danger_notification DangerNotification? @relation("DangerNotificationToBooking")
+
 
   booking_date DateTime @db.Date
   slot         Slot
@@ -573,5 +580,21 @@ model Testimonial {
 }
 
 
+model DangerNotification {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
 
+  current_address     String?
+
+  booking_id           String? @unique
+  booking               Booking? @relation("DangerNotificationToBooking", fields: [booking_id], references: [id])
+
+
+  user_id String?
+  user    User?   @relation("DangerNotificationToUser", fields: [user_id], references: [id])
+
+  @@map("danger_notifications")
+}
 
