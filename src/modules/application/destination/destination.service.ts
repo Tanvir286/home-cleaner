@@ -44,6 +44,15 @@ export class DestinationService {
         general_cleaning_package_id: true,
         deep_cleaning_package_id: true,
         slot: true,
+        // 👈 homeowner relation
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            location: true,
+          },
+        },
       },
     });
 
@@ -82,6 +91,16 @@ export class DestinationService {
               ? 'Deep Cleaning'
               : 'Unknown Service',
           slot: booking.slot,
+        },
+        homeowner: {
+          id: booking.user?.id,
+          name: booking.user?.name,
+          avatar: booking.user?.avatar,
+          location: booking.user?.location || booking.homeowner_location,
+        },
+        location: {
+          pickup: booking.maid_location,
+          dropoff: booking.homeowner_location,
         },
         map_link: mapLink,
       };
@@ -162,6 +181,12 @@ export class DestinationService {
             ? 'Deep Cleaning'
             : 'Unknown Service',
         slot: booking.slot,
+      },
+      homeowner: {
+        id: booking.user?.id,
+        name: booking.user?.name,
+        avatar: booking.user?.avatar,
+        location: booking.user?.location || booking.homeowner_location,
       },
       distance_km: distanceInfo.distance_km,
       distance_text: distanceInfo.distance_text,
