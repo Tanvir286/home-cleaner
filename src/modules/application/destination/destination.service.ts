@@ -31,6 +31,10 @@ export class DestinationService {
     createDestinationDto: CreateDestinationDto,
     user_id: string
   ) {
+    if (!this.apiKey) {
+      throw new BadRequestException('Google Maps API key is not configured');
+    }
+
     const { booking_id } = createDestinationDto;
 
     const booking = await this.prisma.booking.findUnique({
@@ -43,6 +47,10 @@ export class DestinationService {
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
+    }
+
+    if (!booking.maid_location || !booking.homeowner_location) {
+      throw new BadRequestException('Booking locations are incomplete');
     }
 
     const existingDestination = await this.prisma.destination.findFirst({
@@ -61,22 +69,36 @@ export class DestinationService {
       };
     }
 
-    // address -> lat,lng
-    const pickupCoords = await geocodeAddress(
-      booking.maid_location,
-      this.apiKey,
-    );
-    const dropoffCoords = await geocodeAddress(
-      booking.homeowner_location,
-      this.apiKey,
-    );
+    let pickupCoords: { lat: number; lng: number };
+    let dropoffCoords: { lat: number; lng: number };
+    let distanceInfo: {
+      distance_text: string;
+      distance_km: number;
+      duration_text: string;
+      duration_seconds: number;
+    };
 
-    // distance + driving time
-    const distanceInfo = await getDrivingDistance(
-      pickupCoords,
-      dropoffCoords,
-      this.apiKey,
-    );
+    try {
+      // address -> lat,lng
+      pickupCoords = await geocodeAddress(booking.maid_location, this.apiKey);
+      dropoffCoords = await geocodeAddress(
+        booking.homeowner_location,
+        this.apiKey,
+      );
+
+      // distance + driving time
+      distanceInfo = await getDrivingDistance(
+        pickupCoords,
+        dropoffCoords,
+        this.apiKey,
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown Google Maps error';
+      throw new BadGatewayException(
+        `Failed to resolve route from Google Maps: ${errorMessage}`,
+      );
+    }
     // map link
     const mapLink = generateGoogleMapLink(pickupCoords, dropoffCoords);
 

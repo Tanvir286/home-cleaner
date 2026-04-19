@@ -104,12 +104,7 @@ export class BookingService {
   }
 
   // available maids list
-  async getMaidSlots(
-    maidId: string, 
-    month: number, 
-    year: number
-  ) {
-
+  async getMaidSlots(maidId: string, month: number, year: number) {
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -200,14 +195,7 @@ export class BookingService {
 
   // create booking
   async create(userId: string, dto: CreateBookingDto) {
-    
-    const { 
-      maid_id, 
-      package_id, 
-      booking_date, 
-      slot, 
-      address
-    } = dto;
+    const { maid_id, package_id, booking_date, slot, address } = dto;
 
     const maid_location = await this.prisma.user.findUnique({
       where: { id: maid_id },
@@ -244,7 +232,6 @@ export class BookingService {
     }
 
     const booking = await this.prisma.$transaction(async (tx) => {
-  
       const deducted = await tx.user.updateMany({
         where: {
           id: userId,
@@ -305,10 +292,7 @@ export class BookingService {
   // get homeowner bookings list
   // * (pending,upcoming,completed,cancelled) status filter
   // service type,package type,price,address,booking date,slot
-  async getAllBookingsWithStatus(
-    userId: string, 
-    query: PaginationstausDto
-  ) {
+  async getAllBookingsWithStatus(userId: string, query: PaginationstausDto) {
     const { page, perPage, bookingStatus } = query;
 
     const skip = (page - 1) * perPage;
@@ -467,7 +451,6 @@ export class BookingService {
     bookingId: string,
     updateBookingDto: HomeownerUpdateBookingDto,
   ) {
-
     const { status } = updateBookingDto;
 
     const booking = await this.prisma.booking.findUnique({
@@ -479,7 +462,9 @@ export class BookingService {
     }
 
     if (booking.user_id !== userId) {
-      throw new BadRequestException("You are not authorized to cancel this booking");
+      throw new BadRequestException(
+        'You are not authorized to cancel this booking',
+      );
     }
 
     if (booking.status !== BookingStatus.PENDING) {
@@ -493,12 +478,10 @@ export class BookingService {
     const refundAmount = Number(booking.total_price ?? 0);
 
     const updatedBooking = await this.prisma.$transaction(async (tx) => {
-   
       const cancelledBooking = await tx.booking.update({
         where: { id: bookingId },
         data: { status },
       });
-      
 
       if (refundAmount > 0) {
         await tx.user.update({
@@ -795,7 +778,6 @@ export class BookingService {
     bookingId: string,
     dto: UpdateBookingAcceptOrRejectDto,
   ) {
-    
     const { status } = dto;
 
     const booking = await this.prisma.booking.findUnique({
@@ -842,7 +824,13 @@ export class BookingService {
       this.prisma.booking.findMany({
         where: whereClause,
         include: {
-          user: true,
+          user: {
+            include: {
+              _count: {
+                select: { homeownerReviews: true },
+              },
+            },
+          },
           general_cleaning_package: true,
           deep_cleaning_package: true,
           booking_reviews: {
@@ -852,64 +840,67 @@ export class BookingService {
             },
           },
         },
-        orderBy: {
-          booking_date: 'asc',
-        },
+        orderBy: { booking_date: 'asc' },
         skip,
         take: perPage,
       }),
     ]);
 
-    const formattedBookings = bookings.map((booking) => {
-      const packageData =
-        booking.general_cleaning_package || booking.deep_cleaning_package;
+    
+    const formattedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        const packageData =
+          booking.general_cleaning_package || booking.deep_cleaning_package;
+        const slotTime = bookingSlotTimeMap[booking.slot];
 
-      const serviceType = booking.general_cleaning_package
-        ? 'General Cleaning'
-        : 'Deep Cleaning';
+        const aggregateRating = await this.prisma.review.aggregate({
+          where: { homeowner_id: booking.user.id },
+          _avg: {
+            rating: true,
+          },
+        });
 
-      const slotTime = bookingSlotTimeMap[booking.slot];
+        const hasReview = booking.booking_reviews.length > 0;
 
-      const hasReview = booking.booking_reviews.length > 0;
-
-      return {
-        id: booking.id,
-        service: serviceType,
-        package: packageData?.packageType,
-
-        package_image: packageData?.image
-          ? TanvirStorage.url(
-              appConfig().storageUrl.package + '/' + packageData.image,
-            )
-          : null,
-
-        price: packageData?.price,
-        slot: booking.slot,
-        address: booking.homeowner_location,
-        time: `${slotTime.start} - ${slotTime.end}`,
-        booking_date: formatBookingDate(booking.booking_date),
-        status: booking.status,
-
-        user: {
-          id: booking.user.id,
-          name: booking.user.name,
-          avatar: booking.user.avatar
+        return {
+          id: booking.id,
+          service: booking.general_cleaning_package
+            ? 'General Cleaning'
+            : 'Deep Cleaning',
+          package: packageData?.packageType,
+          package_image: packageData?.image
             ? TanvirStorage.url(
-                appConfig().storageUrl.avatar + '/' + booking.user.avatar,
+                appConfig().storageUrl.package + '/' + packageData.image,
               )
             : null,
-        },
-
-        is_reviewed: hasReview,
-
-        review: hasReview
-          ? {
-              rating: booking.booking_reviews[0].rating,
-              comment: booking.booking_reviews[0].comment,
-            }
-          : null,
-      };
-    });
+          price: packageData?.price,
+          slot: booking.slot,
+          address: booking.homeowner_location,
+          time: `${slotTime.start} - ${slotTime.end}`,
+          booking_date: formatBookingDate(booking.booking_date),
+          status: booking.status,
+          homeowner: {
+            id: booking.user.id,
+            name: booking.user.name,
+            location: booking.user.location,
+            avatar: booking.user.avatar
+              ? TanvirStorage.url(
+                  appConfig().storageUrl.avatar + '/' + booking.user.avatar,
+                )
+              : null,
+            rating: Number(aggregateRating._avg.rating?.toFixed(1)) || 0,
+            total_reviews: booking.user._count.homeownerReviews,
+          },
+          is_reviewed: hasReview,
+          review: hasReview
+            ? {
+                rating: booking.booking_reviews[0].rating,
+                comment: booking.booking_reviews[0].comment,
+              }
+            : null,
+        };
+      }),
+    );
 
     return {
       success: true,
@@ -972,6 +963,4 @@ export class BookingService {
       },
     };
   }
-
-  
 }
