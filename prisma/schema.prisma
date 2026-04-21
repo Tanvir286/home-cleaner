@@ -171,6 +171,7 @@ enum Slot {
 enum BookingStatus {
   PENDING
   CONFIRMED
+  STARTED 
   SUBMITTED
   COMPLETED
   REJECTED

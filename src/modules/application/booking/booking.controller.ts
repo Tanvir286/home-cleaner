@@ -29,6 +29,9 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
+import {
+  StartedBookingDto,
+} from './dto/started-booking.dto';
 
 @ApiTags('Booking')
 @Controller('booking')
@@ -41,9 +44,7 @@ export class BookingController {
 
   // available maids list
   @Get('available-maidlist')
-  async getAvailableMaids(
-    @Query() paginationDto: PaginationDto
-  ) {
+  async getAvailableMaids(@Query() paginationDto: PaginationDto) {
     return this.bookingService.getAvailableMaids(paginationDto);
   }
 
@@ -65,9 +66,7 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Post()
-  async createBooking(
-    @Body() createBookingDto: CreateBookingDto, 
-    @Req() req) {
+  async createBooking(@Body() createBookingDto: CreateBookingDto, @Req() req) {
     const userId = req.user.userId;
     return this.bookingService.create(userId, createBookingDto);
   }
@@ -77,23 +76,16 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Get('homeowner/bookings-by-status')
-  async getBookingsByStatus(
-    @Req() req, 
-    @Query() query: PaginationstausDto) {
+  async getBookingsByStatus(@Req() req, @Query() query: PaginationstausDto) {
     const userId = req.user.userId;
-    return this.bookingService.getAllBookingsWithStatus(
-      userId, 
-      query
-    );
+    return this.bookingService.getAllBookingsWithStatus(userId, query);
   }
 
   // get every booking details information
   @Get('details/:id')
-  async getBookingDetails(
-    @Param('id') id: string) {
+  async getBookingDetails(@Param('id') id: string) {
     return this.bookingService.getBookingDetails(id);
   }
-
 
   // booking cancel by homeowner  @UseGuards(JwtAuthGuard, RolesGuard)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -104,11 +96,11 @@ export class BookingController {
     @Param('id') id: string,
     @Body() updateBookingDto: HomeownerUpdateBookingDto,
   ) {
-    const userId = req.user.userId; 
+    const userId = req.user.userId;
     return this.bookingService.updateBookingStatusByHomeowner(
-      userId, 
-      id, 
-      updateBookingDto
+      userId,
+      id,
+      updateBookingDto,
     );
   }
 
@@ -116,14 +108,11 @@ export class BookingController {
   // topic:﹝﹝﹝ maid part ﹞﹞﹞
   -----------------------------------------*/
 
-
   // dashboard data for maid
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Get('maid/dashboard')
-  async getMaidDashboardData(
-    @Req() req
-  ) {
+  async getMaidDashboardData(@Req() req) {
     const maidId = req.user.userId;
     return this.bookingService.getMaidDashboardData(maidId);
   }
@@ -132,9 +121,7 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Get('maid/weekly-statistics')
-  async getMaidWeeklyStatistics(
-    @Req() req
-  ) {
+  async getMaidWeeklyStatistics(@Req() req) {
     const maidId = req.user.userId;
     return this.bookingService.getMaidWeeklyStatistics(maidId);
   }
@@ -148,20 +135,14 @@ export class BookingController {
     @Query() paginationDto: PaginationDto,
   ) {
     const maidId = req.user.userId;
-    return this.bookingService.getPendingBookingsForMaid(
-      maidId, 
-      paginationDto
-    );
+    return this.bookingService.getPendingBookingsForMaid(maidId, paginationDto);
   }
 
   // booking list individual details for maid
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Get('maid/booking-details/:id')
-  async getBookingDetailsForMaid(
-    @Req() req, 
-    @Param('id') id: string
-  ) {
+  async getBookingDetailsForMaid(@Req() req, @Param('id') id: string) {
     return this.bookingService.getBookingDetailsForMaid(id);
   }
 
@@ -196,9 +177,23 @@ export class BookingController {
     @Query() query: PaginationstausDto,
   ) {
     const maidId = req.user.userId;
-    return this.bookingService.getBookingsByStatusForMaid(
+    return this.bookingService.getBookingsByStatusForMaid(maidId, query);
+  }
+
+  // booking started by maid
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Patch('maid/started-booking/:id')
+  async startBookingByMaid(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() StartedBookingDto: StartedBookingDto,
+  ) {
+    const maidId = req.user.userId;
+    return this.bookingService.startBookingByMaid(
       maidId,
-       query
+      id,
+      StartedBookingDto,
     );
   }
 
@@ -237,8 +232,4 @@ export class BookingController {
       imageFiles?.after_photos ?? [],
     );
   }
-
-  
-
-
 }

@@ -12,7 +12,10 @@ export class ProfileService {
   // topic: maid part)---------->
 
   // maid availability toggle
-  async toggleAvailability(userId: string) {
+  async toggleAvailability(
+    userId: string
+  ) {
+  
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { availability: true },
@@ -36,10 +39,13 @@ export class ProfileService {
       success: true,
       message: `Availability toggled to ${newAvailability}`,
     };
+
   }
 
   // get profile details
-  async getProfileDetails(userId: string) {
+  async getProfileDetails(
+    userId: string
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {

@@ -3,10 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginationDto, paginateResponse } from 'src/common/pagination';
-
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { PaginationstausDto } from './dto/params-booking.dto';
@@ -24,6 +22,7 @@ import appConfig from 'src/config/app.config';
 import { BookingStatus } from '@prisma/client';
 import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
+import { StartedBookingDto } from './dto/started-booking.dto';
 
 @Injectable()
 export class BookingService {
@@ -810,7 +809,10 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-  async getBookingsByStatusForMaid(maidId: string, query: PaginationstausDto) {
+  async getBookingsByStatusForMaid(
+    maidId: string, 
+    query: PaginationstausDto
+  ) {
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
@@ -907,6 +909,45 @@ export class BookingService {
       message: `Bookings with status ${bookingStatus} retrieved successfully`,
       data: paginateResponse(formattedBookings, total, page, perPage),
     };
+  }
+
+  // booking start by maid
+  async startBookingByMaid(
+    maidId: string,
+    bookingId: string,
+    updateBookingDto: StartedBookingDto,
+  ) {
+   
+    const { status } = updateBookingDto;
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+    if (booking.maid_id !== maidId) {
+      throw new BadRequestException(
+        'You are not authorized to update this booking',
+      );
+    }
+
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException('Only confirmed bookings can be started');
+    }
+
+    const updatedBooking = await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+    });
+
+    return {
+      success: true,
+      message: `Booking status updated to ${status.toLowerCase()} successfully`,
+      data: updatedBooking,
+    };
+
   }
 
   // booking complete by maid
