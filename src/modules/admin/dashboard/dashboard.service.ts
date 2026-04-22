@@ -80,9 +80,7 @@ export class DashboardService {
   --------------------------------------------*/
 
   // get all homeowners with details
-  async getAllHomeowners(
-    paginationDto: PaginationDto
-  ) {
+  async getAllHomeowners(paginationDto: PaginationDto) {
     try {
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
@@ -148,7 +146,8 @@ export class DashboardService {
 
       return {
         success: true,
-        ...paginateResponse(data, total, page, perPage),
+        message: `Homeowners retrieved successfully`,
+        data: paginateResponse(data, page, perPage, total),
       };
     } catch (error: any) {
       return {
@@ -160,7 +159,7 @@ export class DashboardService {
 
   /*--------------------------------------------
             Clearner LIST WITH DETAILS
-  --------------------------------------------*/ 
+  --------------------------------------------*/
 
   // get all cleaners with details
   async getAllCleaners(paginationDto: PaginationDto) {
@@ -169,19 +168,12 @@ export class DashboardService {
       const perPage = paginationDto.perPage || 10;
       const skip = (page - 1) * perPage;
 
-      const whereCondition = {
-        type: UserType.MAID,
-        deleted_at: null,
-      };
-
-      const [total, cleaners] = await this.prisma.$transaction([
-        this.prisma.user.count({
-          where: whereCondition,
-        }),
+      const [cleaners, total] = await Promise.all([
         this.prisma.user.findMany({
-          where: whereCondition,
-          skip,
-          take: perPage,
+          where: {
+            type: UserType.MAID,
+            deleted_at: null,
+          },
           select: {
             id: true,
             name: true,
@@ -189,27 +181,34 @@ export class DashboardService {
             phone_number: true,
             avatar: true,
             status: true,
+            availability: true,
             created_at: true,
-            maidReviews: {
-              where: {
-                deleted_at: null,
-              },
-              select: {
-                rating: true,
-              },
-            },
+
             maidBookings: {
-              where: {
-                deleted_at: null,
-              },
+              where: { deleted_at: null },
               select: {
+                id: true,
                 status: true,
                 total_price: true,
               },
             },
+
+            maidReviews: {
+              where: { deleted_at: null },
+              select: {
+                rating: true,
+              },
+            },
           },
-          orderBy: {
-            created_at: 'desc',
+          orderBy: { created_at: 'desc' },
+          skip,
+          take: perPage,
+        }),
+
+        this.prisma.user.count({
+          where: {
+            type: UserType.MAID,
+            deleted_at: null,
           },
         }),
       ]);
@@ -218,40 +217,34 @@ export class DashboardService {
         const totalJobs = cleaner.maidBookings.length;
 
         const completedJobs = cleaner.maidBookings.filter(
-          (booking) => booking.status === BookingStatus.COMPLETED,
+          (b) => b.status === BookingStatus.COMPLETED,
         ).length;
-
-        const activeJobs = cleaner.maidBookings.filter((booking) =>
-          [
-            BookingStatus.CONFIRMED,
-            BookingStatus.STARTED,
-            BookingStatus.SUBMITTED,
-          ].includes(booking.status),
-        ).length;
-
-        const totalEarnings = cleaner.maidBookings.reduce((sum, booking) => {
-          if (booking.status !== BookingStatus.COMPLETED) {
-            return sum;
-          }
-
-          return sum + Number(booking.total_price ?? 0);
-        }, 0);
-
-        const ratings = cleaner.maidReviews
-          .map((review) => Number(review.rating ?? 0))
-          .filter((rating) => rating > 0);
-
-        const averageRating = ratings.length
-          ? Number(
-              (
-                ratings.reduce((sum, rating) => sum + rating, 0) /
-                ratings.length
-              ).toFixed(1),
-            )
-          : 0;
 
         const completionRate =
           totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0;
+
+        const totalEarnings = cleaner.maidBookings
+          .filter((b) => b.status === BookingStatus.COMPLETED)
+          .reduce((sum, b) => sum + Number(b.total_price ?? 0), 0);
+
+        const ratings = cleaner.maidReviews
+          .map((r) => r.rating)
+          .filter((r): r is number => r !== null);
+
+        const avgRating =
+          ratings.length > 0
+            ? Math.round(
+                (ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10,
+              ) / 10
+            : 0;
+
+        // status: availability false হলে "busy", status 0 হলে "inactive", বাকি "active"
+        let statusLabel: 'active' | 'inactive';
+        if (cleaner.status !== 1) {
+          statusLabel = 'inactive';
+        } else {
+          statusLabel = 'active';
+        }
 
         return {
           id: cleaner.id,
@@ -259,35 +252,31 @@ export class DashboardService {
           email: cleaner.email,
           phone_number: cleaner.phone_number,
           avatar: cleaner.avatar,
-          rating: averageRating,
-          rating_count: ratings.length,
+          joined_at: cleaner.created_at,
+          rating: avgRating,
+          total_reviews: ratings.length,
           jobs: {
             completed: completedJobs,
             total: totalJobs,
             completion_rate: completionRate,
           },
           earnings: totalEarnings,
-          status:
-            cleaner.status !== 1
-              ? 'inactive'
-              : activeJobs > 0
-                ? 'busy'
-                : 'active',
-          joined_at: cleaner.created_at,
+          status: statusLabel,
         };
       });
 
       return {
         success: true,
-        ...paginateResponse(data, total, page, perPage),
+        message: `Cleaners retrieved successfully`,
+        data: paginateResponse(data, page, perPage, total),
       };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.message,
-      };
+    } catch (error) {
+      throw error;
     }
   }
+
+  
+
 
 
 }
