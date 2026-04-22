@@ -147,7 +147,7 @@ export class DashboardService {
       return {
         success: true,
         message: `Homeowners retrieved successfully`,
-        data: paginateResponse(data, page, perPage, total),
+        data: paginateResponse(data, total, page, perPage),
       };
     } catch (error: any) {
       return {
@@ -268,15 +268,124 @@ export class DashboardService {
       return {
         success: true,
         message: `Cleaners retrieved successfully`,
-        data: paginateResponse(data, page, perPage, total),
+        data: paginateResponse(data, total, page, perPage),
       };
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
     }
   }
 
-  
+   /*--------------------------------------------
+            Booking  WITH DETAILS
+  --------------------------------------------*/
 
+  // get all bookings with details
+  async getAllBookings(paginationDto: PaginationDto) {
+    try {
+      const page = paginationDto.page || 1;
+      const perPage = paginationDto.perPage || 10;
+      const skip = (page - 1) * perPage;
 
+      const whereCondition = {
+        deleted_at: null,
+      };
 
+      const [bookings, total] = await Promise.all([
+        this.prisma.booking.findMany({
+          where: whereCondition,
+          skip,
+          take: perPage,
+          orderBy: {
+            created_at: 'desc',
+          },
+          select: {
+            id: true,
+            created_at: true,
+            booking_date: true,
+            slot: true,
+            homeowner_location: true,
+            status: true,
+            total_price: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                location: true,
+              },
+            },
+            maid: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            general_cleaning_package: {
+              select: {
+                title: true,
+                duration: true,
+              },
+            },
+            deep_cleaning_package: {
+              select: {
+                title: true,
+                duration: true,
+              },
+            },
+          },
+        }),
+        this.prisma.booking.count({
+          where: whereCondition,
+        }),
+      ]);
+
+      const slotTimeMap = {
+        A: '07:30 AM',
+        B: '11:00 AM',
+        C: '01:30 PM',
+        D: '04:00 PM',
+      };
+
+      const statusMap = {
+        [BookingStatus.PENDING]: 'pending',
+        [BookingStatus.CONFIRMED]: 'confirmed',
+        [BookingStatus.STARTED]: 'in-progress',
+        [BookingStatus.SUBMITTED]: 'in-progress',
+        [BookingStatus.COMPLETED]: 'completed',
+        [BookingStatus.REJECTED]: 'rejected',
+        [BookingStatus.CANCELLED]: 'cancelled',
+      };
+
+      const data = bookings.map((booking, index) => {
+        const serviceInfo =
+          booking.general_cleaning_package || booking.deep_cleaning_package;
+
+        return {
+          id: booking.id,
+          homeowner_name: booking.user?.name || 'Unknown',
+          cleaner_name: booking.maid?.name || 'Unknown',
+          booking_date: booking.booking_date,
+          booking_time: slotTimeMap[booking.slot] || booking.slot,
+          location: booking.homeowner_location || booking.user?.location || null,
+          service_name: serviceInfo?.title || 'Cleaning Service',
+          service_duration: serviceInfo?.duration || null,
+          amount: Number(booking.total_price ?? 0),
+          status: statusMap[booking.status] || String(booking.status).toLowerCase(),
+        };
+      });
+
+      return {
+        success: true,
+        message: 'Bookings retrieved successfully',
+        data: paginateResponse(data, total, page, perPage),
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
 }
