@@ -23,7 +23,22 @@ export class DashboardController {
     return this.dashboardService.getOverview();
   }
 
+  // recent activities
+  // only activity (mane j j jabe tar vitor notification moto takbe)
+
+
+
+  /*--------------------------------------------
+            HOMEOWNER LIST WITH DETAILS
+  --------------------------------------------*/
+
+  // get all homeowners with details
+  @Get('homeowners/details')
+  async getAllHomeowners() {
+    return this.dashboardService.getAllHomeowners();
+  }
   
+          
    
 
   
