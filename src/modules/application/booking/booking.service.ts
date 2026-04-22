@@ -927,6 +927,7 @@ export class BookingService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
+    
     if (booking.maid_id !== maidId) {
       throw new BadRequestException(
         'You are not authorized to update this booking',

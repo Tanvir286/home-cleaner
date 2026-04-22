@@ -83,7 +83,9 @@ export class BookingController {
 
   // get every booking details information
   @Get('details/:id')
-  async getBookingDetails(@Param('id') id: string) {
+  async getBookingDetails(
+    @Param('id') id: string
+  ) {
     return this.bookingService.getBookingDetails(id);
   }
 
@@ -183,7 +185,7 @@ export class BookingController {
   // booking started by maid
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
-  @Patch('maid/started-booking/:id')
+  @Patch('maid/start-booking/:id')
   async startBookingByMaid(
     @Req() req,
     @Param('id') id: string,
