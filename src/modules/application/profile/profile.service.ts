@@ -12,10 +12,7 @@ export class ProfileService {
   // topic: maid part)---------->
 
   // maid availability toggle
-  async toggleAvailability(
-    userId: string
-  ) {
-  
+  async toggleAvailability(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { availability: true },
@@ -39,13 +36,10 @@ export class ProfileService {
       success: true,
       message: `Availability toggled to ${newAvailability}`,
     };
-
   }
 
   // get profile details
-  async getProfileDetails(
-    userId: string
-  ) {
+  async getProfileDetails(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -367,10 +361,8 @@ export class ProfileService {
 
     if (dto.location !== undefined) userData.location = dto.location;
     if (dto.about_me !== undefined) userData.about_me = dto.about_me;
-    if (dto.service_type !== undefined)
-      userData.service_type = dto.service_type;
-    if (dto.experience_years !== undefined)
-      userData.experience_years = dto.experience_years;
+    if (dto.service_type !== undefined) userData.service_type = dto.service_type;
+    if (dto.experience_years !== undefined) userData.experience_years = dto.experience_years;
 
     // -------- image --------
 

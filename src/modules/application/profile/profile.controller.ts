@@ -28,7 +28,6 @@ export class ProfileController {
   // topic: maid part  ---------->
   -----------------------------------------------*/
 
-
   // maid availability toggle
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)

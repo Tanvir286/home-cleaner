@@ -23,6 +23,7 @@ import { BookingStatus } from '@prisma/client';
 import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
 import { StartedBookingDto } from './dto/started-booking.dto';
+import { DangerDto } from './dto/danger.dto';
 
 @Injectable()
 export class BookingService {
@@ -809,10 +810,7 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-  async getBookingsByStatusForMaid(
-    maidId: string, 
-    query: PaginationstausDto
-  ) {
+  async getBookingsByStatusForMaid(maidId: string, query: PaginationstausDto) {
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
@@ -848,7 +846,6 @@ export class BookingService {
       }),
     ]);
 
-    
     const formattedBookings = await Promise.all(
       bookings.map(async (booking) => {
         const packageData =
@@ -917,7 +914,6 @@ export class BookingService {
     bookingId: string,
     updateBookingDto: StartedBookingDto,
   ) {
-   
     const { status } = updateBookingDto;
 
     const booking = await this.prisma.booking.findUnique({
@@ -927,7 +923,7 @@ export class BookingService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    
+
     if (booking.maid_id !== maidId) {
       throw new BadRequestException(
         'You are not authorized to update this booking',
@@ -948,7 +944,6 @@ export class BookingService {
       message: `Booking status updated to ${status.toLowerCase()} successfully`,
       data: updatedBooking,
     };
-
   }
 
   // booking complete by maid
@@ -1005,4 +1000,125 @@ export class BookingService {
       },
     };
   }
+
+  /*----------------------------------------
+  // topic:﹝﹝﹝ danger part ﹞﹞﹞
+  -----------------------------------------*/
+
+  // create danger booking
+  async createDangerBooking(maidId: string, bookingId: string) {
+  
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        maid_id: true,
+
+        danger_notification: {
+          select: {
+            id: true,
+            booking_id: true,
+            user_id: true,
+            latitude: true,
+            longitude: true,
+            created_at: true,
+          },
+        },
+
+        live_locations: {
+          where: {
+            user_id: maidId,
+          },
+          orderBy: {
+            updated_at: 'desc',
+          },
+          take: 1,
+          select: {
+            latitude: true,
+            longitude: true,
+            updated_at: true,
+          },
+        },
+
+        booking_destinations: {
+          where: {
+            user_id: maidId,
+          },
+          orderBy: {
+            updated_at: 'desc',
+          },
+          take: 1,
+          select: {
+            pickup_lat: true,
+            pickup_lng: true,
+            dropoff_lat: true,
+            dropoff_lng: true,
+            distance_km: true,
+            distance_text: true,
+            duration_min: true,
+          },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.maid_id !== maidId) {
+      throw new BadRequestException(
+        'You are not authorized to report danger for this booking',
+      );
+    }
+
+    const latestLiveLocation = booking.live_locations[0];
+
+    if (!latestLiveLocation) {
+      throw new NotFoundException('Live location not found for this booking');
+    }
+
+    const destination = booking.booking_destinations[0] ?? null;
+
+    if (booking.danger_notification) {
+      return {
+        success: true,
+        message: 'Danger alert already exists for this booking',
+        data: {
+          danger: booking.danger_notification,
+          maid_live_location: latestLiveLocation,
+          destination,
+        },
+      };
+    }
+
+    const danger = await this.prisma.danger.create({
+      data: {
+        booking_id: booking.id,
+        user_id: maidId,
+        latitude: latestLiveLocation.latitude,
+        longitude: latestLiveLocation.longitude,
+      },
+      select: {
+        id: true,
+        booking_id: true,
+        user_id: true,
+        latitude: true,
+        longitude: true,
+        created_at: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Danger alert created successfully',
+      data: {
+        danger,
+        maid_live_location: latestLiveLocation,
+        destination,
+      },
+    };
+  }
+
+
+  
 }

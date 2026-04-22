@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/* ----------------------------------------
+          User Deatils Part Start 
+-----------------------------------------*/
+
 model Account {
   id         String   @id @default(cuid())
   created_at DateTime @default(now())
@@ -124,10 +128,9 @@ model User {
   live_locations LiveLocation[]
 
   // Danger notifications
-  danger_notifications DangerNotification[] @relation("DangerNotificationToUser")
+  danger_notifications Danger[] @relation("DangerNotificationToUser")
 
   // recods created by user
-
 
   @@map("users")
 }
@@ -148,6 +151,13 @@ model Ucode {
 
   @@map("ucodes")
 }
+
+/* ----------------------------------------
+          User Deatils Part End 
+-----------------------------------------*/
+/* ----------------------------------------
+          Booking Part Start 
+-----------------------------------------*/
 
 enum serviceType {
   GENERAL_CLEANING
@@ -235,7 +245,7 @@ model Booking {
   general_cleaning_package    GeneralCleaningPackage? @relation("GeneralCleaningPackageBookings", fields: [general_cleaning_package_id], references: [id], onDelete: Cascade)
 
   // link to danger notification
-  danger_notification DangerNotification? @relation("DangerNotificationToBooking")
+  danger_notification Danger? @relation("DangerNotificationToBooking")
 
 
   booking_date DateTime @db.Date
@@ -284,6 +294,27 @@ model Destination {
   @@map("destinations")
 }
 
+// danger notification
+
+model Danger {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  latitude  Float
+  longitude Float
+
+  booking_id           String? @unique
+  booking               Booking? @relation("DangerNotificationToBooking", fields: [booking_id], references: [id], onDelete: Cascade)
+
+  user_id String?
+  user    User?   @relation("DangerNotificationToUser", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("danger")
+}
+
+
 model LiveLocation {
   id         String   @id @default(cuid())
   created_at DateTime @default(now())
@@ -324,6 +355,14 @@ model Review {
   @@index([booking_id])
   @@map("reviews")
 }
+
+/* ----------------------------------------
+          Booking Part  End
+-----------------------------------------*/
+/* ----------------------------------------
+          Conversation Part start
+-----------------------------------------*/
+
 
 model Conversation {
   id           String        @id @default(cuid())
@@ -373,6 +412,14 @@ model Message {
   attachments String[] @db.Text
 }
 
+/* ----------------------------------------
+          Conversation Part  End
+-----------------------------------------*/
+/* ----------------------------------------
+          Notification Part start
+-----------------------------------------*/
+
+
 model NotificationEvent {
   id            String         @id @default(uuid())
   created_at    DateTime       @default(now())
@@ -404,6 +451,10 @@ model Notification {
 
   entity_id String?
 }
+
+/* ----------------------------------------
+          Notification Part End
+-----------------------------------------*/
 
 model Role {
   id         String    @id @default(cuid())
@@ -581,21 +632,4 @@ model Testimonial {
 }
 
 
-model DangerNotification {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  current_address     String?
-
-  booking_id           String? @unique
-  booking               Booking? @relation("DangerNotificationToBooking", fields: [booking_id], references: [id])
-
-
-  user_id String?
-  user    User?   @relation("DangerNotificationToUser", fields: [user_id], references: [id])
-
-  @@map("danger_notifications")
-}
 
