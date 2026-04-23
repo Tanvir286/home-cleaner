@@ -9,11 +9,12 @@ import {
   Req,
   Res,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { memoryStorage } from 'multer';
@@ -23,6 +24,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Role } from 'src/common/guard/role/role.enum';
+import { Roles } from 'src/common/guard/role/roles.decorator';
+import { RolesGuard } from 'src/common/guard/role/roles.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -345,6 +349,80 @@ export class AuthController {
       };
     }
   }
+
+  /*----------------------------------------------
+  // topic: maid Verification Part Start ---------->
+  -----------------------------------------------*/
+
+  // submit verification
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Post('maid/verification') 
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'front_page', maxCount: 1 },
+        { name: 'back_page', maxCount: 1 },
+      ],
+      {
+        storage: memoryStorage(),
+        limits: {
+          fileSize: 5 * 1024 * 1024,
+        },
+      },
+    ),
+  )
+  async submitVerification(
+    @Req() req: Request,
+    @UploadedFiles()
+    files: {
+      front_page?: Express.Multer.File[];
+      back_page?: Express.Multer.File[];
+    },
+  ) {
+    try {
+      const user_id = req.user.userId;
+      const frontPageImage = files?.front_page ? files.front_page[0] : null;
+      const backImage = files?.back_page ? files.back_page[0] : null;
+
+      const response = await this.authService.submitVerification(
+        user_id,
+        frontPageImage,
+        backImage,
+      );
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        message: 'Failed to submit verification',
+      };
+    }
+  }
+
+  // get verification status
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MAID)
+  @Get('maid/verification/status')
+  async getVerificationStatus(@Req() req: Request) {
+    try {
+      const user_id = req.user.userId;
+      const response = await this.authService.getVerificationStatus(user_id);
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        message: 'Failed to get verification status',
+      };
+    }
+  }
+  
+
+
+  /*----------------------------------------------
+  // topic: maid Verification Part End ---------->
+  -----------------------------------------------*/
+
   //-----------------------------------------------(end)----------------------------------------------------------------------
 
   @ApiOperation({ summary: 'Refresh token' })

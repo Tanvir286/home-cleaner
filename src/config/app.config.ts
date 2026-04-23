@@ -90,8 +90,10 @@ export default () => ({
     destination: '/destination',
     blog: '/blog',
     avatar: '/avatar',
+    verification: '/verification',
     portfolio: '/portfolio',
     websiteInfo: '/website-info',
+    maidverification: '/maid-verification',
     // chat
     attachment: 'attachment/',
     jobPhoto: 'job-photo/',

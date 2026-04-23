@@ -70,7 +70,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -176,7 +176,7 @@ export class AuthService {
         success: true,
         message: 'We have sent an OTP code to your email',
       };
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -221,7 +221,7 @@ export class AuthService {
         },
         type: user.type,
       };
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -260,7 +260,7 @@ export class AuthService {
         success: true,
         message: 'FCM token saved successfully',
       };
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -325,7 +325,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -362,7 +362,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -399,7 +399,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -485,7 +485,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -521,7 +521,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -570,7 +570,7 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -609,13 +609,126 @@ export class AuthService {
           message: 'Email not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
       };
     }
   }
+
+  /*----------------------------------------------
+  // topic: maid Verification Part Start ---------->
+  -----------------------------------------------*/
+  // submit verification
+  async submitVerification(
+    userId: string,
+    front_page?: Express.Multer.File,
+    back_page?: Express.Multer.File,
+  ) {
+    try {
+      const data: any = {};
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, type: true },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found',
+        };
+      }
+
+      if (user.type !== 'MAID') {
+        return {
+          success: false,
+          message: 'Only maid can submit verification',
+        };
+      }
+
+      if (!front_page || !back_page) {
+        return {
+          success: false,
+          message: 'front_page and back_page are required',
+        };
+      }
+
+      const existingVerification = await this.prisma.maidVerification.findFirst(
+        {
+          where: { user_id: userId },
+          orderBy: { created_at: 'desc' },
+        },
+      );
+
+      if (existingVerification && existingVerification.status === 'PENDING') {
+        return {
+          success: false,
+          message:
+            'You already have a pending verification. Please wait for it to be reviewed before submitting a new one.',
+          data: {
+            id: existingVerification.id,
+            status: existingVerification.status,
+          },
+        };
+      }
+
+      if (front_page && back_page) {
+        // upload front page
+        const frontFileName = `${StringHelper.randomString()}_${front_page.originalname}`;
+        await TanvirStorage.put(
+          appConfig().storageUrl.maidverification + '/' + frontFileName,
+          front_page.buffer,
+        );
+        data.id_card_front = frontFileName;
+
+        // upload back page
+        const backFileName = `${StringHelper.randomString()}_${back_page.originalname}`;
+        await TanvirStorage.put(
+          appConfig().storageUrl.maidverification + '/' + backFileName,
+          back_page.buffer,
+        );
+        data.id_card_back = backFileName;
+      }
+
+      await this.prisma.maidVerification.create({
+        data: {
+          user_id: userId,
+          id_card_front: data.id_card_front,
+          id_card_back: data.id_card_back,
+          status: 'PENDING',
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Verification submitted successfully',
+        data: {
+          front_page_url: TanvirStorage.url(
+            appConfig().storageUrl.maidverification + '/' + data.id_card_front,
+          ),
+          back_page_url: TanvirStorage.url(
+            appConfig().storageUrl.maidverification + '/' + data.id_card_back,
+          ),
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+  
+  // get verification status
+  async getVerificationStatus(userId: string) {
+   
+  }
+
+  /*----------------------------------------------
+  // topic: maid Verification Part End ---------->
+  -----------------------------------------------*/
 
   // ---------------------------------(end)---------------------------------------
 
@@ -659,7 +772,7 @@ export class AuthService {
           access_token: accessToken,
         },
       };
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -683,7 +796,7 @@ export class AuthService {
         success: true,
         message: 'Refresh token revoked successfully',
       };
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -717,7 +830,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -772,7 +885,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -844,7 +957,7 @@ export class AuthService {
   async generate2FASecret(user_id: string) {
     try {
       return await this.userRepository.generate2FASecret(user_id);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -865,7 +978,7 @@ export class AuthService {
         success: true,
         message: '2FA verified successfully',
       };
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -888,7 +1001,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -911,7 +1024,7 @@ export class AuthService {
           message: 'User not found',
         };
       }
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
