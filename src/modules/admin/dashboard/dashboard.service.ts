@@ -74,6 +74,7 @@ export class DashboardService {
   }
 
   // recent activities (only notifications)
+  // only activity (mane j j jabe tar vitor notification moto takbe)
 
   /*--------------------------------------------
             HOMEOWNER LIST WITH DETAILS
@@ -86,9 +87,27 @@ export class DashboardService {
       const perPage = paginationDto.perPage || 10;
       const skip = (page - 1) * perPage;
 
-      const whereCondition = {
+      const search = paginationDto.search?.trim();
+      const orderby = paginationDto.orderby || 'name';
+
+      const whereCondition: any = {
         type: UserType.HOMEOWNER,
-        deleted_at: null,
+        ...(search && {
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
       };
 
       const [total, homeowners] = await this.prisma.$transaction([
@@ -117,12 +136,13 @@ export class DashboardService {
             },
           },
           orderBy: {
-            created_at: 'desc',
+            [orderby]: 'asc',
           },
         }),
       ]);
 
       const data = homeowners.map((homeowner) => {
+        
         const totalBookings = homeowner.userBookings.length;
 
         const totalSpent = homeowner.userBookings.reduce(
@@ -168,12 +188,33 @@ export class DashboardService {
       const perPage = paginationDto.perPage || 10;
       const skip = (page - 1) * perPage;
 
+      const search = paginationDto.search?.trim();
+      const orderby = paginationDto.orderby || 'name';
+
+      const whereCondition: any = {
+        type: UserType.MAID,
+        ...(search && {
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
+      };
+
+
       const [cleaners, total] = await Promise.all([
         this.prisma.user.findMany({
-          where: {
-            type: UserType.MAID,
-            deleted_at: null,
-          },
+          where: whereCondition,
           select: {
             id: true,
             name: true,
@@ -200,16 +241,14 @@ export class DashboardService {
               },
             },
           },
-          orderBy: { created_at: 'desc' },
+          orderBy: {
+            [orderby]: 'asc',
+          },
           skip,
           take: perPage,
         }),
-
         this.prisma.user.count({
-          where: {
-            type: UserType.MAID,
-            deleted_at: null,
-          },
+          where: whereCondition,
         }),
       ]);
 
@@ -238,7 +277,7 @@ export class DashboardService {
               ) / 10
             : 0;
 
-        // status: availability false হলে "busy", status 0 হলে "inactive", বাকি "active"
+        // status: availability 
         let statusLabel: 'active' | 'inactive';
         if (cleaner.status !== 1) {
           statusLabel = 'inactive';
@@ -278,19 +317,32 @@ export class DashboardService {
     }
   }
 
-   /*--------------------------------------------
+  /*--------------------------------------------
             Booking  WITH DETAILS
   --------------------------------------------*/
 
   // get all bookings with details
-  async getAllBookings(paginationDto: PaginationDto) {
+  async getAllBookings(
+    paginationDto: PaginationDto
+  ) {
     try {
+
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
       const skip = (page - 1) * perPage;
 
-      const whereCondition = {
+      const search = paginationDto.search?.trim();
+      const bookingorderby = paginationDto.bookingorderby || 'created_at';
+
+      const whereCondition: any = {
         deleted_at: null,
+        ...(search?.trim() && {
+          OR: [
+            { id: { contains: search.trim(), mode: 'insensitive' } },
+            { maid_id: { contains: search.trim(), mode: 'insensitive' } },
+            { user_id: { contains: search.trim(), mode: 'insensitive' } },
+          ],
+        }),
       };
 
       const [bookings, total] = await Promise.all([
@@ -299,7 +351,7 @@ export class DashboardService {
           skip,
           take: perPage,
           orderBy: {
-            created_at: 'desc',
+            [bookingorderby]: 'asc',
           },
           select: {
             id: true,
@@ -359,11 +411,10 @@ export class DashboardService {
       };
 
       const data = bookings.map((booking, index) => {
-        const serviceInfo =
-          booking.general_cleaning_package || booking.deep_cleaning_package;
-
+      
+        const serviceInfo = booking.general_cleaning_package || booking.deep_cleaning_package;
         return {
-          id: booking.id,
+          id: `BK - ${booking.id} `,
           homeowner_name: booking.user?.name || 'Unknown',
           cleaner_name: booking.maid?.name || 'Unknown',
           booking_date: booking.booking_date,
@@ -388,4 +439,5 @@ export class DashboardService {
       };
     }
   }
+
 }

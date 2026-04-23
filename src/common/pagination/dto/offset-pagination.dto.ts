@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, IsIn } from 'class-validator';
 
 export class PaginationDto {
   @IsOptional()
@@ -13,4 +13,20 @@ export class PaginationDto {
   @IsInt()
   @Min(1)
   perPage: number = 10;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['name', 'email'])
+  orderby?: 'name' | 'email';
+
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['id', 'maid_id', 'user_id', 'created_at'])
+  bookingorderby?: 'id' | 'maid_id' | 'user_id' | 'created_at';
+
 }

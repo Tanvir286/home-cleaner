@@ -39,7 +39,9 @@ export class DashboardController {
 
   // get all homeowners with details
   @Get('homeowners/details')
-  async getAllHomeowners(@Query() paginationDto: PaginationDto) {
+  async getAllHomeowners(
+    @Query() paginationDto: PaginationDto
+  ) {
     return this.dashboardService.getAllHomeowners(paginationDto);
   }
 
@@ -52,19 +54,14 @@ export class DashboardController {
   async getAllCleaners(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllCleaners(paginationDto);
   }
- 
+
   /*--------------------------------------------
             Booking  WITH DETAILS
-  --------------------------------------------*/
+  --------------------------------------------*/ 
 
-  // get all bookings with details 
+  // get all bookings with details
   @Get('bookings/details')
   async getAllBookings(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllBookings(paginationDto);
-  }    
-
-
-
-
-
+  }
 }
