@@ -24,7 +24,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
-
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -40,7 +39,7 @@ export class AuthController {
       const response = await this.authService.me(user_id);
 
       return response;
-    } catch (error:any) {
+    } catch (error: any) {
       // console.error('Error fetching user details:', error);
       return {
         success: false,
@@ -52,7 +51,6 @@ export class AuthController {
   // *register user
   @Post('register')
   async create(@Body() data: CreateUserDto) {
-    
     try {
       const first_name = data.first_name;
       const last_name = data.last_name;
@@ -61,7 +59,6 @@ export class AuthController {
       const address = data.address;
       const password = data.password;
       const type = data.type;
-
 
       if (!first_name) {
         throw new HttpException('Name not provided', HttpStatus.UNAUTHORIZED);
@@ -75,10 +72,16 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       if (!password) {
-        throw new HttpException('Password not provided',HttpStatus.UNAUTHORIZED,);
+        throw new HttpException(
+          'Password not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
       }
       if (!address) {
-        throw new HttpException('Address not provided', HttpStatus.UNAUTHORIZED);
+        throw new HttpException(
+          'Address not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
       }
 
       const response = await this.authService.register({
@@ -92,7 +95,7 @@ export class AuthController {
       });
 
       return response;
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -104,7 +107,7 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(
-    @Req() req: Request, 
+    @Req() req: Request,
     @Res() res: Response,
     @Body() data: { fcm_token?: string; device_type?: string },
   ) {
@@ -123,11 +126,10 @@ export class AuthController {
       res.cookie('refresh_token', response.authorization.refresh_token, {
         httpOnly: true,
         secure: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7, 
+        maxAge: 1000 * 60 * 60 * 24 * 7,
       });
       res.json(response);
-    } 
-    catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -141,7 +143,7 @@ export class AuthController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 }, 
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   async updateUser(
@@ -153,7 +155,7 @@ export class AuthController {
       const user_id = req.user.userId;
       const response = await this.authService.updateUser(user_id, data, image);
       return response;
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to update user',
@@ -171,7 +173,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.forgotPassword(email);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -196,7 +198,7 @@ export class AuthController {
         email: email,
         token: token,
       });
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to verify email',
@@ -214,7 +216,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.resendVerificationEmail(email);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to resend verification email',
@@ -249,7 +251,7 @@ export class AuthController {
         token: token,
         password: password,
       });
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -267,7 +269,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.resendToken(email);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to resend password reset token',
@@ -292,7 +294,7 @@ export class AuthController {
         email: email,
         token: token,
       });
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to verify token',
@@ -336,7 +338,7 @@ export class AuthController {
         oldPassword: oldPassword,
         newPassword: newPassword,
       });
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Failed to change password',
@@ -362,7 +364,7 @@ export class AuthController {
       );
 
       return response;
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -392,7 +394,7 @@ export class AuthController {
         fcm_token: data.fcm_token,
         device_type: data.device_type,
       });
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -408,7 +410,7 @@ export class AuthController {
       const userId = req.user.userId;
       const response = await this.authService.revokeRefreshToken(userId);
       return response;
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -431,8 +433,6 @@ export class AuthController {
     };
   }
 
- 
-
   // --------------change password---------
 
   // --------------end change password---------
@@ -453,7 +453,7 @@ export class AuthController {
         throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
       }
       return await this.authService.requestEmailChange(user_id, email);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -485,7 +485,7 @@ export class AuthController {
         new_email: email,
         token: token,
       });
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: 'Something went wrong',
@@ -503,7 +503,7 @@ export class AuthController {
     try {
       const user_id = req.user.userId;
       return await this.authService.generate2FASecret(user_id);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -520,7 +520,7 @@ export class AuthController {
       const user_id = req.user.userId;
       const token = data.token;
       return await this.authService.verify2FA(user_id, token);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -536,7 +536,7 @@ export class AuthController {
     try {
       const user_id = req.user.userId;
       return await this.authService.enable2FA(user_id);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -552,7 +552,7 @@ export class AuthController {
     try {
       const user_id = req.user.userId;
       return await this.authService.disable2FA(user_id);
-    } catch (error:any) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
