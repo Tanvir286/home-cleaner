@@ -213,7 +213,8 @@ export class AuthController {
   // *resend verification email to verify the email
   @ApiOperation({ summary: 'Resend verification email' })
   @Post('resend-verification-email')
-  async resendVerificationEmail(@Body() data: { email: string }) {
+  async resendVerificationEmail(
+    @Body() data: { email: string }) {
     try {
       const email = data.email;
       if (!email) {
@@ -232,7 +233,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password' })
   @Post('reset-password')
   async resetPassword(
-    @Body() data: { email: string; token: string; password: string },
+    @Body() data: {
+       email: string; 
+       token: string; 
+       password: string },
   ) {
     try {
       const email = data.email;
