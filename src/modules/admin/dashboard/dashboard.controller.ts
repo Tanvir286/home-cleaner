@@ -64,4 +64,18 @@ export class DashboardController {
   async getAllBookings(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllBookings(paginationDto);
   }
+
+  
+  /*--------------------------------------------
+    Cleaner Requests with approve part 
+  --------------------------------------------*/  
+  
+  // get all cleaner requests with details
+  @Get('cleaners/request')
+  async getAllCleanerRequests(@Query() paginationDto: PaginationDto) {
+    return this.dashboardService.getAllCleanerRequests(paginationDto);
+  }
+
+
+
 }

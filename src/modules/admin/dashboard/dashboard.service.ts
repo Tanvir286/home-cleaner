@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BookingStatus, UserType } from '@prisma/client';
 import { PaginationDto, paginateResponse } from 'src/common/pagination';
+import appConfig from 'src/config/app.config';
+import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 
 @Injectable()
 export class DashboardService {
@@ -142,7 +144,6 @@ export class DashboardService {
       ]);
 
       const data = homeowners.map((homeowner) => {
-        
         const totalBookings = homeowner.userBookings.length;
 
         const totalSpent = homeowner.userBookings.reduce(
@@ -211,7 +212,6 @@ export class DashboardService {
         }),
       };
 
-
       const [cleaners, total] = await Promise.all([
         this.prisma.user.findMany({
           where: whereCondition,
@@ -277,7 +277,7 @@ export class DashboardService {
               ) / 10
             : 0;
 
-        // status: availability 
+        // status: availability
         let statusLabel: 'active' | 'inactive';
         if (cleaner.status !== 1) {
           statusLabel = 'inactive';
@@ -322,11 +322,8 @@ export class DashboardService {
   --------------------------------------------*/
 
   // get all bookings with details
-  async getAllBookings(
-    paginationDto: PaginationDto
-  ) {
+  async getAllBookings(paginationDto: PaginationDto) {
     try {
-
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
       const skip = (page - 1) * perPage;
@@ -411,19 +408,21 @@ export class DashboardService {
       };
 
       const data = bookings.map((booking, index) => {
-      
-        const serviceInfo = booking.general_cleaning_package || booking.deep_cleaning_package;
+        const serviceInfo =
+          booking.general_cleaning_package || booking.deep_cleaning_package;
         return {
           id: `BK - ${booking.id} `,
           homeowner_name: booking.user?.name || 'Unknown',
           cleaner_name: booking.maid?.name || 'Unknown',
           booking_date: booking.booking_date,
           booking_time: slotTimeMap[booking.slot] || booking.slot,
-          location: booking.homeowner_location || booking.user?.location || null,
+          location:
+            booking.homeowner_location || booking.user?.location || null,
           service_name: serviceInfo?.title || 'Cleaning Service',
           service_duration: serviceInfo?.duration || null,
           amount: Number(booking.total_price ?? 0),
-          status: statusMap[booking.status] || String(booking.status).toLowerCase(),
+          status:
+            statusMap[booking.status] || String(booking.status).toLowerCase(),
         };
       });
 
@@ -440,4 +439,83 @@ export class DashboardService {
     }
   }
 
+  /*--------------------------------------------
+     Cleaner Requests with approve part 
+   --------------------------------------------*/
+
+  // get all cleaner requests with details
+  async getAllCleanerRequests(
+    paginationDto: PaginationDto
+  ) {
+    try {
+      const page = paginationDto.page || 1;
+      const perPage = paginationDto.perPage || 10;
+      const skip = (page - 1) * perPage;
+
+      const search = paginationDto.search?.trim();
+      const orderby = paginationDto.orderby || 'created_at';
+
+      const whereCondition: any = {
+        type: UserType.MAID,
+        ...(search && {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      };
+
+      const [requests, total] = await Promise.all([
+        this.prisma.user.findMany({
+          where: whereCondition,
+          skip,
+          take: perPage,
+          orderBy: {
+            [orderby]: 'desc',
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone_number: true,
+            avatar: true,
+            location: true,
+            maidVerification: {
+              orderBy: { created_at: 'desc' },
+              take: 1,
+              select: {
+                created_at: true,
+                status: true,
+                id_card_front: true,
+                id_card_back: true,
+              },
+            },
+          },
+        }),
+        this.prisma.user.count({ where: whereCondition }),
+      ]);
+
+      const data = requests.map((item) => ({
+        id: item.id,
+        name: item.name,
+        email: item.email,
+        phone_number: item.phone_number,
+        avatar: item.avatar,
+        location: item.location || 'N/A',
+        applied_date: item.maidVerification[0]?.created_at || null,
+        status: item.maidVerification[0]?.status?.toLowerCase() || 'pending',
+      }));
+
+      return {
+        success: true,
+        message: 'Cleaner requests retrieved successfully',
+        data: paginateResponse(data, total, page, perPage),
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
 }
