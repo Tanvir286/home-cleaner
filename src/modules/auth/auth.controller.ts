@@ -14,7 +14,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { memoryStorage } from 'multer';
@@ -44,7 +47,6 @@ export class AuthController {
 
       return response;
     } catch (error: any) {
-      // console.error('Error fetching user details:', error);
       return {
         success: false,
         message: 'Failed to fetch user details',
@@ -213,8 +215,7 @@ export class AuthController {
   // *resend verification email to verify the email
   @ApiOperation({ summary: 'Resend verification email' })
   @Post('resend-verification-email')
-  async resendVerificationEmail(
-    @Body() data: { email: string }) {
+  async resendVerificationEmail(@Body() data: { email: string }) {
     try {
       const email = data.email;
       if (!email) {
@@ -233,10 +234,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password' })
   @Post('reset-password')
   async resetPassword(
-    @Body() data: {
-       email: string; 
-       token: string; 
-       password: string },
+    @Body() data: { email: string; token: string; password: string },
   ) {
     try {
       const email = data.email;
@@ -361,7 +359,7 @@ export class AuthController {
   // submit verification
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
-  @Post('maid/verification') 
+  @Post('maid/verification')
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -420,8 +418,6 @@ export class AuthController {
       };
     }
   }
-  
-
 
   /*----------------------------------------------
   // topic: maid Verification Part End ---------->

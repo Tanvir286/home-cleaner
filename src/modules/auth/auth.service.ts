@@ -723,7 +723,67 @@ export class AuthService {
   
   // get verification status
   async getVerificationStatus(userId: string) {
-   
+    try {
+      const verification = await this.prisma.maidVerification.findFirst({
+        where: { user_id: userId },
+        orderBy: { created_at: 'desc' },
+      });
+
+      if (!verification) {
+        return {
+          success: true,
+          message: 'No verification submission found',
+          data: null,
+        };
+      }
+
+      let title = 'Under Review';
+      let short_status = 'UNDER_REVIEW';
+      
+
+      if (verification.status === 'VERIFIED') {
+        title = 'Approved By Admin';
+        short_status = 'APPROVED';
+      }
+
+      if (verification.status === 'REJECTED') {
+        title = 'Rejected';
+        short_status = 'REJECTED';
+      }
+
+      return {
+        success: true,
+        data: {
+          id: verification.id,
+          status: verification.status,
+          short_status,
+          title,
+          submission_date: verification.created_at,
+          approval_date: verification.verified_at,
+          verification_documents: {
+            id_card_front_url: verification.id_card_front
+              ? TanvirStorage.url(
+                  appConfig().storageUrl.maidverification +
+                    '/' +
+                    verification.id_card_front,
+                )
+              : null,
+            id_card_back_url: verification.id_card_back
+              ? TanvirStorage.url(
+                  appConfig().storageUrl.maidverification +
+                    '/' +
+                    verification.id_card_back,
+                )
+              : null,
+          },
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
 
   /*----------------------------------------------
