@@ -17,6 +17,7 @@ import { RolesGuard } from 'src/common/guard/role/roles.guard';
 import { Role } from 'src/common/guard/role/role.enum';
 import { Roles } from 'src/common/guard/role/roles.decorator';
 import { PaginationDto } from 'src/common/pagination/dto/offset-pagination.dto';
+import { CleanerStatusDto } from './dto/cleaner-status.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -75,6 +76,26 @@ export class DashboardController {
   async getAllCleanerRequests(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllCleanerRequests(paginationDto);
   }
+
+  // get cleaner deatils by id
+  @Get('cleaners/request/:id')
+  async getCleanerRequestById(
+    @Param('id') id: string
+  ) {
+    return this.dashboardService.getCleanerRequestById(id);
+  }  
+
+  // approve or reject cleaner request by id
+  @Patch('cleaners/request/:id')
+  async updateCleanerRequestById(
+    @Param('id') id: string,
+    @Body() CleanerStatusDto: CleanerStatusDto
+  ) {
+    return this.dashboardService.updateCleanerRequestById(id, CleanerStatusDto);
+  }
+
+
+
 
 
 

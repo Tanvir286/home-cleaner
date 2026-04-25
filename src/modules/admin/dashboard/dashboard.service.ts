@@ -4,6 +4,7 @@ import { BookingStatus, UserType } from '@prisma/client';
 import { PaginationDto, paginateResponse } from 'src/common/pagination';
 import appConfig from 'src/config/app.config';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
+import { CleanerStatusDto } from './dto/cleaner-status.dto';
 
 @Injectable()
 export class DashboardService {
@@ -444,9 +445,7 @@ export class DashboardService {
    --------------------------------------------*/
 
   // get all cleaner requests with details
-  async getAllCleanerRequests(
-    paginationDto: PaginationDto
-  ) {
+  async getAllCleanerRequests(paginationDto: PaginationDto) {
     try {
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
@@ -510,6 +509,144 @@ export class DashboardService {
         success: true,
         message: 'Cleaner requests retrieved successfully',
         data: paginateResponse(data, total, page, perPage),
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  // get cleaner deatils by id
+  async getCleanerRequestById(id: string) {
+    try {
+      const cleaner = await this.prisma.user.findFirst({
+        where: {
+          id,
+          type: UserType.MAID,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone_number: true,
+          created_at: true,
+          location: true,
+          address: true,
+          city: true,
+          state: true,
+          zip_code: true,
+          maidVerification: {
+            orderBy: { created_at: 'desc' },
+            take: 1,
+            select: {
+              id: true,
+              created_at: true,
+              verified_at: true,
+              status: true,
+              id_card_front: true,
+              id_card_back: true,
+            },
+          },
+        },
+      });
+
+      if (!cleaner) {
+        return {
+          success: false,
+          message: 'Cleaner not found',
+        };
+      }
+
+      const verification = cleaner.maidVerification[0];
+      if (!verification) {
+        return {
+          success: false,
+          message: 'No verification submission found for this cleaner',
+        };
+      }
+
+      const data = {
+        id: cleaner.id,
+        verification_id: verification.id,
+        name: cleaner.name,
+        email: cleaner.email,
+        phone_number: cleaner.phone_number,
+        location: cleaner.location || 'N/A',
+        status: verification.status?.toLowerCase() || 'pending',
+        id_card_front_url: verification.id_card_front
+          ? TanvirStorage.url(
+              appConfig().storageUrl.maidverification +
+                '/' +
+                verification.id_card_front,
+            )
+          : null,
+        id_card_back_url: verification.id_card_back
+          ? TanvirStorage.url(
+              appConfig().storageUrl.maidverification +
+                '/' +
+                verification.id_card_back,
+            )
+          : null,
+      };
+
+      return {
+        success: true,
+        message: 'Cleaner details retrieved successfully',
+        data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  // approve or reject cleaner request by id
+  async updateCleanerRequestById(
+    id: string,
+    updateDto: CleanerStatusDto,
+  ) {
+    try {
+      const { status } = updateDto;
+
+      if (status !== 'VERIFIED' && status !== 'REJECTED') {
+        return {
+          success: false,
+          message: 'Status must be VERIFIED or REJECTED',
+        };
+      }
+
+      const verification = await this.prisma.maidVerification.findFirst({
+        where: {
+          user_id: id,
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      });
+
+      if (!verification) {
+        return {
+          success: false,
+          message: 'No verification submission found for this cleaner',
+        };
+      }
+
+      const updatedVerification = await this.prisma.maidVerification.update({
+        where: { id: verification.id },
+        data: {
+          status,
+          verified_at: status === 'VERIFIED' ? new Date() : null,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Cleaner request status updated successfully',
+        data: updatedVerification,
       };
     } catch (error: any) {
       return {
