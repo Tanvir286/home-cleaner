@@ -1012,11 +1012,15 @@ export class BookingService {
 
   // create danger booking
   async createDangerBooking(maidId: string, bookingId: string) {
+  
     const booking = await this.prisma.booking.findUnique({
+     
       where: { id: bookingId },
+      
       select: {
         id: true,
         maid_id: true,
+        homeowner_location: true,
 
         danger_notification: {
           select: {
@@ -1099,6 +1103,7 @@ export class BookingService {
       data: {
         booking_id: booking.id,
         user_id: maidId,
+        maid_current_location: booking.homeowner_location,
         latitude: latestLiveLocation.latitude,
         longitude: latestLiveLocation.longitude,
       },

@@ -159,6 +159,7 @@ model MaidVerification {
   status        VerificationStatus @default(PENDING)
    
   verified_at DateTime?
+  @@map("maid_verifications")
 }
 
 
@@ -331,6 +332,7 @@ model Danger {
 
   latitude  Float
   longitude Float
+  maid_current_location      String
 
   booking_id           String? @unique
   booking               Booking? @relation("DangerNotificationToBooking", fields: [booking_id], references: [id], onDelete: Cascade)
