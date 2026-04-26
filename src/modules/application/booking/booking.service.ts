@@ -1014,9 +1014,7 @@ export class BookingService {
   async createDangerBooking(maidId: string, bookingId: string) {
   
     const booking = await this.prisma.booking.findUnique({
-     
       where: { id: bookingId },
-      
       select: {
         id: true,
         maid_id: true,
@@ -1111,6 +1109,7 @@ export class BookingService {
         id: true,
         booking_id: true,
         user_id: true,
+        maid_current_location: true,
         latitude: true,
         longitude: true,
         created_at: true,

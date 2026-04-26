@@ -332,7 +332,7 @@ model Danger {
 
   latitude  Float
   longitude Float
-  maid_current_location      String
+  maid_current_location      String?
 
   booking_id           String? @unique
   booking               Booking? @relation("DangerNotificationToBooking", fields: [booking_id], references: [id], onDelete: Cascade)
