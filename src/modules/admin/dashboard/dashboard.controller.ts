@@ -66,7 +66,6 @@ export class DashboardController {
     return this.dashboardService.getAllBookings(paginationDto);
   }
 
-  
   /*--------------------------------------------
     Cleaner Requests with approve part 
   --------------------------------------------*/  
@@ -94,7 +93,25 @@ export class DashboardController {
     return this.dashboardService.updateCleanerRequestById(id, CleanerStatusDto);
   }
 
+   /*--------------------------------------------
+    Cleaner Requests with approve part 
+  --------------------------------------------*/  
 
+   /*--------------------------------------------
+     Danger Requests with approve part 
+   --------------------------------------------*/
+   
+   @Get('danger/request')
+   async getAllDangerRequests(
+    @Query() paginationDto: PaginationDto
+  ) {
+     return this.dashboardService.getAllDangerRequests(paginationDto);
+   }
+
+
+
+
+  
 
 
 

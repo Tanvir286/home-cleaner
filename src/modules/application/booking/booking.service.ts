@@ -292,10 +292,7 @@ export class BookingService {
   // get homeowner bookings list
   // * (pending,upcoming,completed,cancelled) status filter
   // service type,package type,price,address,booking date,slot
-  async getAllBookingsWithStatus(
-    userId: string, 
-    query: PaginationstausDto
-  ) {
+  async getAllBookingsWithStatus(userId: string, query: PaginationstausDto) {
     const { page, perPage, bookingStatus } = query;
 
     const skip = (page - 1) * perPage;
@@ -387,9 +384,7 @@ export class BookingService {
   }
 
   // get every booking details information
-  async getBookingDetails(
-    bookingId: string
-  ) {
+  async getBookingDetails(bookingId: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
@@ -1012,7 +1007,6 @@ export class BookingService {
 
   // create danger booking
   async createDangerBooking(maidId: string, bookingId: string) {
-  
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       select: {

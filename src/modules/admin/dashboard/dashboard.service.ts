@@ -655,4 +655,99 @@ export class DashboardService {
       };
     }
   }
+
+  /*--------------------------------------------
+      Danger Requests with approve part
+  --------------------------------------------*/
+  async getAllDangerRequests(paginationDto: PaginationDto) {
+    try {
+      const page = paginationDto.page || 1;
+      const perPage = paginationDto.perPage || 10;
+      const skip = (page - 1) * perPage;
+
+      const search = paginationDto.search?.trim();
+      const orderby = 'created_at'; 
+
+      const whereCondition: any = {
+        ...(search && {
+          OR: [
+            { user: { name: { contains: search, mode: 'insensitive' } } },
+            { maid_current_location: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      };
+
+      const [total, dangerRequests] = await this.prisma.$transaction([
+        this.prisma.danger.count({
+          where: whereCondition,
+        }),
+        this.prisma.danger.findMany({
+          where: whereCondition,
+          skip,
+          take: perPage,
+          orderBy: {
+            [orderby]: 'desc', 
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone_number: true,
+                avatar: true,
+                created_at: true,
+              },
+            },
+            booking: {
+              select: {
+                id: true,
+                booking_date: true,
+                status: true,
+                maid: {
+                  select: { name: true }
+                },
+                user: {
+                  select: { name: true }
+                }
+              },
+            },
+          },
+        }),
+      ]);
+
+      const data = dangerRequests.map((danger) => ({
+        
+        id: danger.id,
+        name: danger.user?.name,
+        joint_at: danger.user?.created_at,
+
+        applied_date: danger.created_at,
+        email: danger.user?.email,
+        phone_number: danger.user?.phone_number,
+        location: danger.maid_current_location,
+
+        latitude: danger.latitude,
+        longitude: danger.longitude,
+        status: danger.booking?.status,
+        danger_time: danger.created_at,
+        
+      }));
+
+      return {
+        success: true,
+        message: 'Danger requests retrieved successfully',
+        data: paginateResponse(data, total, page, perPage),
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+
+
+
 }
