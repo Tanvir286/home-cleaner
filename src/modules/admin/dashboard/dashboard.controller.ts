@@ -18,6 +18,7 @@ import { Role } from 'src/common/guard/role/role.enum';
 import { Roles } from 'src/common/guard/role/roles.decorator';
 import { PaginationDto } from 'src/common/pagination/dto/offset-pagination.dto';
 import { CleanerStatusDto } from './dto/cleaner-status.dto';
+import { DangerStatusDto } from './dto/danger-status.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -40,9 +41,7 @@ export class DashboardController {
 
   // get all homeowners with details
   @Get('homeowners/details')
-  async getAllHomeowners(
-    @Query() paginationDto: PaginationDto
-  ) {
+  async getAllHomeowners(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllHomeowners(paginationDto);
   }
 
@@ -58,7 +57,7 @@ export class DashboardController {
 
   /*--------------------------------------------
             Booking  WITH DETAILS
-  --------------------------------------------*/ 
+  --------------------------------------------*/
 
   // get all bookings with details
   @Get('bookings/details')
@@ -68,8 +67,8 @@ export class DashboardController {
 
   /*--------------------------------------------
     Cleaner Requests with approve part 
-  --------------------------------------------*/  
-  
+  --------------------------------------------*/
+
   // get all cleaner requests with details
   @Get('cleaners/request')
   async getAllCleanerRequests(@Query() paginationDto: PaginationDto) {
@@ -78,42 +77,45 @@ export class DashboardController {
 
   // get cleaner deatils by id
   @Get('cleaners/request/:id')
-  async getCleanerRequestById(
-    @Param('id') id: string
-  ) {
+  async getCleanerRequestById(@Param('id') id: string) {
     return this.dashboardService.getCleanerRequestById(id);
-  }  
+  }
 
   // approve or reject cleaner request by id
   @Patch('cleaners/request/:id')
   async updateCleanerRequestById(
     @Param('id') id: string,
-    @Body() CleanerStatusDto: CleanerStatusDto
+    @Body() CleanerStatusDto: CleanerStatusDto,
   ) {
     return this.dashboardService.updateCleanerRequestById(id, CleanerStatusDto);
   }
 
-   /*--------------------------------------------
+  /*--------------------------------------------
     Cleaner Requests with approve part 
-  --------------------------------------------*/  
+  --------------------------------------------*/
 
-   /*--------------------------------------------
+  /*--------------------------------------------
      Danger Requests with approve part 
    --------------------------------------------*/
-   
-   @Get('danger/request')
-   async getAllDangerRequests(
-    @Query() paginationDto: PaginationDto
+  // get all danger requests with 
+  @Get('danger/request')
+  async getAllDangerRequests(@Query() paginationDto: PaginationDto) {
+    return this.dashboardService.getAllDangerRequests(paginationDto);
+  }
+
+  // get danger request by id
+  @Get('danger/request/:id')
+  async getDangerRequestById(@Param('id') id: string) {
+    return this.dashboardService.getDangerRequestById(id);
+  }
+
+  // approve or reject danger request by id
+  @Patch('danger/request/:id')
+  async updateDangerRequestById(
+    @Param('id') id: string,
+    @Body() dangerStatusDto: DangerStatusDto,
   ) {
-     return this.dashboardService.getAllDangerRequests(paginationDto);
-   }
-
-
-
-
-  
-
-
-
+    return this.dashboardService.updateDangerRequestById(id, dangerStatusDto);
+  }
 
 }

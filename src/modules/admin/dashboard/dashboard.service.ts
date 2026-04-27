@@ -5,6 +5,7 @@ import { PaginationDto, paginateResponse } from 'src/common/pagination';
 import appConfig from 'src/config/app.config';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import { CleanerStatusDto } from './dto/cleaner-status.dto';
+import { DangerStatusDto } from './dto/danger-status.dto';
 
 @Injectable()
 export class DashboardService {
@@ -605,10 +606,7 @@ export class DashboardService {
   }
 
   // approve or reject cleaner request by id
-  async updateCleanerRequestById(
-    id: string,
-    updateDto: CleanerStatusDto,
-  ) {
+  async updateCleanerRequestById(id: string, updateDto: CleanerStatusDto) {
     try {
       const { status } = updateDto;
 
@@ -659,6 +657,7 @@ export class DashboardService {
   /*--------------------------------------------
       Danger Requests with approve part
   --------------------------------------------*/
+  // get all danger requests with details
   async getAllDangerRequests(paginationDto: PaginationDto) {
     try {
       const page = paginationDto.page || 1;
@@ -666,13 +665,15 @@ export class DashboardService {
       const skip = (page - 1) * perPage;
 
       const search = paginationDto.search?.trim();
-      const orderby = 'created_at'; 
+      const orderby = 'created_at';
 
       const whereCondition: any = {
         ...(search && {
           OR: [
             { user: { name: { contains: search, mode: 'insensitive' } } },
-            { maid_current_location: { contains: search, mode: 'insensitive' } },
+            {
+              maid_current_location: { contains: search, mode: 'insensitive' },
+            },
           ],
         }),
       };
@@ -686,7 +687,7 @@ export class DashboardService {
           skip,
           take: perPage,
           orderBy: {
-            [orderby]: 'desc', 
+            [orderby]: 'desc',
           },
           include: {
             user: {
@@ -699,25 +700,11 @@ export class DashboardService {
                 created_at: true,
               },
             },
-            booking: {
-              select: {
-                id: true,
-                booking_date: true,
-                status: true,
-                maid: {
-                  select: { name: true }
-                },
-                user: {
-                  select: { name: true }
-                }
-              },
-            },
           },
         }),
       ]);
 
       const data = dangerRequests.map((danger) => ({
-        
         id: danger.id,
         name: danger.user?.name,
         joint_at: danger.user?.created_at,
@@ -729,9 +716,8 @@ export class DashboardService {
 
         latitude: danger.latitude,
         longitude: danger.longitude,
-        status: danger.booking?.status,
+        status: danger.status,
         danger_time: danger.created_at,
-        
       }));
 
       return {
@@ -746,8 +732,112 @@ export class DashboardService {
       };
     }
   }
+ 
+  // get danger request by id
+  async getDangerRequestById(id: string) {
+    try {
+      const danger = await this.prisma.danger.findUnique({
+        where: { id }, 
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone_number: true,
+              avatar: true,
+              created_at: true,
+            },
+          },
+        },
+      });
 
+      if (!danger) {
+        return {
+          success: false,
+          message: 'Danger request not found',
+        };
+      }
 
+      const data = {
+        id: danger.id,
+        name: danger.user?.name,
+        joint_at: danger.user?.created_at,
+        email: danger.user?.email,
+        phone_number: danger.user?.phone_number,
+        location: danger.maid_current_location,
+        applied_date: danger.created_at,
+        status: danger.status,
 
+        latitude: danger.latitude,
+        longitude: danger.longitude,
+      }
+      return {
+        success: true,
+        message: 'Danger request retrieved successfully',
+        data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  } 
+
+  // approve or reject danger request by id
+  async updateDangerRequestById(
+    id: string, 
+    updateDto: DangerStatusDto
+  ) {
+    try {
+      const { status } = updateDto;
+
+      if (status !== 'COMPLETED' && status !== 'REJECTED') {
+        return {
+          success: false,
+          message: 'Status must be COMPLETED or REJECTED',
+        };
+      }
+
+      const existingDanger = await this.prisma.danger.findUnique({
+        where: { id },
+      });
+
+      if (!existingDanger) {
+        return {
+          success: false,
+          message: 'Danger request not found',
+        };
+      }
+
+      if (existingDanger.status === 'COMPLETED' || existingDanger.status === 'REJECTED') {
+        return {
+          success: false,
+          message: `Danger request is already ${existingDanger.status.toLowerCase()}`,
+        };
+      }
+
+      const danger = await this.prisma.danger.update({
+        where: { id },
+        data: {
+          status,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Danger request status updated successfully',
+        data: danger,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  } 
+    
+  
 
 }
