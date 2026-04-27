@@ -19,7 +19,7 @@ import {
 } from './booking.utlis';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, UserType } from '@prisma/client';
 import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
 import { StartedBookingDto } from './dto/started-booking.dto';
@@ -38,10 +38,15 @@ export class BookingService {
     const { page, perPage } = paginationDto;
     const skip = (page - 1) * perPage;
 
+    const whereCondition: any = {
+      type: UserType.MAID,
+      availability:true,
+    };
+
     const [total, maids] = await this.prisma.$transaction([
-      this.prisma.user.count({ where: { type: 'MAID' } }),
+      this.prisma.user.count({ where: whereCondition }),
       this.prisma.user.findMany({
-        where: { type: 'MAID' },
+        where: whereCondition,
         select: {
           id: true,
           name: true,
