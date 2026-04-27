@@ -51,7 +51,7 @@ export class ProfileController {
   async getMaidProfileDetails(
     @Param('maidId') maidId: string
   ) {
-    return this.profileService.getProfileDetails(maidId);
+    return this.profileService.getMaidProfileDetails(maidId);
   }
 
   // maid profile update

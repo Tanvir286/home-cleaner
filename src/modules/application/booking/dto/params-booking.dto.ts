@@ -8,7 +8,8 @@ enum BookingStatus2 {
     CONFIRMED = 'CONFIRMED',
     COMPLETED = 'COMPLETED',
     SUBMITTED = 'SUBMITTED',
-    CANCELLED = 'CANCELLED'
+    CANCELLED = 'CANCELLED',
+    STARTED = 'STARTED'
 }
 
 export class PaginationstausDto {

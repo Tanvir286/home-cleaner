@@ -208,6 +208,14 @@ export class ProfileService {
         about_me: true,
         service_type: true,
         experience_years: true,
+        maidVerification: {
+          orderBy: { created_at: 'desc' },
+          take: 1,
+          select: {
+            status: true,
+            verified_at: true,
+          },
+        },
       },
     });
 
@@ -340,6 +348,8 @@ export class ProfileService {
         about_me: user.about_me,
         service_type: user.service_type,
         experience_years: user.experience_years,
+        verification_status: user.maidVerification?.[0]?.status || 'PENDING',
+        verified_at: user.maidVerification?.[0]?.verified_at || null,
         jobs_done: jobsDone,
         total_earnings,
         repeat_client_rate,
