@@ -369,6 +369,7 @@ export class ProfileService {
   ) {
     const userData: any = {};
 
+    if (dto.name !== undefined) userData.name = dto.name;
     if (dto.location !== undefined) userData.location = dto.location;
     if (dto.about_me !== undefined) userData.about_me = dto.about_me;
     if (dto.service_type !== undefined) userData.service_type = dto.service_type;

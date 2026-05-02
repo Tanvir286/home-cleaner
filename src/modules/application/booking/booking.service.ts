@@ -681,9 +681,17 @@ export class BookingService {
       this.prisma.booking.findMany({
         where: whereClause,
         include: {
-          user: true,
           general_cleaning_package: true,
           deep_cleaning_package: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              location: true,
+              avatar: true,
+              phone_number: true,
+            },
+          },
         },
         orderBy: {
           booking_date: 'asc',
@@ -711,10 +719,21 @@ export class BookingService {
             )
           : null,
         price: packageData?.price,
+        description: packageData?.description,
         slot: booking.slot,
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
+        user: {
+          id: booking.user.id,
+          name: booking.user.name,
+          location: booking.user.location,
+          avatar: booking.user.avatar
+            ? TanvirStorage.url(
+                appConfig().storageUrl.avatar + '/' + booking.user.avatar,
+              )
+            : null,
+        },
       };
     });
     return {

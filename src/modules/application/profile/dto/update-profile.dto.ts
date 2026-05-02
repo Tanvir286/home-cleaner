@@ -6,6 +6,9 @@ export enum ServiceType {
 }
 
 export class UpdateProfileDto {
+
+  @IsOptional()
+  name?: string;
  
   @IsOptional()
   location?: string;
