@@ -24,6 +24,7 @@ import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
 import { StartedBookingDto } from './dto/started-booking.dto';
 import { DangerDto } from './dto/danger.dto';
+import { stat } from 'node:fs';
 
 @Injectable()
 export class BookingService {
@@ -718,6 +719,7 @@ export class BookingService {
               appConfig().storageUrl.package + '/' + packageData.image,
             )
           : null,
+         status: booking.status, 
         price: packageData?.price,
         description: packageData?.description,
         slot: booking.slot,
@@ -745,6 +747,7 @@ export class BookingService {
 
   // booking list individual details for maid
   async getBookingDetailsForMaid(bookingId: string) {
+  
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
@@ -772,20 +775,27 @@ export class BookingService {
         id: booking.id,
         service: serviceType,
         package: packageData?.packageType,
-        package_image: packageData?.image
+        slot: booking.slot,
+        package_image:packageData?.image
           ? TanvirStorage.url(
               appConfig().storageUrl.package + '/' + packageData.image,
             )
           : null,
-        price: packageData?.price,
-        slot: booking.slot,
+        
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
+        bundle:{
+        service: serviceType,
+        package: packageData?.packageType,
+        description: packageData?.description,
+        price: packageData?.price,
+        },
         user: {
           id: booking.user.id,
           name: booking.user.name,
           location: booking.user.location,
+          phone: booking.user.phone_number,
           avatar: booking.user.avatar
             ? TanvirStorage.url(
                 appConfig().storageUrl.avatar + '/' + booking.user.avatar,
