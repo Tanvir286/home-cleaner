@@ -40,7 +40,7 @@ export class BookingService {
 
     const whereCondition: any = {
       type: UserType.MAID,
-      availability:true,
+      availability: true,
     };
 
     const [total, maids] = await this.prisma.$transaction([
@@ -815,7 +815,10 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-  async getBookingsByStatusForMaid(maidId: string, query: PaginationstausDto) {
+  async getBookingsByStatusForMaid(
+    maidId: string, 
+    query: PaginationstausDto
+  ) {
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 

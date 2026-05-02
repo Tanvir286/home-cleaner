@@ -1,5 +1,5 @@
 // external imports
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -31,17 +31,28 @@ async function bootstrap() {
     index: false,
     prefix: "/public",
   });
+ // gobal
+ app.useGlobalPipes(
+  new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: false,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+    exceptionFactory: (errors) => {
+      const messages = errors
+        .map((error) => Object.values(error.constraints || {}))
+        .flat()
+        .join(', ');
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: false,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
+      return new BadRequestException({
+        success: false,
+        message: messages,
+      });
+    },
+  }),
+);
   
   app.useGlobalFilters(
     new CustomExceptionFilter(),

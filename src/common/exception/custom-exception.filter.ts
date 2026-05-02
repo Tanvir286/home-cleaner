@@ -11,11 +11,16 @@ export class CustomExceptionFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse();
     const status = exception.getStatus();
 
-    // Return custom error response format
+    const exceptionResponse = exception.getResponse();
+
+    const message =
+      typeof exceptionResponse === 'string'
+        ? exceptionResponse
+        : (exceptionResponse as any).message || 'An error occurred';
+
     response.status(status).json({
       success: false,
-      // message: exception.message || 'An error occurred',
-      message: exception.getResponse(),
+      message,
     });
   }
 }
