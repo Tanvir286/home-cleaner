@@ -7,9 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* ----------------------------------------
-          User Deatils Part Start 
------------------------------------------*/
+/**
+ * ----------------------------------------
+ * User Deatils Part Start
+ * -----------------------------------------
+ */
 
 model Account {
   id         String   @id @default(cuid())
@@ -68,7 +70,7 @@ model User {
   language         String? @db.VarChar(100)
 
   fcm_token   String?
-  device_type String? 
+  device_type String?
 
   // billing info  
   billing_id        String?
@@ -81,18 +83,18 @@ model User {
   //distination for maid and homeowner
 
   //----------------------------------------
-  domain        String?   @unique
-  username      String?   @unique
-  phone_number  String?
-  country       String?
-  state         String?
-  city          String?
-  zip_code      String?
-  gender        String?
-  date_of_birth DateTime? @db.Date
-  approved_at   DateTime?
-  availability  Boolean   @default(true)
-  is_two_factor_enabled Int?    @default(0)
+  domain                String?   @unique
+  username              String?   @unique
+  phone_number          String?
+  country               String?
+  state                 String?
+  city                  String?
+  zip_code              String?
+  gender                String?
+  date_of_birth         DateTime? @db.Date
+  approved_at           DateTime?
+  availability          Boolean   @default(true)
+  is_two_factor_enabled Int?      @default(0)
   two_factor_secret     String?
 
   service_type ServiceType[]
@@ -138,30 +140,28 @@ model User {
   @@map("users")
 }
 
-
 enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
 }
 
-
 model MaidVerification {
   id         String   @id @default(cuid())
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
-  
+
   user_id String
-  user    User   @relation("maidVerification",fields: [user_id], references: [id], onDelete: Cascade)
+  user    User   @relation("maidVerification", fields: [user_id], references: [id], onDelete: Cascade)
 
   id_card_front String?
   id_card_back  String?
   status        VerificationStatus @default(PENDING)
-   
+
   verified_at DateTime?
+
   @@map("maid_verifications")
 }
-
 
 model Ucode {
   id         String   @id @default(cuid())
@@ -180,12 +180,16 @@ model Ucode {
   @@map("ucodes")
 }
 
-/* ----------------------------------------
-          User Deatils Part End 
------------------------------------------*/
-/* ----------------------------------------
-          Booking Part Start 
------------------------------------------*/
+/**
+ * ----------------------------------------
+ * User Deatils Part End
+ * -----------------------------------------
+ */
+/**
+ * ----------------------------------------
+ * Booking Part Start
+ * -----------------------------------------
+ */
 
 enum serviceType {
   GENERAL_CLEANING
@@ -209,7 +213,7 @@ enum Slot {
 enum BookingStatus {
   PENDING
   CONFIRMED
-  STARTED 
+  STARTED
   SUBMITTED
   COMPLETED
   REJECTED
@@ -275,7 +279,6 @@ model Booking {
   // link to danger notification
   danger_notification Danger? @relation("DangerNotificationToBooking")
 
-
   booking_date DateTime @db.Date
   slot         Slot
 
@@ -336,21 +339,20 @@ model Danger {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  latitude  Float
-  longitude Float
-  maid_current_location      String?
- 
+  latitude              Float
+  longitude             Float
+  maid_current_location String?
+
   status DangerStatus @default(PENDING)
 
-  booking_id           String? @unique
-  booking               Booking? @relation("DangerNotificationToBooking", fields: [booking_id], references: [id], onDelete: Cascade)
+  booking_id String?  @unique
+  booking    Booking? @relation("DangerNotificationToBooking", fields: [booking_id], references: [id], onDelete: Cascade)
 
   user_id String?
   user    User?   @relation("DangerNotificationToUser", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("danger")
 }
-
 
 model LiveLocation {
   id         String   @id @default(cuid())
@@ -393,13 +395,16 @@ model Review {
   @@map("reviews")
 }
 
-/* ----------------------------------------
-          Booking Part  End
------------------------------------------*/
-/* ----------------------------------------
-          Conversation Part start
------------------------------------------*/
-
+/**
+ * ----------------------------------------
+ * Booking Part  End
+ * -----------------------------------------
+ */
+/**
+ * ----------------------------------------
+ * Conversation Part start
+ * -----------------------------------------
+ */
 
 model Conversation {
   id           String        @id @default(cuid())
@@ -449,19 +454,22 @@ model Message {
   attachments String[] @db.Text
 }
 
-/* ----------------------------------------
-          Conversation Part  End
------------------------------------------*/
-/* ----------------------------------------
-          Notification Part start
------------------------------------------*/
-
+/**
+ * ----------------------------------------
+ * Conversation Part  End
+ * -----------------------------------------
+ */
+/**
+ * ----------------------------------------
+ * Notification Part start
+ * -----------------------------------------
+ */
 
 model NotificationEvent {
-  id            String         @id @default(uuid())
-  created_at    DateTime       @default(now())
-  updated_at    DateTime       @default(now()) @updatedAt
-  deleted_at    DateTime?
+  id         String    @id @default(uuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+  deleted_at DateTime?
 
   status        Int?           @default(1) @db.SmallInt
   type          String?
@@ -489,9 +497,11 @@ model Notification {
   entity_id String?
 }
 
-/* ----------------------------------------
-          Notification Part End
------------------------------------------*/
+/**
+ * ----------------------------------------
+ * Notification Part End
+ * -----------------------------------------
+ */
 
 model Role {
   id         String    @id @default(cuid())
@@ -654,19 +664,15 @@ model Slider {
   @@map("sliders")
 }
 
-
 model Testimonial {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  name    String?
-  quote   String?
-  avatar  String?
+  name   String?
+  quote  String?
+  avatar String?
 
   @@map("testimonials")
 }
-
-
-

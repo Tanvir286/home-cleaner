@@ -25,6 +25,7 @@ import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorrej
 import { StartedBookingDto } from './dto/started-booking.dto';
 import { DangerDto } from './dto/danger.dto';
 import { stat } from 'node:fs';
+import { SubmittedBookingDto } from './dto/submittted-booking.dto';
 
 @Injectable()
 export class BookingService {
@@ -987,7 +988,7 @@ export class BookingService {
   async completeBookingByMaid(
     maidId: string,
     bookingId: string,
-    updateBookingDto: UpdateBookingDto,
+    updateBookingDto: SubmittedBookingDto,
     beforeImageFiles: Express.Multer.File[] = [],
     afterImageFiles: Express.Multer.File[] = [],
   ) {
@@ -1007,8 +1008,8 @@ export class BookingService {
       );
     }
 
-    if (booking.status !== BookingStatus.CONFIRMED) {
-      throw new BadRequestException('Only confirmed bookings can be completed');
+    if (booking.status !== BookingStatus.STARTED) {
+      throw new BadRequestException('Only started bookings can be completed');
     }
 
     const uploadedBeforePhotos = await uploadBookingImages(beforeImageFiles);

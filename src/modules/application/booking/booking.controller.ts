@@ -31,6 +31,7 @@ import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
 import { StartedBookingDto } from './dto/started-booking.dto';
 import { DangerDto } from './dto/danger.dto';
+import { SubmittedBookingDto } from './dto/submittted-booking.dto';
 
 @ApiTags('Booking')
 @Controller('booking')
@@ -215,7 +216,7 @@ export class BookingController {
   async completeBookingByMaid(
     @Req() req,
     @Param('id') id: string,
-    @Body() updateBookingDto: UpdateBookingDto,
+    @Body() updateBookingDto: SubmittedBookingDto,
     @UploadedFiles()
     imageFiles?: {
       before_photos?: Express.Multer.File[];
