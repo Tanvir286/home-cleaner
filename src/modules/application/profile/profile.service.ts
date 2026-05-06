@@ -52,6 +52,13 @@ export class ProfileService {
         about_me: true,
         service_type: true,
         experience_years: true,
+        maidVerification: {
+          orderBy: { created_at: 'desc' },
+          take: 1,
+          select: {
+            status: true,
+          },
+        },
       },
     });
 
@@ -176,6 +183,8 @@ export class ProfileService {
         id: user.id,
         name: user.name,
         email: user.email,
+        verification_status:
+          user.maidVerification?.[0]?.status === 'VERIFIED',
         avater_url: user.avatar
           ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + user.avatar)
           : null,
@@ -184,6 +193,7 @@ export class ProfileService {
         service_type: user.service_type,
         experience_years: user.experience_years,
         jobs_done: jobsDone,
+        maid_verification: user.maidVerification[0],
         total_earnings,
         repeat_client_rate,
         last_active: '2 hour',
