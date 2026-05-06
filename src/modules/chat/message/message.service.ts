@@ -240,7 +240,7 @@ export class MessageService {
             select: { id: true, name: true, email: true, avatar: true },
           },
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         skip,
         take,
       }),

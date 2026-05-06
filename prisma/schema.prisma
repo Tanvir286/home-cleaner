@@ -650,20 +650,6 @@ model Setting {
   @@map("settings")
 }
 
-model Slider {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  title       String?
-  description String?
-  image       String?
-  link        String?
-
-  @@map("sliders")
-}
-
 model Testimonial {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
