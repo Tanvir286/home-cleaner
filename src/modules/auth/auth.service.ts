@@ -167,7 +167,7 @@ export class AuthService {
           sender_id: user.data.id,
           receiver_id: adminuser.id,
           text: `${name} has registered a new account`,
-          type: 'new_user',
+          type: 'new_user_registration',
           entity_id: user.data.id,
         });
       }

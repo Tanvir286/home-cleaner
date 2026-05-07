@@ -493,6 +493,8 @@ model Notification {
 
   notification_event_id String?
   notification_event    NotificationEvent? @relation(fields: [notification_event_id], references: [id])
+
+  entity_id String?
 }
 
 /**

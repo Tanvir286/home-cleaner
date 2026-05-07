@@ -28,7 +28,7 @@ if (!admin.apps.length) {
   }
 }
 
-type NotificationType =
+export type NotificationType =
   | 'new_user_registration'
   | 'new_user_created'
   | 'email_verification'
@@ -135,7 +135,7 @@ export class NotificationRepository {
     }
   }
 
-
+  // get notification title based on type
   // get notification title based on type
   private static getNotificationTitle(type: string): string {
     const titles: Record<string, string> = {

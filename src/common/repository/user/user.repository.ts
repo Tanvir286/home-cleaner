@@ -274,7 +274,7 @@ export class UserRepository {
           message: 'User creation failed',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -381,7 +381,7 @@ export class UserRepository {
           message: 'User update failed',
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -418,7 +418,7 @@ export class UserRepository {
         success: true,
         message: 'User deleted successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
@@ -445,7 +445,7 @@ export class UserRepository {
         },
       });
       return user;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -468,7 +468,7 @@ export class UserRepository {
         },
       });
       return user;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -519,7 +519,7 @@ export class UserRepository {
         success: true,
         message: 'Converted to ' + type + ' successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,
