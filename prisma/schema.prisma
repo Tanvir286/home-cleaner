@@ -493,8 +493,6 @@ model Notification {
 
   notification_event_id String?
   notification_event    NotificationEvent? @relation(fields: [notification_event_id], references: [id])
-
-  entity_id String?
 }
 
 /**
@@ -637,7 +635,6 @@ model Contact {
   @@map("contacts")
 }
 
-// General application settings, such as site title, contact info, etc.
 model Setting {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())

@@ -1,5 +1,5 @@
-import * as admin from "firebase-admin";
-import { PrismaClient } from "@prisma/client";
+import * as admin from 'firebase-admin';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -14,33 +14,43 @@ if (!admin.apps.length) {
         credential: admin.credential.cert({
           projectId: firebaseProjectId,
           clientEmail: firebaseClientEmail,
-          privateKey: firebasePrivateKey.replace(/\\n/g, "\n"),
+          privateKey: firebasePrivateKey.replace(/\\n/g, '\n'),
         }),
       });
-      console.log("💯💯💯 Firebase initialized successfully. 💯💯💯");
+      console.log('💯💯💯 Firebase initialized successfully. 💯💯💯');
     } catch (error) {
-      console.error("❌ Firebase initialization failed:", error);
+      console.error('❌ Firebase initialization failed:', error);
     }
   } else {
     console.warn(
-      "⚠️ Firebase credentials missing in .env file. Push notifications will not work.",
+      '⚠️ Firebase credentials missing in .env file. Push notifications will not work.',
     );
   }
 }
 
 type NotificationType =
-  | "new_user"
-  | "profile_update"
-  | "create_booking"
-  | "approve_booking"
-  | "complete_booking"
-  | "cancel_booking"
-  | "review_booking"
-  | "update_booking" ;
+  | 'new_user_registration'
+  | 'new_user_created'
+  | 'email_verification'
+  | 'account_verification'
+  | 'verification_approved'
+  | 'verification_rejected'
+  | 'profile_update'
+  | 'danger_request'
+  | 'account_action'
+  | 'create_booking'
+  | 'approve_booking'
+  | 'complete_booking'
+  | 'started_job'
+  | 'submitted_job'
+  | 'approve_job_submission'
+  | 'reject_job_submission'
+  | 'cancel_booking'
+  | 'review_booking'
+  | 'update_booking';
 
 export class NotificationRepository {
-  
-  // create notification 
+  // create notification
   static async createNotification(payload: {
     sender_id: string;
     receiver_id: string;
@@ -74,12 +84,12 @@ export class NotificationRepository {
 
       return newNotification;
     } catch (error) {
-      console.error("Error creating notification:", error);
+      console.error('Error creating notification:', error);
       throw error;
     }
   }
- 
-  // send push notification using firebase 
+
+  // send push notification using firebase
   private static async sendPushNotification(
     receiverId: string,
     type: string,
@@ -87,7 +97,9 @@ export class NotificationRepository {
     entityId: string,
   ) {
     if (!admin.apps.length) {
-      console.warn("⚠️ Firebase app is not initialized. Push notification skipped.");
+      console.warn(
+        '⚠️ Firebase app is not initialized. Push notification skipped.',
+      );
       return;
     }
 
@@ -108,7 +120,7 @@ export class NotificationRepository {
           data: {
             entity_id: String(entityId),
             type: String(type),
-            click_action: "FLUTTER_NOTIFICATION_CLICK",
+            click_action: 'FLUTTER_NOTIFICATION_CLICK',
           },
         };
 
@@ -119,25 +131,36 @@ export class NotificationRepository {
         );
       }
     } catch (error) {
-      console.error("❌ Error sending FCM:", error);
+      console.error('❌ Error sending FCM:', error);
     }
   }
- 
+
+
   // get notification title based on type
   private static getNotificationTitle(type: string): string {
     const titles: Record<string, string> = {
-      new_user: "New User Registration",
-      profile_update: "Profile Updated",
-      create_booking: "Booking Created",
-      approve_booking: "Booking Approved",
-      complete_booking: "Booking Completed",
-      cancel_booking: "Booking Cancelled",
-      review_booking: "Booking Reviewed",
-      update_booking: "Booking Updated",
+      new_user_registration: 'New User Registration',
+      new_user_created: 'New User Created',
+      email_verification: 'Email Verification',
+      account_verification: 'Account Verification',
+      verification_approved: 'Verification Approved',
+      verification_rejected: 'Verification Rejected',
+      profile_update: 'Profile Updated',
+      danger_request: 'Danger Request',
+      account_action: 'Account Action',
+
+      create_booking: 'Booking Created',
+      approve_booking: 'Booking Approved',
+      complete_booking: 'Booking Completed',
+      started_job: 'Job Started',
+      submitted_job: 'Job Submitted',
+      approve_job_submission: 'Job Submission Approved',
+      reject_job_submission: 'Job Submission Rejected',
+      cancel_booking: 'Booking Cancelled',
+      review_booking: 'Booking Reviewed',
+      update_booking: 'Booking Updated',
     };
-    return titles[type] || "New Notification";
+
+    return titles[type] || 'New Notification';
   }
-
- 
-
 }
