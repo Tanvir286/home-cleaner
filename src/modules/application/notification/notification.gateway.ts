@@ -92,31 +92,31 @@ export class NotificationGateway
     }
   }
 
-  @SubscribeMessage('createNotification')
-  create(@MessageBody() createNotificationDto: CreateNotificationDto) {
-    return this.notificationService.create(createNotificationDto);
-  }
+  // @SubscribeMessage('createNotification')
+  // create(@MessageBody() createNotificationDto: CreateNotificationDto) {
+  //   return this.notificationService.create(createNotificationDto);
+  // }
 
-  @SubscribeMessage('findAllNotification')
-  findAll() {
-    return this.notificationService.findAll();
-  }
+  // @SubscribeMessage('findAllNotification')
+  // findAll() {
+  //   return this.notificationService.findAll();
+  // }
 
-  @SubscribeMessage('findOneNotification')
-  findOne(@MessageBody() id: number) {
-    return this.notificationService.findOne(id);
-  }
+  // @SubscribeMessage('findOneNotification')
+  // findOne(@MessageBody() id: number) {
+  //   return this.notificationService.findOne(id);
+  // }
 
-  @SubscribeMessage('updateNotification')
-  update(@MessageBody() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationService.update(
-      updateNotificationDto.id,
-      updateNotificationDto,
-    );
-  }
+  // @SubscribeMessage('updateNotification')
+  // update(@MessageBody() updateNotificationDto: UpdateNotificationDto) {
+  //   return this.notificationService.update(
+  //     updateNotificationDto.id,
+  //     updateNotificationDto,
+  //   );
+  // }
 
-  @SubscribeMessage('removeNotification')
-  remove(@MessageBody() id: number) {
-    return this.notificationService.remove(id);
-  }
+  // @SubscribeMessage('removeNotification')
+  // remove(@MessageBody() id: number) {
+  //   return this.notificationService.remove(id);
+  // }
 }

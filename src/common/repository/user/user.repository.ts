@@ -47,6 +47,7 @@ export class UserRepository {
       select: {
         id: true,
         email: true,
+        name: true,
         type: true,
         role_users: {
           include: {

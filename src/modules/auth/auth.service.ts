@@ -17,6 +17,7 @@ import { MailService } from '../../mail/mail.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from '../admin/user/entities/user.entity';
+import { sendAdminNotification } from 'src/common/utils/notification.util';
 
 @Injectable()
 export class AuthService {
@@ -159,18 +160,12 @@ export class AuthService {
         otp: token,
       });
 
-      // notification with admin
-      const adminuser = await this.userRepository.getAdminUser();
-
-      if (adminuser?.id) {
-        await NotificationRepository.createNotification({
-          sender_id: user.data.id,
-          receiver_id: adminuser.id,
-          text: `${name} has registered a new account`,
-          type: 'new_user_registration',
-          entity_id: user.data.id,
-        });
-      }
+      await sendAdminNotification({
+        sender_id: user.data.id,
+        text: `${name} has registered a new account`,
+        type: 'new_user_registration',
+        entity_id: user.data.id,
+      });
 
       return {
         success: true,
@@ -314,7 +309,7 @@ export class AuthService {
             ...data,
           },
         });
-
+        
         return {
           success: true,
           message: 'User updated successfully',

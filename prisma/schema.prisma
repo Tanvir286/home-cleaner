@@ -135,7 +135,8 @@ model User {
   // Danger notifications
   danger_notifications Danger[] @relation("DangerNotificationToUser")
 
-  // recods created by user
+  // saved locations
+  saved_locations Location[] @relation("SavedLocation")
 
   @@map("users")
 }
@@ -178,6 +179,27 @@ model Ucode {
   verified_at DateTime?
 
   @@map("ucodes")
+}
+
+enum LocationType {
+  HOME
+  OFFICE
+  OTHER
+}
+
+model Location {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  location_name String?
+  location_type LocationType @default(OTHER)
+
+  user_id String
+  user    User   @relation("SavedLocation", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("locations")
 }
 
 /**
@@ -276,7 +298,6 @@ model Booking {
   general_cleaning_package_id String?
   general_cleaning_package    GeneralCleaningPackage? @relation("GeneralCleaningPackageBookings", fields: [general_cleaning_package_id], references: [id], onDelete: Cascade)
 
-  // link to danger notification
   danger_notification Danger? @relation("DangerNotificationToBooking")
 
   booking_date DateTime @db.Date
