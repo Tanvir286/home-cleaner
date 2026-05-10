@@ -790,6 +790,7 @@ export class BookingService {
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
+        cancle_reason: booking.cancle_reason ?? null,
         bundle: {
           service: serviceType,
           package: packageData?.packageType,
@@ -917,6 +918,7 @@ export class BookingService {
           time: `${slotTime.start} - ${slotTime.end}`,
           booking_date: formatBookingDate(booking.booking_date),
           status: booking.status,
+          cancle_reason: booking.cancle_reason ?? null,
           homeowner: {
             id: booking.user.id,
             name: booking.user.name,
