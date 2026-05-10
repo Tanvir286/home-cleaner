@@ -13,6 +13,7 @@ export class NotificationService {
 
   // get all notification 
   async findAll(userId: string) {
+   
     const notifications = await this.prisma.notification.findMany({
       where: {
         receiver_id: userId,
@@ -37,10 +38,18 @@ export class NotificationService {
       },
     });
 
+    const data = notifications.map((n) => ({
+      id: n.id,
+      created_at: n.created_at,
+      type: n.notification_event?.type,
+      text: n.notification_event?.text,
+      sender: n.sender,
+    }));
+
     return {
       success: true,
       message: 'Notifications retrieved successfully',
-      data: notifications,
+      data,
     };
   }
 
