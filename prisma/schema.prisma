@@ -306,6 +306,9 @@ model Booking {
   maid_location      String
   homeowner_location String
 
+  // optional cancle reason and date 
+  cancle_reason String?
+
   before_photos String[]
   after_photos  String[]
 

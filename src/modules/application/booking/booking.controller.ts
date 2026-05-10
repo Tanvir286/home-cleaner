@@ -76,7 +76,10 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Get('homeowner/bookings-by-status')
-  async getBookingsByStatus(@Req() req, @Query() query: PaginationstausDto) {
+  async getBookingsByStatus(
+    @Req() req,
+    @Query() query: PaginationstausDto
+  ) {
     const userId = req.user.userId;
     return this.bookingService.getAllBookingsWithStatus(userId, query);
   }

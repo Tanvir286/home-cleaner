@@ -208,6 +208,7 @@ export class ServiceService {
         image: true,
         price: true,
         description: true,
+        duration: true,
       },
     });
 

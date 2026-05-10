@@ -1,4 +1,4 @@
-import { IsEnum } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
 
 enum AllowedBookingStatus {
   CANCELLED = 'CANCELLED',
@@ -10,5 +10,9 @@ export class HomeownerUpdateBookingDto {
     message: 'status must be either CANCELLED',
   })
   status: AllowedBookingStatus;
+
+  @IsString()
+  @IsOptional()
+  cancle_reason: string;
 
 }

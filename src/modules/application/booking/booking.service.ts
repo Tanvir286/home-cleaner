@@ -362,6 +362,7 @@ export class BookingService {
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
         status: booking.status,
+        cancle_reason: booking.cancle_reason ?? null,
 
         maid: {
           id: booking.maid.id,
@@ -448,6 +449,7 @@ export class BookingService {
           email: booking.user.email,
         },
         status: booking.status,
+        cancle_reason: booking.cancle_reason ?? null,
       },
     };
   }
@@ -458,7 +460,7 @@ export class BookingService {
     bookingId: string,
     updateBookingDto: HomeownerUpdateBookingDto,
   ) {
-    const { status } = updateBookingDto;
+    const { status,cancle_reason } = updateBookingDto;
 
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
@@ -487,7 +489,10 @@ export class BookingService {
     const updatedBooking = await this.prisma.$transaction(async (tx) => {
       const cancelledBooking = await tx.booking.update({
         where: { id: bookingId },
-        data: { status },
+        data: {
+          status: status ,
+          cancle_reason: cancle_reason,
+         },
       });
 
       if (refundAmount > 0) {
@@ -720,7 +725,7 @@ export class BookingService {
               appConfig().storageUrl.package + '/' + packageData.image,
             )
           : null,
-         status: booking.status, 
+        status: booking.status,
         price: packageData?.price,
         description: packageData?.description,
         slot: booking.slot,
@@ -748,7 +753,6 @@ export class BookingService {
 
   // booking list individual details for maid
   async getBookingDetailsForMaid(bookingId: string) {
-  
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
@@ -777,20 +781,20 @@ export class BookingService {
         service: serviceType,
         package: packageData?.packageType,
         slot: booking.slot,
-        package_image:packageData?.image
+        package_image: packageData?.image
           ? TanvirStorage.url(
               appConfig().storageUrl.package + '/' + packageData.image,
             )
           : null,
-        
+
         address: booking.homeowner_location,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
-        bundle:{
-        service: serviceType,
-        package: packageData?.packageType,
-        description: packageData?.description,
-        price: packageData?.price,
+        bundle: {
+          service: serviceType,
+          package: packageData?.packageType,
+          description: packageData?.description,
+          price: packageData?.price,
         },
         user: {
           id: booking.user.id,
@@ -845,10 +849,7 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-  async getBookingsByStatusForMaid(
-    maidId: string, 
-    query: PaginationstausDto
-  ) {
+  async getBookingsByStatusForMaid(maidId: string, query: PaginationstausDto) {
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
