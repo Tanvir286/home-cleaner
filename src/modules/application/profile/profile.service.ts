@@ -4,6 +4,7 @@ import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CreateLocationDto } from './dto/create-location.dto';
 
 @Injectable()
 export class ProfileService {
@@ -628,4 +629,114 @@ export class ProfileService {
       },
     };
   }
+
+  
+  // topic: saved location part)---------->
+  
+  // post save location
+  async saveLocation(
+    userId: string,
+    locationDto: CreateLocationDto,
+  ) {
+   
+    const { location_name, location_type } = locationDto;
+
+    const newLocation = await this.prisma.location.create({
+      data: {
+        user_id: userId,
+        location_name: location_name,
+        location_type: location_type,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Location saved successfully',
+      data: newLocation,
+    };
+  }
+
+  // get saved location
+  async getSavedLocations(
+    userId: string,
+  ) {
+ 
+    const locations = await this.prisma.location.findMany({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Locations retrieved successfully',
+      data: locations,
+    };
+  }
+
+  // get a specific saved location by id
+  async getSavedLocationById(
+    userId: string,
+    locationId: string,
+  ) {
+    const location = await this.prisma.location.findFirst({
+      where: {
+        id: locationId,
+        user_id: userId,
+      },
+    });
+
+    if (!location) {
+      return {
+        success: false,
+        message: 'Location not found',
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Location retrieved successfully',
+      data: location,
+    };
+  }
+
+  // update saved location
+  async updateSavedLocation(
+    userId: string,
+    locationId: string,
+    locationDto: CreateLocationDto,
+  ) {
+    const { location_name, location_type } = locationDto;
+
+    const location = await this.prisma.location.findFirst({
+      where: {
+        id: locationId,
+        user_id: userId,
+      },
+    });
+
+    if (!location) {
+      return {
+        success: false,
+        message: 'Location not found',
+      };
+    }
+
+    const updatedLocation = await this.prisma.location.update({
+      where: {
+        id: locationId,
+      },
+      data: {
+        location_name: location_name,
+        location_type: location_type,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Location updated successfully',
+      data: updatedLocation,
+    };
+  }
+
 }

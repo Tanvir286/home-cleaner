@@ -19,6 +19,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Roles } from 'src/common/guard/role/roles.decorator';
 import { RolesGuard } from 'src/common/guard/role/roles.guard';
 import { Role } from 'src/common/guard/role/role.enum';
+import { CreateLocationDto } from './dto/create-location.dto';
 
 @Controller('profile')
 export class ProfileController {
@@ -116,7 +117,53 @@ export class ProfileController {
     return this.profileService.updateHomeowner(userId, updateProfileDto, image);
   }
 
+  /*----------------------------------------------
+  // topic: Save Address part  ---------->
+  -----------------------------------------------*/
 
+  // post save location
+  @UseGuards(JwtAuthGuard)
+  @Post('saved-location')
+  async saveLocation(
+    @Body() locationDto: CreateLocationDto,
+    @Req() req,
+  ) {
+    const userId = req.user.userId;
+    return this.profileService.saveLocation(userId, locationDto);
+  }
+
+  // get saved location
+  @UseGuards(JwtAuthGuard)
+  @Get('get-location')
+  async getSavedLocations(
+    @Req() req,
+  ) {
+    const userId = req.user.userId;
+    return this.profileService.getSavedLocations(userId);
+  }
+
+  // get a specific saved location by id
+  @UseGuards(JwtAuthGuard)
+  @Get('get-location/:locationId')
+  async getSavedLocationById(
+    @Req() req,
+    @Param('locationId') locationId: string,
+  ) {
+    const userId = req.user.userId;
+    return this.profileService.getSavedLocationById(userId, locationId);
+  }  
+
+  // update saved location
+  @UseGuards(JwtAuthGuard)
+  @Patch('get-location/:locationId')
+  async updateSavedLocation(
+    @Req() req,
+    @Param('locationId') locationId: string,
+    @Body() locationDto: CreateLocationDto,
+  ) {
+    const userId = req.user.userId;
+    return this.profileService.updateSavedLocation(userId, locationId, locationDto);
+  }
 
 
 }
