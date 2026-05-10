@@ -667,10 +667,18 @@ export class ProfileService {
       },
     });
 
+    const formattedLocations = locations.map((location) => {
+      return {
+        id: location.id,
+        location_name: location.location_name,
+        location_type: location.location_type,
+      };
+    });
+
     return {
       success: true,
       message: 'Locations retrieved successfully',
-      data: locations,
+      data: formattedLocations,
     };
   }
 
@@ -708,6 +716,10 @@ export class ProfileService {
   ) {
     const { location_name, location_type } = locationDto;
 
+    const locationData: any = {};
+    if (location_name !== undefined) locationData.location_name = location_name;
+    if (location_type !== undefined) locationData.location_type = location_type;
+
     const location = await this.prisma.location.findFirst({
       where: {
         id: locationId,
@@ -726,16 +738,44 @@ export class ProfileService {
       where: {
         id: locationId,
       },
-      data: {
-        location_name: location_name,
-        location_type: location_type,
-      },
+      data: locationData
     });
 
     return {
       success: true,
       message: 'Location updated successfully',
       data: updatedLocation,
+    };
+  }
+
+  // detele saved location
+  async deleteSavedLocation(
+    userId: string,
+    locationId: string,
+  ) {
+    const location = await this.prisma.location.findFirst({
+      where: {
+        id: locationId,
+        user_id: userId,
+      },
+    });
+
+    if (!location) {
+      return {
+        success: false,
+        message: 'Location not found',
+      };
+    }
+
+    await this.prisma.location.delete({
+      where: {
+        id: locationId,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Location deleted successfully',
     };
   }
 

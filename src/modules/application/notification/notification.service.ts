@@ -9,7 +9,10 @@ export class NotificationService {
   constructor(private readonly prisma: PrismaService) {}
 
   // get all notification
-  async findAll(userId: string, paginationdto: PaginationDto) {
+  async findAll(
+    userId: string, 
+    paginationdto: PaginationDto
+  ) {
 
     const { page, perPage } = paginationdto;
     const skip = (page - 1) * perPage;

@@ -20,6 +20,7 @@ import { Roles } from 'src/common/guard/role/roles.decorator';
 import { RolesGuard } from 'src/common/guard/role/roles.guard';
 import { Role } from 'src/common/guard/role/role.enum';
 import { CreateLocationDto } from './dto/create-location.dto';
+import { UpdateLocationDto } from './dto/update-location.dto';
 
 @Controller('profile')
 export class ProfileController {
@@ -159,11 +160,21 @@ export class ProfileController {
   async updateSavedLocation(
     @Req() req,
     @Param('locationId') locationId: string,
-    @Body() locationDto: CreateLocationDto,
+    @Body() locationDto: UpdateLocationDto,
   ) {
     const userId = req.user.userId;
     return this.profileService.updateSavedLocation(userId, locationId, locationDto);
   }
 
+  // delete saved location
+  @UseGuards(JwtAuthGuard)
+  @Delete('get-location/:locationId')
+  async deleteSavedLocation(
+    @Req() req,
+    @Param('locationId') locationId: string,
+  ) {
+    const userId = req.user.userId;
+    return this.profileService.deleteSavedLocation(userId, locationId);
+  }
 
 }
