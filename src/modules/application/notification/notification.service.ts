@@ -2,41 +2,39 @@ import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { paginateResponse, PaginationDto } from 'src/common/pagination';
 
 @Injectable()
 export class NotificationService {
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(
-    private readonly  prisma: PrismaService
-  ) {}
+  // get all notification
+  async findAll(userId: string, paginationdto: PaginationDto) {
+
+    const { page, perPage } = paginationdto;
+    const skip = (page - 1) * perPage;
+    const take = perPage;
 
 
-  // get all notification 
-  async findAll(userId: string) {
-   
-    const notifications = await this.prisma.notification.findMany({
-      where: {
-        receiver_id: userId,
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
+    const [notifications, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where: { receiver_id: userId },
+        include: {
+          sender: {
+            select: { id: true, name: true, avatar: true },
+          },
+          notification_event: {
+            select: { type: true, text: true },
           },
         },
-        notification_event: {
-          select: {
-            type: true,
-            text: true,
-          },
-        },
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
+        orderBy: { created_at: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.notification.count({
+        where: { receiver_id: userId },
+      }),
+    ]);
 
     const data = notifications.map((n) => ({
       id: n.id,
@@ -46,14 +44,28 @@ export class NotificationService {
       sender: n.sender,
     }));
 
+    const paginationResponse = paginateResponse(
+      data,
+      total,
+      page,
+      perPage,
+    );
+
     return {
       success: true,
       message: 'Notifications retrieved successfully',
-      data,
+      ... paginationResponse,
+      
     };
   }
 
-    
 
-   
+
+
+
+
+
+
+
+
 }
