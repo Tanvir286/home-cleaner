@@ -66,7 +66,10 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.HOMEOWNER)
   @Post()
-  async createBooking(@Body() createBookingDto: CreateBookingDto, @Req() req) {
+  async createBooking(
+    @Body() createBookingDto: CreateBookingDto, 
+    @Req() req
+  ) {
     const userId = req.user.userId;
     return this.bookingService.create(userId, createBookingDto);
   }

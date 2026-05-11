@@ -15,12 +15,14 @@ export const bookingSlotTimeMap: Record<BookingSlot, { start: string; end: strin
   D: { start: '04:00pm', end: '07:30pm' },
 };
 
-// Function to format booking date 
+// Function to format booking date
+// Use UTC date parts to avoid timezone shift when displaying dates.
 export function formatBookingDate(date: Date) {
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: '2-digit',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 

@@ -111,7 +111,12 @@ export class BookingService {
   }
 
   // available maids list
-  async getMaidSlots(maidId: string, month: number, year: number) {
+  async getMaidSlots(
+    maidId: string, 
+    month: number, 
+    year: number
+  ) {
+ 
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -132,7 +137,7 @@ export class BookingService {
           gte: startDate,
           lte: endDate,
         },
-        status: { not: 'PENDING' },
+        status: { not: 'CANCELLED' },
       },
       select: {
         booking_date: true,
@@ -209,11 +214,15 @@ export class BookingService {
       select: { location: true },
     });
 
-    const parsedDate = new Date(booking_date);
+    // Parse date parts manually to avoid UTC midnight timezone shift.
+    // e.g. "2026-05-15" parsed as UTC = May 14 in UTC+6 timezone.
+    // Setting hours to 12:00 (noon) keeps the date stable across timezones.
+    const [year, month, day] = booking_date.split('-').map(Number);
+    const parsedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    parsedDate.setHours(0, 0, 0, 0);
+    parsedDate.setHours(12, 0, 0, 0);
 
     if (parsedDate < today) {
       throw new BadRequestException('You cannot book a date in the past');
@@ -289,10 +298,24 @@ export class BookingService {
       });
     });
 
+    const formatPackage = (pkg: typeof booking.general_cleaning_package | typeof booking.deep_cleaning_package) => {
+      if (!pkg) return null;
+      return {
+        ...pkg,
+        image: pkg.image
+          ? TanvirStorage.url(appConfig().storageUrl.package + '/' + pkg.image)
+          : null,
+      };
+    };
+
     return {
       success: true,
       message: 'Booking created successfully',
-      data: booking,
+      data: {
+        ...booking,
+        general_cleaning_package: formatPackage(booking.general_cleaning_package),
+        deep_cleaning_package: formatPackage(booking.deep_cleaning_package),
+      },
     };
   }
 
@@ -850,7 +873,10 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-  async getBookingsByStatusForMaid(maidId: string, query: PaginationstausDto) {
+  async getBookingsByStatusForMaid(
+    maidId: string, 
+    query: PaginationstausDto
+  ) {
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
