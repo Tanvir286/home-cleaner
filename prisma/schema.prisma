@@ -280,6 +280,15 @@ model DeepCleaningPackage {
   @@map("deep_cleaning_packages")
 }
 
+// payment status for booking
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Booking model with maid 
 model Booking {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -300,6 +309,8 @@ model Booking {
 
   danger_notification Danger? @relation("DangerNotificationToBooking")
 
+  payment_transaction PaymentTransaction? @relation("paymentTransactionBooking")
+
   booking_date DateTime @db.Date
   slot         Slot
 
@@ -314,6 +325,7 @@ model Booking {
 
   total_price Decimal?      @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
+  payment_status PaymentStatus @default(PENDING)
 
   booking_destinations Destination[]
   live_locations       LiveLocation[]
@@ -526,7 +538,62 @@ model Notification {
  * Notification Part End
  * -----------------------------------------
  */
+/**
+ * ----------------------------------------
+ * Payment Part Start
+ * -----------------------------------------
+ */
 
+model UserPaymentMethod {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  payment_method_id String?
+  checkout_id       String?
+
+  @@map("user_payment_methods")
+}
+
+
+model PaymentTransaction {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  store_id String?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  booking_id String? @unique
+  booking    Booking? @relation("paymentTransactionBooking", fields: [booking_id], references: [id], onDelete: Cascade)
+
+  type             String?  @default("order")
+  withdraw_via     String?  @default("wallet")
+  provider         String?
+  reference_number String?
+  status           String?  @default("pending")
+  raw_status       String?
+  amount           Decimal?
+  currency         String?
+  paid_amount      Decimal?
+  paid_currency    String?
+
+  @@map("payment_transactions")
+}
+
+
+/**
+ * ----------------------------------------
+ * Payment Part End
+ * -----------------------------------------
+ */
 model Role {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -591,46 +658,7 @@ model RoleUser {
   @@map("role_users")
 }
 
-model UserPaymentMethod {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
 
-  user_id String?
-  user    User?   @relation(fields: [user_id], references: [id])
-
-  payment_method_id String?
-  checkout_id       String?
-
-  @@map("user_payment_methods")
-}
-
-model PaymentTransaction {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  store_id String?
-
-  user_id String?
-  user    User?   @relation(fields: [user_id], references: [id])
-
-  order_id         String?
-  type             String?  @default("order")
-  withdraw_via     String?  @default("wallet")
-  provider         String?
-  reference_number String?
-  status           String?  @default("pending")
-  raw_status       String?
-  amount           Decimal?
-  currency         String?
-  paid_amount      Decimal?
-  paid_currency    String?
-
-  @@map("payment_transactions")
-}
 
 model Faq {
   id         String    @id @default(cuid())

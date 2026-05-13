@@ -214,9 +214,6 @@ export class BookingService {
       select: { location: true },
     });
 
-    // Parse date parts manually to avoid UTC midnight timezone shift.
-    // e.g. "2026-05-15" parsed as UTC = May 14 in UTC+6 timezone.
-    // Setting hours to 12:00 (noon) keeps the date stable across timezones.
     const [year, month, day] = booking_date.split('-').map(Number);
     const parsedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
 
