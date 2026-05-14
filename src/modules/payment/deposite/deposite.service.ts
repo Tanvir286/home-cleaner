@@ -11,6 +11,31 @@ export class DepositeService {
      private readonly prisma: PrismaService
    ) {}
 
+    // get my balance
+    async getBalance(userId: string) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { 
+          balance: true,
+          stripe_connect_id: true,
+        },
+      });
+
+      if(!user) {
+        throw new BadRequestException('User not found');
+      }
+      
+      return {
+        success: true,
+        message: 'Balance retrieved successfully',
+        data: {
+          balance: user.balance,
+          has_payout_account: !!user.stripe_connect_id,
+          stripe_connect_id: user.stripe_connect_id,
+        }
+      };
+    }
+
 
     // add deposite
     async create(
@@ -39,43 +64,52 @@ export class DepositeService {
       try {
 
         let customerId = user.billing_id;
-        if(!customerId) throw new BadRequestException('User does not have a billing customer ID');
+        if(!customerId) {
+          const customer = await StripePayment.createCustomer({
+            user_id: userId,
+            name: user.name,
+            email: user.email,
+          });
+          customerId = customer.id;
+        }
 
-        const customer = await StripePayment.createCustomer({
-          user_id: userId,
-          name: user.name,
-          email: user.email,
-        }) 
-        customerId = customer.id;
-
-        const paymentIntent = await StripePayment.createPaymentIntent({
-          amount: amount,
-          currency: currency,
-          customer_id: customerId,
-          metadata: {
-            userId: userId,
-            type: 'deposit'
-          }
-        });
-
-        await this.prisma.paymentTransaction.create({
+        const paymentTransaction = await this.prisma.paymentTransaction.create({
           data: {
             user_id: userId,
             type: 'deposit',
             provider: 'stripe',
-            reference_number: paymentIntent.id,
+            reference_number: null,
             status: 'pending',
             amount: amount,
             currency: currency,
           }
         });
 
+        const session = await StripePayment.createCheckoutSessionForAmount({
+          customer: customerId,
+          amount: amount,
+          currency: currency,
+          metadata: {
+            userId: userId,
+            type: 'deposit',
+            transaction_id: paymentTransaction.id,
+          },
+        });
+
+        await this.prisma.paymentTransaction.update({
+          where: { id: paymentTransaction.id },
+          data: {
+            reference_number: session.id,
+          },
+        });
+
         return {
           success: true,
-          message: 'Deposit intent created successfully',
+          message: 'Checkout session created successfully',
           data: {
-            payment_intent_id: paymentIntent.id,
-            client_secret: (paymentIntent as any).client_secret,
+            session_id: session.id,
+            checkout_url: (session as any).url,
+            transaction_id: paymentTransaction.id,
             amount: amount,
             currency: currency,
           }
@@ -85,7 +119,7 @@ export class DepositeService {
       }
     }
 
-    // get all deposite
+   
     
 
 }

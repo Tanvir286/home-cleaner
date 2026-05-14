@@ -11,6 +11,13 @@ export class DepositeController {
 
   constructor(private readonly depositeService: DepositeService) {}
 
+  // get my balance
+  @Get('balance')
+  async getBalance(@Req() req: any) {
+    const userId = req.user.userId;
+    return this.depositeService.getBalance(userId);
+  }
+
   // add deposite
   @Post('add-balance')
   async create(

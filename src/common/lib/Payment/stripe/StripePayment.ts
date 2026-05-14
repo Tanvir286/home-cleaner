@@ -15,6 +15,10 @@ const STRIPE_WEBHOOK_SECRET = appConfig().payment.stripe.webhook_secret;
 
 export class StripePayment {
 
+  private static getCheckoutRedirectBaseUrl() {
+    return appConfig().app.url;
+  }
+
 
   /*-----------------------------------------
             important Schema start
@@ -235,9 +239,10 @@ export class StripePayment {
    * @returns
    */
   static async createCheckoutSession() {
-    const success_url = `${appConfig().app.url
+    const redirectBaseUrl = this.getCheckoutRedirectBaseUrl();
+    const success_url = `${redirectBaseUrl
       }/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel_url = `${appConfig().app.url}/failed`;
+    const cancel_url = `${redirectBaseUrl}/failed`;
 
     const session = await Stripe.checkout.sessions.create({
       mode: 'payment',
@@ -263,6 +268,50 @@ export class StripePayment {
   }
 
   /**
+   * Create stripe hosted checkout session for a custom amount (deposit)
+   */
+  static async createCheckoutSessionForAmount({
+    customer,
+    amount,
+    currency,
+    metadata,
+  }: {
+    customer?: string;
+    amount: number;
+    currency: string;
+    metadata?: stripe.MetadataParam;
+  }) {
+    const redirectBaseUrl = this.getCheckoutRedirectBaseUrl();
+    const success_url = `${redirectBaseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = `${redirectBaseUrl}/failed`;
+
+    const session = await Stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      customer: customer,
+      payment_intent_data: {
+        metadata: metadata,
+      },
+      line_items: [
+        {
+          price_data: {
+            currency: currency,
+            product_data: {
+              name: 'Deposit',
+            },
+            unit_amount: Math.round(amount * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: success_url,
+      cancel_url: cancel_url,
+      metadata: metadata,
+    });
+    return session;
+  }
+
+  /**
    * Create stripe hosted checkout session
    * @param customer
    * @param price
@@ -272,9 +321,10 @@ export class StripePayment {
     customer: string,
     price: string,
   ) {
-    const success_url = `${appConfig().app.url
+    const redirectBaseUrl = this.getCheckoutRedirectBaseUrl();
+    const success_url = `${redirectBaseUrl
       }/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel_url = `${appConfig().app.url}/failed`;
+    const cancel_url = `${redirectBaseUrl}/failed`;
 
     const session = await Stripe.checkout.sessions.create({
       mode: 'subscription',

@@ -36,10 +36,7 @@ export class WithdrawService {
     }
 
     try {
-      // Create Stripe Connected Account
-      const connectedAccount =
-        await StripePayment.createConnectedAccount(email);
-
+      const connectedAccount = await StripePayment.createConnectedAccount(email);
       // Save banking_id in user's profile
       await this.prisma.user.update({
         where: { id: userId },
@@ -55,8 +52,18 @@ export class WithdrawService {
           accountId: connectedAccount.id,
         },
       };
-    } catch (error) {
-      console.error('Connected account error:', error);
+    } catch (error: any) {
+      console.error('Connected account error:', error?.raw ?? error?.message ?? error);
+
+      const message =
+        error?.raw?.message || error?.message || 'Failed to create payout account.';
+
+      if (message.includes('signed up for Connect') || message.includes('create new accounts')) {
+        throw new BadRequestException(
+          'Stripe Connect is not enabled for this platform. Enable Connect at https://dashboard.stripe.com/connect and retry.',
+        );
+      }
+
       throw new HttpException(
         'Failed to create payout account. Please try again later.',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -80,7 +87,7 @@ export class WithdrawService {
           url: accountLink.url,
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Onboarding link error:', error);
       throw new HttpException(
         'Failed to create onboarding link',
@@ -171,7 +178,7 @@ export class WithdrawService {
           status: 'completed',
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Withdraw processing error:', error);
 
       await this.prisma.paymentTransaction.create({
@@ -216,6 +223,7 @@ export class WithdrawService {
       return {
         success: true,
         data: {
+          stripe_id: user.stripe_connect_id,
           available: {
             amount: availableAmount / 100,
             amount_in_cents: availableAmount,
@@ -234,7 +242,7 @@ export class WithdrawService {
           },
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking balance:', error);
       throw new HttpException(
         'Failed to check balance',

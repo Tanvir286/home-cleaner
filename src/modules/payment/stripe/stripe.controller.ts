@@ -13,6 +13,46 @@ export class StripeController {
     private readonly prisma: PrismaService,
   ) {}
 
+  private async finalizeDepositTransaction({
+    transactionId,
+    referenceNumber,
+    paidAmount,
+    rawStatus,
+  }: {
+    transactionId?: string;
+    referenceNumber?: string;
+    paidAmount?: number;
+    rawStatus?: string;
+  }) {
+    if (!transactionId) return;
+
+    const transaction = await this.prisma.paymentTransaction.findUnique({
+      where: { id: transactionId },
+    });
+
+    if (!transaction || transaction.status !== 'pending') return;
+
+    await this.prisma.paymentTransaction.update({
+      where: { id: transactionId },
+      data: {
+        status: 'succeeded',
+        raw_status: rawStatus,
+        reference_number: referenceNumber ?? transaction.reference_number,
+      },
+    });
+
+    if (transaction.user_id) {
+      await this.prisma.user.update({
+        where: { id: transaction.user_id },
+        data: {
+          balance: {
+            increment: paidAmount ?? Number(transaction.amount ?? 0),
+          },
+        },
+      });
+    }
+  }
+
 
   @Post('webhook')
   async handleWebhook(
@@ -25,9 +65,6 @@ export class StripeController {
       const event = await this.stripeService.handleWebhook(payload, signature);
 
       if (!event.data || !event.data.object) return { received: true };
-
-      const pi = event.data.object as Stripe.PaymentIntent;
-      const meta = pi.metadata || {};
      
       // Handle events
       switch (event.type) {
@@ -35,28 +72,36 @@ export class StripeController {
           break;
         case 'payment_intent.created':
           break;
-        case 'payment_intent.succeeded': 
-  
-          if (meta.type === 'deposit' && meta.transaction_id) {
-            await this.prisma.paymentTransaction.update({
-              where: { id: meta.transaction_id },
-              data: {
-                status: 'succeeded',
-                reference_number: pi.id,
-              },
+        case 'payment_intent.succeeded': {
+          const paymentIntent = event.data.object as Stripe.PaymentIntent;
+          const meta = paymentIntent.metadata || {};
+
+          if (meta.type === 'deposit') {
+            await this.finalizeDepositTransaction({
+              transactionId: meta.transaction_id,
+              referenceNumber: paymentIntent.id,
+              paidAmount: paymentIntent.amount_received ? paymentIntent.amount_received / 100 : undefined,
+              rawStatus: event.type,
             });
           }
 
-          await this.prisma.user.update({
-            where: { id: meta.userId },
-            data: {
-              balance: {
-                increment: pi.amount_received / 100, 
-              },
-            },
-          });
-
           break; 
+        }
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const meta = session.metadata || {};
+
+          if (meta.type === 'deposit') {
+            await this.finalizeDepositTransaction({
+              transactionId: meta.transaction_id,
+              referenceNumber: session.id,
+              paidAmount: session.amount_total ? session.amount_total / 100 : undefined,
+              rawStatus: event.type,
+            });
+          }
+
+          break;
+        }
         case 'payment_intent.canceled':
           
           break;
@@ -70,7 +115,7 @@ export class StripeController {
           
           break;
         default:
-          console.log(`Unhandled event type ${event.type}`);
+          break;
       }
 
       return { received: true };
