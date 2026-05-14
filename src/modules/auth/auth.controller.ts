@@ -30,6 +30,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Role } from 'src/common/guard/role/role.enum';
 import { Roles } from 'src/common/guard/role/roles.decorator';
 import { RolesGuard } from 'src/common/guard/role/roles.guard';
+import { FirebaseAuthDto } from './dto/firebase-auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -496,19 +497,52 @@ export class AuthController {
     }
   }
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleLogin(): Promise<any> {
-    return HttpStatus.OK;
+  // ------------- Firebase Google Authentication --------------
+
+  @ApiOperation({ summary: "Firebase Google Authentication" })
+  @Post("firebase/google")
+  async firebaseGoogleAuth(@Body() firebaseAuthDto: FirebaseAuthDto) {
+    try {
+      const { idToken, fcm_token } = firebaseAuthDto;
+
+      if (!idToken) {
+        throw new HttpException(
+          "ID Token not provided",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return await this.authService.firebaseGoogleAuth(idToken, fcm_token);
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
 
-  @Get('google/redirect')
-  @UseGuards(AuthGuard('google'))
-  async googleLoginRedirect(@Req() req: Request): Promise<any> {
-    return {
-      statusCode: HttpStatus.OK,
-      data: req.user,
-    };
+  // ------------- Firebase Apple Authentication --------------
+
+  @ApiOperation({ summary: "Firebase Apple Authentication" })
+  @Post("firebase/apple")
+  async firebaseAppleAuth(@Body() firebaseAuthDto: FirebaseAuthDto) {
+    try {
+      const { idToken, fcm_token } = firebaseAuthDto;
+
+      if (!idToken) {
+        throw new HttpException(
+          "ID Token not provided",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return await this.authService.firebaseAppleAuth(idToken, fcm_token);
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
 
   // --------------change password---------
@@ -593,7 +627,9 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('verify-2fa')
-  async verify2FA(@Req() req: Request, @Body() data: { token: string }) {
+  async verify2FA(
+    @Req() req: Request, 
+    @Body() data: { token: string }) {
     try {
       const user_id = req.user.userId;
       const token = data.token;
