@@ -12,7 +12,7 @@ export class DepositeService {
    ) {}
 
 
-   // add deposite
+    // add deposite
     async create(
       createDepositDto: CreateDepositDto,
       userId: string
@@ -84,5 +84,8 @@ export class DepositeService {
         throw new BadRequestException(`Failed to create deposit intent: ${error?.message ?? 'Unknown error'}`);
       }
     }
+
+    // get all deposite
+    
 
 }

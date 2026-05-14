@@ -1,4 +1,4 @@
- import { Controller, Post, Req, Headers } from '@nestjs/common';
+ import { Controller, Post, Req, Headers, UseGuards } from '@nestjs/common';
 import { StripeService } from './stripe.service';
 import { Request } from 'express';
 import { TransactionRepository } from '../../../common/repository/transaction/transaction.repository';
@@ -12,6 +12,7 @@ export class StripeController {
     private transactionRepository: TransactionRepository,
     private readonly prisma: PrismaService,
   ) {}
+
 
   @Post('webhook')
   async handleWebhook(

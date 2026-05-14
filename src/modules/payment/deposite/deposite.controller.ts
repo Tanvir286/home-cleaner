@@ -13,12 +13,14 @@ export class DepositeController {
 
   // add deposite
   @Post('add-balance')
-  create(
+  async create(
     @Body() createDepositDto: CreateDepositDto,
     @Req() req: any
   ) {
     const userId = req.user.userId;
     return this.depositeService.create(createDepositDto, userId);
   }
+
+  // get all deposite
  
 }
