@@ -13,8 +13,11 @@ import { CustomExceptionFilter } from './common/exception/custom-exception.filte
 import { TanvirStorage } from './common/lib/Disk/TanvirStorage';
 import appConfig from './config/app.config';
 import { PrismaExceptionFilter } from './common/exception/prisma-exception.filter';
+import initializeFirebase from './config/firebase.config';
 
 async function bootstrap() {
+  // initialize Firebase Admin SDK early so `admin` is ready for services
+  initializeFirebase();
  
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,

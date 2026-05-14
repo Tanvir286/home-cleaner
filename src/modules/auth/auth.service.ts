@@ -1121,6 +1121,7 @@ export class AuthService {
             googleId: uid,
             email_verified_at: new Date(),
             status: 1,
+            type: 'MAID',
           },
         });
 
@@ -1168,6 +1169,10 @@ export class AuthService {
         60 * 60 * 24 * 7, // 7 days
       );
 
+      const avatarUrl = user.avatar
+        ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + user.avatar)
+        : null;
+
       return {
         success: true,
         message: "Logged in successfully via Firebase",
@@ -1181,7 +1186,7 @@ export class AuthService {
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
-          avatar: user.avatar,
+          avatar_url: avatarUrl,
           type: user.type,
         },
       };
@@ -1218,6 +1223,7 @@ export class AuthService {
             apple_id: uid,
             email_verified_at: new Date(),
             status: 1,
+            type: 'MAID',
           },
         });
 
@@ -1261,6 +1267,10 @@ export class AuthService {
         60 * 60 * 24 * 7,
       );
 
+      const avatarUrl = user.avatar
+        ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + user.avatar)
+        : null;
+
       return {
         success: true,
         message: "Logged in successfully via Firebase (Apple)",
@@ -1274,7 +1284,7 @@ export class AuthService {
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
-          avatar: user.avatar,
+          avatar_url: avatarUrl,
           type: user.type,
         },
       };
