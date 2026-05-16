@@ -31,6 +31,18 @@ export class AuthService {
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
+  private resolveAvatarUrl(avatar: string | null | undefined) {
+    if (!avatar) {
+      return null;
+    }
+
+    if (/^https?:\/\//i.test(avatar)) {
+      return avatar;
+    }
+
+    return TanvirStorage.url(appConfig().storageUrl.avatar + '/' + avatar);
+  }
+
   // done
   async me(userId: string) {
     try {
@@ -56,9 +68,7 @@ export class AuthService {
       }
 
       if (user.avatar) {
-        user['avatar_url'] = TanvirStorage.url(
-          appConfig().storageUrl.avatar + '/' + user.avatar,
-        );
+        user['avatar_url'] = this.resolveAvatarUrl(user.avatar);
       }
 
       if (user) {
@@ -180,7 +190,12 @@ export class AuthService {
     }
   }
   // done
-  async login({ email, userId, fcm_token, device_type }) {
+  async login({ 
+    email,
+    userId,
+    fcm_token, 
+    device_type 
+  }) {
     try {
       const user = await this.userRepository.getUserDetails(userId);
 
@@ -272,13 +287,15 @@ export class AuthService {
     try {
       const data: any = {};
 
-      if (updateUserDto.name) data.name = updateUserDto.name;
+      if (updateUserDto.name !== undefined) data.name = updateUserDto.name;
 
-      if (updateUserDto.first_name) data.first_name = updateUserDto.first_name;
+      if (updateUserDto.first_name !== undefined) data.first_name = updateUserDto.first_name;
 
-      if (updateUserDto.last_name) data.last_name = updateUserDto.last_name;
+      if (updateUserDto.last_name !== undefined) data.last_name = updateUserDto.last_name;
 
-      if (updateUserDto.address) data.address = updateUserDto.address;
+      if (updateUserDto.address !== undefined) data.address = updateUserDto.address;
+
+      if (updateUserDto.type !== undefined) data.type = updateUserDto.type;
 
       if (image) {
         // delete old image from storage
@@ -1093,7 +1110,7 @@ export class AuthService {
   // Firebase Google Authentication
   async firebaseGoogleAuth(idToken: string, fcm_token?: string) {
     try {
-      // Verify the Firebase ID token
+     
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       const { uid, email, name, picture } = decodedToken;
 
@@ -1101,12 +1118,10 @@ export class AuthService {
         throw new UnauthorizedException("Email not found in Firebase token");
       }
 
-      // Check if user already exists
       let user = await this.prisma.user.findUnique({
         where: { email: email },
       });
 
-      // If user doesn't exist, create a new user
       if (!user) {
         const nameParts = name ? name.split(" ") : ["", ""];
         const firstName = nameParts[0] || "";
@@ -1118,14 +1133,13 @@ export class AuthService {
             first_name: firstName,
             last_name: lastName,
             avatar: picture || null,
-            googleId: uid,
+            google_id: uid,
             email_verified_at: new Date(),
             status: 1,
             type: 'MAID',
           },
         });
 
-        // Create Stripe customer
         const stripeCustomer = await StripePayment.createCustomer({
           user_id: user.id,
           name: name || email,
@@ -1138,17 +1152,16 @@ export class AuthService {
             data: { billing_id: stripeCustomer.id },
           });
         }
-      } else if (!user.googleId) {
+      } else if (!user.google_id) {
         user = await this.prisma.user.update({
           where: { id: user.id },
           data: {
-            googleId: uid,
+            google_id: uid,
             avatar: user.avatar || picture || null,
           },
         });
       }
 
-      // Update FCM token if provided
       if (fcm_token) {
         await this.prisma.user.update({
           where: { id: user.id },
@@ -1156,22 +1169,19 @@ export class AuthService {
         });
       }
 
-      // Generate JWT tokens
       const payload = { email: user.email, sub: user.id };
       const accessToken = this.jwtService.sign(payload, { expiresIn: "1h" });
       const refreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
 
-      // Store refresh token in Redis
+     
       await this.redis.set(
         `refresh_token:${user.id}`,
         refreshToken,
         "EX",
-        60 * 60 * 24 * 7, // 7 days
+        60 * 60 * 24 * 7, 
       );
 
-      const avatarUrl = user.avatar
-        ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + user.avatar)
-        : null;
+      const avatarUrl = this.resolveAvatarUrl(user.avatar);
 
       return {
         success: true,
@@ -1186,6 +1196,7 @@ export class AuthService {
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
+          google_id: user.google_id,
           avatar_url: avatarUrl,
           type: user.type,
         },
@@ -1267,9 +1278,7 @@ export class AuthService {
         60 * 60 * 24 * 7,
       );
 
-      const avatarUrl = user.avatar
-        ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + user.avatar)
-        : null;
+      const avatarUrl = this.resolveAvatarUrl(user.avatar);
 
       return {
         success: true,
@@ -1284,6 +1293,7 @@ export class AuthService {
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
+          google_id: user.google_id,
           avatar_url: avatarUrl,
           type: user.type,
         },

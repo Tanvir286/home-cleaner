@@ -190,7 +190,6 @@ export class ConversationService {
 
       const opponentUserId = opponentParticipant?.user.id;
 
-
       const opponentData = opponentParticipant ? {
         userId: opponentParticipant.user.id,
         name: opponentParticipant.user.name,
