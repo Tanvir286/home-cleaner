@@ -13,6 +13,8 @@ services:
       # 1 second polling interval
       - CHOKIDAR_INTERVAL=1000
 
+      - HOST=0.0.0.0
+
       - NODE_ENV=development
       # host.docker.internal is the host machine's IP address
       # - DATABASE_URL=postgresql://postgres:root@host.docker.internal/backend 

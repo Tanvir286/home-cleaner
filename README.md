@@ -68,6 +68,8 @@ For docker:
 docker compose up
 ```
 
+If you run the app directly on Windows and hit a bind permission error, set `HOST=127.0.0.1`.
+
 ## Api documentation
 
 Swagger: http://{domain_name}/api/docs
