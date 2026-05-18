@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateTransectionDto } from './dto/create-transection.dto';
-import { UpdateTransectionDto } from './dto/update-transection.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -11,24 +9,37 @@ export class TransectionService {
   ) {}
 
   // transection list
- 
-  async findDepositList() {
-  const deposits = await this.prisma.transection.findMany({
-    where: {
-      type: 'deposit',
-      deleted_at: null,
-    },
-    orderBy: {
-      created_at: 'desc',
-    },
-  });
-
-  return {
-    message: 'Deposit transaction list fetched successfully',
-    data: deposits,
-  };
-}
-
+  async findAll(
+    userId: string
+  ) {
   
+    const transactions = await this.prisma.paymentTransaction.findMany({
+      where: {
+        user_id: userId,
+        type: 'deposit',
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    const formattedTransection = transactions.map((t) => ({
+      id: t.id,
+      amount: t.amount,
+      type: t.type,
+      status: t.status,
+      createdAt: t.created_at,
+    }));
+
+    return {
+      success: true,
+      message: 'Transection list retrieved successfully',
+      data: formattedTransection,
+    };
+  }
+
+   
+
+
   
 }

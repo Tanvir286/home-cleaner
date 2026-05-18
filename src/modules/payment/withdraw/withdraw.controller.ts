@@ -121,4 +121,23 @@ export class WithdrawController {
       throw error;
     }
   }
+
+  // Check onboarding connected account
+  @UseGuards(JwtAuthGuard)
+  @Get('onboarding-status')
+  async getOnboardingStatus(@Req() req: any) {
+    try {
+      const userId = req.user.userId;
+      const result = await this.withdrawService.isOnboardingComplete(userId);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+
+
+
+
 }

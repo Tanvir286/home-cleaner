@@ -193,7 +193,7 @@ export class WithdrawService {
         },
       });
 
-      let errorMessage = 'Failed to process withdraw. Please try again later.';
+      let errorMessage = 'please add onboarding link to your stripe connected account and try again';
       if (error?.code === 'balance_insufficient') {
         errorMessage =
           'Stripe account have not enough balance. Please try again later.';
@@ -295,4 +295,28 @@ export class WithdrawService {
       },
     };
   }
+
+  // Check if onboarding completed for connected account
+  async isOnboardingComplete(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { stripe_connect_id: true },
+    });
+
+    if (!user || !user.stripe_connect_id) {
+      return { success: true, onboarded: false };
+    }
+    try {
+      const account = await StripePayment.getAccount(user.stripe_connect_id);
+      const onboarded = !!( account.charges_enabled || (account as any).payouts_enabled || account.details_submitted );
+      return { success: true, onboarded };
+    } catch (error: any) {
+      console.error('Error retrieving Stripe account:', error);
+      throw new HttpException('Failed to retrieve account status', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+
+
+  
 }

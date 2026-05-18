@@ -454,6 +454,12 @@ export class StripePayment {
     return balance;
   }
 
+  // retrieve connected account details
+  static async getAccount(account_id: string): Promise<stripe.Account> {
+    const account = await Stripe.accounts.retrieve(account_id);
+    return account as stripe.Account;
+  }
+
   // static async createPayout(amount: number, currency: string) {
   //   const payout = await Stripe.payouts.create({
   //     amount: amount * 100,

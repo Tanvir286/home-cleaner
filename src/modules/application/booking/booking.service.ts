@@ -19,7 +19,7 @@ import {
 } from './booking.utlis';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
-import { BookingStatus, UserType } from '@prisma/client';
+import { BookingStatus, UserType, VerificationStatus } from '@prisma/client';
 import { HomeownerUpdateBookingDto } from './dto/homeonwer-update-booking.dto';
 import { UpdateBookingAcceptOrRejectDto } from './dto/update-booking-acceptorreject.dto';
 import { StartedBookingDto } from './dto/started-booking.dto';
@@ -43,6 +43,13 @@ export class BookingService {
     const whereCondition: any = {
       type: UserType.MAID,
       availability: true,
+
+      maidVerification: {
+      some: {
+        status: VerificationStatus.VERIFIED,
+      },
+    },
+
     };
 
     const [total, maids] = await this.prisma.$transaction([
