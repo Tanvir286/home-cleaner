@@ -499,20 +499,39 @@ export class AuthController {
 
   // ------------- Firebase Google Authentication --------------
 
-  @ApiOperation({ summary: "Firebase Google Authentication" })
-  @Post("firebase/google")
+  @ApiOperation({ summary: 'Firebase Google Authentication' })
+  @Post('firebase/google')
   async firebaseGoogleAuth(@Body() firebaseAuthDto: FirebaseAuthDto) {
     try {
       const { idToken, fcm_token } = firebaseAuthDto;
 
       if (!idToken) {
         throw new HttpException(
-          "ID Token not provided",
+          'ID Token not provided',
           HttpStatus.BAD_REQUEST,
         );
       }
 
-      return await this.authService.firebaseGoogleAuth(idToken, fcm_token);
+      const result = await this.authService.firebaseGoogleAuth(
+        idToken,
+        fcm_token,
+      );
+
+      const isNew =
+        result && typeof result === 'object'
+          ? !!(
+              (result as any).is_new_user ??
+              (result as any).isNewUser ??
+              (result as any).new_user ??
+              false
+            )
+          : false;
+
+      if (result && typeof result === 'object') {
+        return { ...(result as object), is_new_user: isNew };
+      }
+
+      return { success: true, data: result, is_new_user: isNew };
     } catch (error: any) {
       return {
         success: false,
@@ -523,20 +542,39 @@ export class AuthController {
 
   // ------------- Firebase Apple Authentication --------------
 
-  @ApiOperation({ summary: "Firebase Apple Authentication" })
-  @Post("firebase/apple")
+  @ApiOperation({ summary: 'Firebase Apple Authentication' })
+  @Post('firebase/apple')
   async firebaseAppleAuth(@Body() firebaseAuthDto: FirebaseAuthDto) {
     try {
       const { idToken, fcm_token } = firebaseAuthDto;
 
       if (!idToken) {
         throw new HttpException(
-          "ID Token not provided",
+          'ID Token not provided',
           HttpStatus.BAD_REQUEST,
         );
       }
 
-      return await this.authService.firebaseAppleAuth(idToken, fcm_token);
+      const result = await this.authService.firebaseAppleAuth(
+        idToken,
+        fcm_token,
+      );
+
+      const isNew =
+        result && typeof result === 'object'
+          ? !!(
+              (result as any).is_new_user ??
+              (result as any).isNewUser ??
+              (result as any).new_user ??
+              false
+            )
+          : false;
+
+      if (result && typeof result === 'object') {
+        return { ...(result as object), is_new_user: isNew };
+      }
+
+      return { success: true, data: result, is_new_user: isNew };
     } catch (error: any) {
       return {
         success: false,
@@ -627,9 +665,7 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('verify-2fa')
-  async verify2FA(
-    @Req() req: Request, 
-    @Body() data: { token: string }) {
+  async verify2FA(@Req() req: Request, @Body() data: { token: string }) {
     try {
       const user_id = req.user.userId;
       const token = data.token;

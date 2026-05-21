@@ -221,6 +221,8 @@ export class BookingService {
       select: { location: true },
     });
 
+    const maidLocationValue = maid_location?.location ?? '';
+
     const [year, month, day] = booking_date.split('-').map(Number);
     const parsedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
 
@@ -251,7 +253,9 @@ export class BookingService {
       throw new BadRequestException('Insufficient balance for this booking');
     }
 
-    const booking = await this.prisma.$transaction(async (tx) => {
+    let booking;
+    try {
+      booking = await this.prisma.$transaction(async (tx) => {
       const deducted = await tx.user.updateMany({
         where: {
           id: userId,
@@ -272,14 +276,20 @@ export class BookingService {
 
       return tx.booking.create({
         data: {
-          user_id: userId,
-          maid_id,
+          user: { connect: { id: userId } },
+          maid: { connect: { id: maid_id } },
           booking_date: parsedDate,
           slot,
-          maid_location: maid_location.location,
+          maid_location: maidLocationValue,
           homeowner_location: address,
           status: 'PENDING',
-          ...packageData,
+          total_price: packageData.total_price ?? null,
+          ...(packageData.general_cleaning_package_id
+            ? { general_cleaning_package: { connect: { id: packageData.general_cleaning_package_id } } }
+            : {}),
+          ...(packageData.deep_cleaning_package_id
+            ? { deep_cleaning_package: { connect: { id: packageData.deep_cleaning_package_id } } }
+            : {}),
         },
         include: {
           maid: {
@@ -300,7 +310,11 @@ export class BookingService {
           deep_cleaning_package: true,
         },
       });
-    });
+      });
+    } catch (err: any) {
+      console.error('Prisma transaction error in createBooking:', err);
+      throw new BadRequestException(err?.message ?? 'Invalid data provided for a Prisma operation.');
+    }
 
     const formatPackage = (pkg: typeof booking.general_cleaning_package | typeof booking.deep_cleaning_package) => {
       if (!pkg) return null;
@@ -353,7 +367,7 @@ export class BookingService {
           },
         },
         orderBy: {
-          booking_date: 'desc',
+          booking_date: 'asc',
         },
         skip,
         take: perPage,

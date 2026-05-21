@@ -15,11 +15,13 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
-    const datasourceUrl = appConfig().database.url;
+    const datasourceUrl = appConfig().database.url?.trim();
 
     if (!datasourceUrl) {
       throw new Error('DATABASE_URL is not defined in environment variables');
     }
+
+    process.env.DATABASE_URL = datasourceUrl;
 
     super({
       datasourceUrl,

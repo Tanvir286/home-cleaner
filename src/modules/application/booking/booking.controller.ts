@@ -71,6 +71,7 @@ export class BookingController {
     @Req() req
   ) {
     const userId = req.user.userId;
+  
     return this.bookingService.create(userId, createBookingDto);
   }
 
