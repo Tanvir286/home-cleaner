@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { OpenOrCreateConversationDto } from './dto/open-or-create-conversation.dto';
 import { MessageGateway } from './message.gateway';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -54,6 +55,24 @@ export class MessageController {
     console.log(`User ID: ${user}`);
     return this.messageService.create(createMessageDto, user, files);
   }
+
+  //*open or create conversation when user is clicked
+  @Post('open-or-create-conversation')
+  @ApiOperation({
+    summary: 'Open an existing conversation or create a new one',
+  })
+  async openOrCreateConversation(
+    @Body() openOrCreateConversationDto: OpenOrCreateConversationDto,
+    @Req() req: any,
+  ) {
+    const user = req.user.userId;
+    return this.messageService.openOrCreateConversation(
+      openOrCreateConversationDto,
+      user,
+    );
+  }
+
+
 
   
   //*get all message for a conversation

@@ -16,6 +16,7 @@ import { CreateWithdrawDto } from './dto/create-withdraw.dto';
 import { UpdateWithdrawDto } from './dto/update-withdraw.dto';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { UserRepository } from 'src/common/repository/user/user.repository';
+import appConfig from 'src/config/app.config';
 
 @Controller('withdraw')
 export class WithdrawController {
@@ -49,11 +50,18 @@ export class WithdrawController {
   async getOnboardingLink(@Param('accountId') accountId: string) {
     try {
       const result = await this.withdrawService.createOnboardingLink(accountId);
+      const baseUrl = appConfig().app.url;
+      const successUrl = `${baseUrl}/withdraw/onboarding/success`;
+      const refreshUrl = `${baseUrl}/withdraw/onboarding/refresh`;
 
       return {
         success: true,
         message: 'Onboarding link created successfully',
         data: result,
+        redirectUrls: {
+          successUrl,
+          refreshUrl,
+        },
       };
     } catch (error) {
       throw error;

@@ -23,7 +23,7 @@ import { Roles } from '../../../common/guard/role/roles.decorator';
 export class ConversationController {
   constructor(private readonly conversationService: ConversationService) {}
 
-  // *create conversation
+  // create conversation
   @Post('create-conversation')
   @ApiOperation({ summary: 'Create a new conversation' })
   async create(
@@ -38,7 +38,7 @@ export class ConversationController {
     );
   }
 
-  //  *conversation list of user
+  // conversation list of user
   @Get('conversation-list') 
   @ApiOperation({ summary: 'Get all conversations for the authenticated user' })
   async findAll(@Req() req) { 
@@ -57,7 +57,6 @@ export class ConversationController {
   }
 
   // delete conversation
-  // Delete a conversation by ID
   @Delete('delete-conversation/:id')
   @ApiOperation({ summary: 'Delete a conversation by ID' })
   async remove(@Param('id') id: string, @Req() req) {

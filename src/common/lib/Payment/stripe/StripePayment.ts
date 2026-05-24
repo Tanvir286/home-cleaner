@@ -129,15 +129,18 @@ export class StripePayment {
 
   // Stripe Connect onboarding.
   static async createOnboardingAccountLink(account_id: string) {
+    const redirectBaseUrl = this.getCheckoutRedirectBaseUrl();
+    const successUrl = `${redirectBaseUrl}/withdraw/onboarding/success`;
+    const refreshUrl = `${redirectBaseUrl}/withdraw/onboarding/refresh`;
+
     const accountLink = await Stripe.accountLinks.create({
       account: account_id,
-      refresh_url: appConfig().app.url,
-      return_url: appConfig().app.url,
+      refresh_url: refreshUrl,
+      return_url: successUrl,
       type: 'account_onboarding',
     });
     return accountLink;
   }
-
 
   // transfer money to account
   static async createTransfer(

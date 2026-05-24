@@ -1,5 +1,7 @@
 import {
   Injectable,
+  BadRequestException,
+  ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,6 +13,7 @@ import { MessageGateway } from './message.gateway';
 import { StringHelper } from 'src/common/helper/string.helper';
 import { paginateResponse, PaginationDto } from 'src/common/pagination';
 import { ChatRepository } from '../../../common/repository/chat/chat.repository';
+import { OpenOrCreateConversationDto } from './dto/open-or-create-conversation.dto';
 
 // Temporary enum until Prisma generates it
 enum MessageStatus {
@@ -26,6 +29,168 @@ export class MessageService {
     private readonly prisma: PrismaService,
     private readonly messageGateway: MessageGateway,
   ) {}
+
+
+  //
+  private formatConversationParticipant(user: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+  }) {
+    return {
+      userId: user.id,
+      name: user.name,
+      avater: user.avatar,
+      avatar_url: user.avatar
+        ? TanvirStorage.url(`${appConfig().storageUrl.avatar}/${user.avatar}`)
+        : null,
+    };
+  }
+
+  private formatConversationMessage(message: {
+    id: string;
+    text: string | null;
+    createdAt: Date;
+    sender: {
+      id: string;
+      name: string | null;
+      avatar: string | null;
+    };
+  }) {
+    return {
+      id: message.id,
+      text: message.text,
+      createdAt: message.createdAt,
+      sender: {
+        id: message.sender.id,
+        name: message.sender.name,
+        avatar: message.sender.avatar
+          ? TanvirStorage.url(
+              `${appConfig().storageUrl.avatar}/${message.sender.avatar}`,
+            )
+          : null,
+      },
+    };
+  }
+
+  private async buildConversationResponse(conversationId: string) {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        messages: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          include: {
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    return {
+      id: conversation.id,
+      participants: conversation.participants.map((participant) =>
+        this.formatConversationParticipant(participant.user),
+      ),
+      messages: conversation.messages.map((message) =>
+        this.formatConversationMessage(message),
+      ),
+    };
+  }
+
+  async openOrCreateConversation(
+    openOrCreateConversationDto: OpenOrCreateConversationDto,
+    sender: string,
+  ) {
+    const participantId = openOrCreateConversationDto.participant_id?.trim();
+
+    if (!participantId) {
+      throw new BadRequestException('participant_id is required');
+    }
+
+    if (participantId === sender) {
+      throw new ConflictException('Cannot create conversation with yourself');
+    }
+
+    const [senderUser, participantUser] = await this.prisma.$transaction([
+      this.prisma.user.findUnique({
+        where: { id: sender },
+        select: { id: true, name: true, avatar: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: participantId },
+        select: { id: true, name: true, avatar: true },
+      }),
+    ]);
+
+    if (!senderUser) {
+      throw new NotFoundException('Authenticated user not found');
+    }
+
+    if (!participantUser) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    const existingConversation = await this.prisma.conversation.findFirst({
+      where: {
+        AND: [
+          { participants: { some: { userId: sender } } },
+          { participants: { some: { userId: participantId } } },
+        ],
+      },
+    });
+
+    if (existingConversation) {
+      return {
+        message: 'Conversation retrieved successfully',
+        success: true,
+        conversation: await this.buildConversationResponse(existingConversation.id),
+      };
+    }
+
+    const newConversation = await this.prisma.conversation.create({
+      data: {
+        participants: {
+          create: [{ userId: sender }, { userId: participantId }],
+        },
+      },
+    });
+
+    return {
+      message: 'Conversation created successfully',
+      success: true,
+      conversation: {
+        id: newConversation.id,
+        participants: [
+          this.formatConversationParticipant(senderUser),
+          this.formatConversationParticipant(participantUser),
+        ],
+        messages: [],
+      },
+    };
+  }
 
   // *Send message (with Prisma transaction)
   async create(
