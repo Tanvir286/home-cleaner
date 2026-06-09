@@ -19,6 +19,7 @@ import { Roles } from 'src/common/guard/role/roles.decorator';
 import { PaginationDto } from 'src/common/pagination/dto/offset-pagination.dto';
 import { CleanerStatusDto } from './dto/cleaner-status.dto';
 import { DangerStatusDto } from './dto/danger-status.dto';
+import { JobStatusDto } from './dto/job-status.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -88,9 +89,9 @@ export class DashboardController {
   @Patch('job-approvals/:id')
   async updateJobApprovalById(  
     @Param('id') id: string,
-    @Body() CleanerStatusDto: CleanerStatusDto,
+    @Body() JobStatusDto: JobStatusDto
   ) {
-    return this.dashboardService.updateJobApprovalById(id, CleanerStatusDto);
+    return this.dashboardService.updateJobApprovalById(id, JobStatusDto);
   }
 
 

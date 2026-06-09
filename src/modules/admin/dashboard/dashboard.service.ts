@@ -6,6 +6,7 @@ import appConfig from 'src/config/app.config';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import { CleanerStatusDto } from './dto/cleaner-status.dto';
 import { DangerStatusDto } from './dto/danger-status.dto';
+import { JobStatusDto } from './dto/job-status.dto';
 
 @Injectable()
 export class DashboardService {
@@ -77,10 +78,8 @@ export class DashboardService {
     }
   }
 
-  // recent activities 
-  async getActivities(
-    paginationDto: PaginationDto
-  ) {
+  // recent activities
+  async getActivities(paginationDto: PaginationDto) {
     try {
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
@@ -156,7 +155,9 @@ export class DashboardService {
                 name: notification.sender.name,
                 avatar: notification.sender.avatar
                   ? TanvirStorage.url(
-                      appConfig().storageUrl.avatar + '/' + notification.sender.avatar,
+                      appConfig().storageUrl.avatar +
+                        '/' +
+                        notification.sender.avatar,
                     )
                   : null,
                 type: notification.sender.type,
@@ -168,7 +169,9 @@ export class DashboardService {
                 name: notification.receiver.name,
                 avatar: notification.receiver.avatar
                   ? TanvirStorage.url(
-                      appConfig().storageUrl.avatar + '/' + notification.receiver.avatar,
+                      appConfig().storageUrl.avatar +
+                        '/' +
+                        notification.receiver.avatar,
                     )
                   : null,
                 type: notification.receiver.type,
@@ -188,7 +191,7 @@ export class DashboardService {
         message: error.message,
       };
     }
-  } 
+  }
 
   /*--------------------------------------------
             HOMEOWNER LIST WITH DETAILS
@@ -551,25 +554,22 @@ export class DashboardService {
     }
   }
 
-
   /*--------------------------------------------
             Job Approval  WITH DETAILS
   --------------------------------------------*/
 
   // get all job approval
-  async getAllJobApprovals(
-    paginationDto: PaginationDto
-  ) {
-
+  async getAllJobApprovals(paginationDto: PaginationDto) {
     const page = paginationDto.page || 1;
     const perPage = paginationDto.perPage || 10;
     const skip = (page - 1) * perPage;
-    
+
     try {
       const [total, bookings] = await this.prisma.$transaction([
-        
-        this.prisma.booking.count({ where: { status: 'SUBMITTED', deleted_at: null } }),
-       
+        this.prisma.booking.count({
+          where: { status: 'SUBMITTED', deleted_at: null },
+        }),
+
         this.prisma.booking.findMany({
           where: { status: 'SUBMITTED', deleted_at: null },
           skip,
@@ -590,7 +590,6 @@ export class DashboardService {
             maid: { select: { id: true, name: true } },
             maid_note: true,
           },
-
         }),
       ]);
 
@@ -625,32 +624,105 @@ export class DashboardService {
         message: error.message,
       };
     }
-
-  }  
-
-  // approve or reject job approval by id
-  async updateJobApprovalById(
-    id: string, 
-    updateDto: CleanerStatusDto
-  ) {
-    
-  
   }
 
+  // approve or reject job approval by id
+  async updateJobApprovalById(id: string, updateDto: JobStatusDto) {
+    try {
+      const { status } = updateDto as any;
 
+      if (status !== 'VERIFIED' && status !== 'REJECTED') {
+        return {
+          success: false,
+          message: 'Status must be VERIFIED or REJECTED',
+        };
+      }
 
+      const existingBooking = await this.prisma.booking.findUnique({
+        where: { id },
+      });
 
+      if (!existingBooking) {
+        return {
+          success: false,
+          message: 'Booking not found',
+        };
+      }
 
+      if (existingBooking.status !== BookingStatus.SUBMITTED) {
+        return {
+          success: false,
+          message: `Booking is already ${String(existingBooking.status).toLowerCase()}`,
+        };
+      }
 
+      // Approve
+      if (status === 'VERIFIED') {
+        const updated = await this.prisma.booking.update({
+          where: { id },
+          data: {
+            status: BookingStatus.COMPLETED,
+          },
+        });
+
+        return {
+          success: true,
+          message: 'Booking approved and marked as completed',
+          data: updated,
+        };
+      }
+
+      // mark rejected and refund homeowner balance
+      const amount = Number(existingBooking.total_price ?? 0);
+      const userId = existingBooking.user_id;
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.booking.update({
+          where: { id },
+          data: { status: BookingStatus.REJECTED },
+        });
+
+        if (amount > 0 && userId) {
+          await tx.user.updateMany({
+            where: { id: userId },
+            data: {
+              balance: {
+                increment: amount,
+              },
+            },
+          });
+
+          // record refund transaction
+          await tx.paymentTransaction.create({
+            data: {
+              booking_id: id,
+              user_id: userId,
+              type: 'refund',
+              status: 'completed',
+              amount: amount,
+            },
+          });
+        }
+      });
+
+      return {
+        success: true,
+        message: 'Booking rejected and amount refunded to homeowner',
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error?.message ?? 'Failed to update booking approval status',
+      };
+    }
+  }
 
   /*--------------------------------------------
      Cleaner Requests with approve part 
   --------------------------------------------*/
 
   // get all cleaner requests with details
-  async getAllCleanerRequests(
-    paginationDto: PaginationDto
-  ) {
+  async getAllCleanerRequests(paginationDto: PaginationDto) {
     try {
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
@@ -724,9 +796,7 @@ export class DashboardService {
   }
 
   // get cleaner deatils by id
-  async getCleanerRequestById(
-    id: string
-  ) {
+  async getCleanerRequestById(id: string) {
     try {
       const cleaner = await this.prisma.user.findFirst({
         where: {
@@ -812,10 +882,7 @@ export class DashboardService {
   }
 
   // approve or reject cleaner request by id
-  async updateCleanerRequestById(
-    id: string, 
-    updateDto: CleanerStatusDto
-  ) {
+  async updateCleanerRequestById(id: string, updateDto: CleanerStatusDto) {
     try {
       const { status } = updateDto;
 
@@ -869,11 +936,9 @@ export class DashboardService {
   /*--------------------------------------------
       Danger Requests with approve part
   --------------------------------------------*/
- 
+
   // get all danger requests with details
-  async getAllDangerRequests(
-    paginationDto: PaginationDto
-  ) {
+  async getAllDangerRequests(paginationDto: PaginationDto) {
     try {
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
@@ -946,7 +1011,7 @@ export class DashboardService {
         message: error.message,
       };
     }
-  }
+  }1
 
   // get danger request by id
   async getDangerRequestById(id: string) {
@@ -1001,10 +1066,7 @@ export class DashboardService {
   }
 
   // approve or reject danger request by id
-  async updateDangerRequestById(
-    id: string, 
-    updateDto: DangerStatusDto
-  ) {
+  async updateDangerRequestById(id: string, updateDto: DangerStatusDto) {
     try {
       const { status } = updateDto;
 
@@ -1059,5 +1121,4 @@ export class DashboardService {
   /*--------------------------------------------
      Danger Requests with approve part 
    --------------------------------------------*/
-
 }
