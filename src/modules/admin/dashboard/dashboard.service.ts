@@ -77,8 +77,118 @@ export class DashboardService {
     }
   }
 
-  // recent activities (only notifications)
-  // only activity (mane j j jabe tar vitor notification moto takbe)
+  // recent activities 
+  async getActivities(
+    paginationDto: PaginationDto
+  ) {
+    try {
+      const page = paginationDto.page || 1;
+      const perPage = paginationDto.perPage || 10;
+      const skip = (page - 1) * perPage;
+
+      const [total, notifications] = await this.prisma.$transaction([
+        this.prisma.notification.count({
+          where: { deleted_at: null },
+        }),
+        this.prisma.notification.findMany({
+          where: { deleted_at: null },
+          skip,
+          take: perPage,
+          orderBy: {
+            created_at: 'desc',
+          },
+          select: {
+            id: true,
+            created_at: true,
+            read_at: true,
+            status: true,
+            entity_id: true,
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+                type: true,
+              },
+            },
+            receiver: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+                type: true,
+              },
+            },
+            notification_event: {
+              select: {
+                id: true,
+                type: true,
+                text: true,
+              },
+            },
+          },
+        }),
+      ]);
+
+      const data = notifications.map((notification) => {
+        const title =
+          notification.notification_event?.type ??
+          notification.notification_event?.text ??
+          'Notification';
+
+        const subtitle =
+          notification.notification_event?.text ??
+          notification.sender?.name ??
+          notification.receiver?.name ??
+          null;
+
+        return {
+          id: notification.id,
+          title,
+          subtitle,
+          entity_id: notification.entity_id,
+          status: notification.status,
+          is_read: !!notification.read_at,
+          created_at: notification.created_at,
+          sender: notification.sender
+            ? {
+                id: notification.sender.id,
+                name: notification.sender.name,
+                avatar: notification.sender.avatar
+                  ? TanvirStorage.url(
+                      appConfig().storageUrl.avatar + '/' + notification.sender.avatar,
+                    )
+                  : null,
+                type: notification.sender.type,
+              }
+            : null,
+          receiver: notification.receiver
+            ? {
+                id: notification.receiver.id,
+                name: notification.receiver.name,
+                avatar: notification.receiver.avatar
+                  ? TanvirStorage.url(
+                      appConfig().storageUrl.avatar + '/' + notification.receiver.avatar,
+                    )
+                  : null,
+                type: notification.receiver.type,
+              }
+            : null,
+        };
+      });
+
+      return {
+        success: true,
+        message: 'Recent activities retrieved successfully',
+        data: paginateResponse(data, total, page, perPage),
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  } 
 
   /*--------------------------------------------
             HOMEOWNER LIST WITH DETAILS
@@ -441,12 +551,106 @@ export class DashboardService {
     }
   }
 
+
+  /*--------------------------------------------
+            Job Approval  WITH DETAILS
+  --------------------------------------------*/
+
+  // get all job approval
+  async getAllJobApprovals(
+    paginationDto: PaginationDto
+  ) {
+
+    const page = paginationDto.page || 1;
+    const perPage = paginationDto.perPage || 10;
+    const skip = (page - 1) * perPage;
+    
+    try {
+      const [total, bookings] = await this.prisma.$transaction([
+        
+        this.prisma.booking.count({ where: { status: 'SUBMITTED', deleted_at: null } }),
+       
+        this.prisma.booking.findMany({
+          where: { status: 'SUBMITTED', deleted_at: null },
+          skip,
+          take: perPage,
+          orderBy: { created_at: 'desc' },
+          select: {
+            id: true,
+            created_at: true,
+            booking_date: true,
+            slot: true,
+            maid_location: true,
+            homeowner_location: true,
+            total_price: true,
+            status: true,
+            before_photos: true,
+            after_photos: true,
+            user: { select: { id: true, name: true } },
+            maid: { select: { id: true, name: true } },
+            maid_note: true,
+          },
+
+        }),
+      ]);
+
+      const data = bookings.map((b) => ({
+        id: b.id,
+        created_at: b.created_at,
+        booking_date: b.booking_date,
+        slot: b.slot,
+        homeowner_location: b.homeowner_location,
+        maid_location: b.maid_location,
+        amount: Number(b.total_price ?? 0),
+        status: b.status,
+        homeowner: b.user ? { id: b.user.id, name: b.user.name } : null,
+        maid: b.maid ? { id: b.maid.id, name: b.maid.name } : null,
+        before_photos: (b.before_photos || []).map((f) =>
+          TanvirStorage.url(`${appConfig().storageUrl.booking}/${f}`),
+        ),
+        after_photos: (b.after_photos || []).map((f) =>
+          TanvirStorage.url(`${appConfig().storageUrl.booking}/${f}`),
+        ),
+        maid_note: b.maid_note || null,
+      }));
+
+      return {
+        success: true,
+        message: 'Job approvals retrieved successfully',
+        data: paginateResponse(data, total, page, perPage),
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+
+  }  
+
+  // approve or reject job approval by id
+  async updateJobApprovalById(
+    id: string, 
+    updateDto: CleanerStatusDto
+  ) {
+    
+  
+  }
+
+
+
+
+
+
+
   /*--------------------------------------------
      Cleaner Requests with approve part 
-   --------------------------------------------*/
+  --------------------------------------------*/
 
   // get all cleaner requests with details
-  async getAllCleanerRequests(paginationDto: PaginationDto) {
+  async getAllCleanerRequests(
+    paginationDto: PaginationDto
+  ) {
     try {
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
@@ -520,7 +724,9 @@ export class DashboardService {
   }
 
   // get cleaner deatils by id
-  async getCleanerRequestById(id: string) {
+  async getCleanerRequestById(
+    id: string
+  ) {
     try {
       const cleaner = await this.prisma.user.findFirst({
         where: {
@@ -606,7 +812,10 @@ export class DashboardService {
   }
 
   // approve or reject cleaner request by id
-  async updateCleanerRequestById(id: string, updateDto: CleanerStatusDto) {
+  async updateCleanerRequestById(
+    id: string, 
+    updateDto: CleanerStatusDto
+  ) {
     try {
       const { status } = updateDto;
 
@@ -655,10 +864,16 @@ export class DashboardService {
   }
 
   /*--------------------------------------------
+     Cleaner Requests with approve part 
+  --------------------------------------------*/
+  /*--------------------------------------------
       Danger Requests with approve part
   --------------------------------------------*/
+ 
   // get all danger requests with details
-  async getAllDangerRequests(paginationDto: PaginationDto) {
+  async getAllDangerRequests(
+    paginationDto: PaginationDto
+  ) {
     try {
       const page = paginationDto.page || 1;
       const perPage = paginationDto.perPage || 10;
@@ -732,12 +947,12 @@ export class DashboardService {
       };
     }
   }
- 
+
   // get danger request by id
   async getDangerRequestById(id: string) {
     try {
       const danger = await this.prisma.danger.findUnique({
-        where: { id }, 
+        where: { id },
         include: {
           user: {
             select: {
@@ -771,7 +986,7 @@ export class DashboardService {
 
         latitude: danger.latitude,
         longitude: danger.longitude,
-      }
+      };
       return {
         success: true,
         message: 'Danger request retrieved successfully',
@@ -783,7 +998,7 @@ export class DashboardService {
         message: error.message,
       };
     }
-  } 
+  }
 
   // approve or reject danger request by id
   async updateDangerRequestById(
@@ -811,7 +1026,10 @@ export class DashboardService {
         };
       }
 
-      if (existingDanger.status === 'COMPLETED' || existingDanger.status === 'REJECTED') {
+      if (
+        existingDanger.status === 'COMPLETED' ||
+        existingDanger.status === 'REJECTED'
+      ) {
         return {
           success: false,
           message: `Danger request is already ${existingDanger.status.toLowerCase()}`,
@@ -836,8 +1054,10 @@ export class DashboardService {
         message: error.message,
       };
     }
-  } 
-    
-  
+  }
+
+  /*--------------------------------------------
+     Danger Requests with approve part 
+   --------------------------------------------*/
 
 }

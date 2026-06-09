@@ -42,9 +42,7 @@ export class ConversationController {
   @Get('conversation-list') 
   @ApiOperation({ summary: 'Get all conversations for the authenticated user' })
   async findAll(@Req() req) { 
-  
     const user = req.user.userId; 
-
     return this.conversationService.findAll(user);
   }
 

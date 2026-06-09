@@ -82,8 +82,8 @@ model User {
   email_verified_at DateTime? @default(now())
   //distination for maid and homeowner
 
-  google_id     String? @unique 
-  apple_id     String? @unique
+  google_id String? @unique
+  apple_id  String? @unique
 
   //----------------------------------------
   domain                String?   @unique
@@ -326,8 +326,10 @@ model Booking {
   before_photos String[]
   after_photos  String[]
 
-  total_price Decimal?      @db.Decimal(10, 2)
-  status      BookingStatus @default(PENDING)
+  maid_note String?
+
+  total_price    Decimal?      @db.Decimal(10, 2)
+  status         BookingStatus @default(PENDING)
   payment_status PaymentStatus @default(PENDING)
 
   booking_destinations Destination[]
@@ -562,7 +564,6 @@ model UserPaymentMethod {
   @@map("user_payment_methods")
 }
 
-
 model PaymentTransaction {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -574,7 +575,7 @@ model PaymentTransaction {
   user_id String?
   user    User?   @relation(fields: [user_id], references: [id])
 
-  booking_id String? @unique
+  booking_id String?  @unique
   booking    Booking? @relation("paymentTransactionBooking", fields: [booking_id], references: [id], onDelete: Cascade)
 
   type             String?  @default("order")
@@ -590,7 +591,6 @@ model PaymentTransaction {
 
   @@map("payment_transactions")
 }
-
 
 /**
  * ----------------------------------------
@@ -660,8 +660,6 @@ model RoleUser {
   @@id([role_id, user_id])
   @@map("role_users")
 }
-
-
 
 model Faq {
   id         String    @id @default(cuid())

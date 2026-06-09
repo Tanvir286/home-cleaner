@@ -233,6 +233,7 @@ export class ConversationService {
 
   // get conversation by id
   async findOne(id: string, userId: string) {
+  
     const conversation = await this.prisma.conversation.findFirst({
       where: {
         id: id,

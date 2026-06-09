@@ -1,4 +1,4 @@
-import { IsEnum } from "class-validator";
+import { IsEnum, IsNotEmpty, IsSemVer, IsString } from "class-validator";
 
 enum AllowedBookingStatus {
   SUBMITTED = 'SUBMITTED',
@@ -10,5 +10,8 @@ export class SubmittedBookingDto {
     message: 'status must be either SUBMITTED',
   })
   status: AllowedBookingStatus;
+
+  @IsString()
+  maid_note: string;
 
 }

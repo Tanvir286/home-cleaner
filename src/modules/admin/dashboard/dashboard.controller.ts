@@ -32,8 +32,13 @@ export class DashboardController {
     return this.dashboardService.getOverview();
   }
 
-  // recent activities
-  // only activity (mane j j jabe tar vitor notification moto takbe)
+  // recent activities alias
+  @Get('activities')
+  async getActivitiesAlias(
+    @Query() paginationDto: PaginationDto
+  ) {
+    return this.dashboardService.getActivities(paginationDto);
+  }
 
   /*--------------------------------------------
             HOMEOWNER LIST WITH DETAILS
@@ -65,13 +70,39 @@ export class DashboardController {
     return this.dashboardService.getAllBookings(paginationDto);
   }
 
+   /*--------------------------------------------
+            Job Approval  WITH DETAILS
+  --------------------------------------------*/
+  
+
+  // get all job approval 
+  @Get('job-approvals')
+  async getAllJobApprovals(
+    @Query() paginationDto: PaginationDto
+  ) {
+    return this.dashboardService.getAllJobApprovals(paginationDto);
+  } 
+
+
+  // approve or reject job approval by id
+  @Patch('job-approvals/:id')
+  async updateJobApprovalById(  
+    @Param('id') id: string,
+    @Body() CleanerStatusDto: CleanerStatusDto,
+  ) {
+    return this.dashboardService.updateJobApprovalById(id, CleanerStatusDto);
+  }
+
+
   /*--------------------------------------------
     Cleaner Requests with approve part 
   --------------------------------------------*/
 
   // get all cleaner requests with details
   @Get('cleaners/request')
-  async getAllCleanerRequests(@Query() paginationDto: PaginationDto) {
+  async getAllCleanerRequests(
+    @Query() paginationDto: PaginationDto
+  ) {
     return this.dashboardService.getAllCleanerRequests(paginationDto);
   }
 
@@ -93,7 +124,6 @@ export class DashboardController {
   /*--------------------------------------------
     Cleaner Requests with approve part 
   --------------------------------------------*/
-
   /*--------------------------------------------
      Danger Requests with approve part 
    --------------------------------------------*/
@@ -117,5 +147,9 @@ export class DashboardController {
   ) {
     return this.dashboardService.updateDangerRequestById(id, dangerStatusDto);
   }
+
+  /*--------------------------------------------
+     Danger Requests with approve part 
+   --------------------------------------------*/
 
 }
