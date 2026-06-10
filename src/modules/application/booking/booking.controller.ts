@@ -248,7 +248,10 @@ export class BookingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MAID)
   @Post('maid/create-danger/:id')
-  async createDangerBooking(@Req() req, @Param('id') id: string) {
+  async createDangerBooking(
+    @Req() req, 
+    @Param('id') id: string
+  ) {
     const maidId = req.user.userId;
     return this.bookingService.createDangerBooking(maidId, id);
   }

@@ -933,6 +933,7 @@ export class DashboardService {
   /*--------------------------------------------
      Cleaner Requests with approve part 
   --------------------------------------------*/
+  
   /*--------------------------------------------
       Danger Requests with approve part
   --------------------------------------------*/
@@ -1011,7 +1012,8 @@ export class DashboardService {
         message: error.message,
       };
     }
-  }1
+  }
+  
 
   // get danger request by id
   async getDangerRequestById(id: string) {
@@ -1066,7 +1068,10 @@ export class DashboardService {
   }
 
   // approve or reject danger request by id
-  async updateDangerRequestById(id: string, updateDto: DangerStatusDto) {
+  async updateDangerRequestById(
+    id: string,
+    updateDto: DangerStatusDto
+  ) {
     try {
       const { status } = updateDto;
 
@@ -1118,7 +1123,11 @@ export class DashboardService {
     }
   }
 
+
   /*--------------------------------------------
      Danger Requests with approve part 
    --------------------------------------------*/
+
+
+
 }

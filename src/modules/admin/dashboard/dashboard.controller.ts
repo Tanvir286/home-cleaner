@@ -47,7 +47,9 @@ export class DashboardController {
 
   // get all homeowners with details
   @Get('homeowners/details')
-  async getAllHomeowners(@Query() paginationDto: PaginationDto) {
+  async getAllHomeowners(
+    @Query() paginationDto: PaginationDto
+  ) {
     return this.dashboardService.getAllHomeowners(paginationDto);
   }
 
@@ -57,7 +59,9 @@ export class DashboardController {
 
   // get all cleaners with details
   @Get('cleaners/details')
-  async getAllCleaners(@Query() paginationDto: PaginationDto) {
+  async getAllCleaners(
+    @Query() paginationDto: PaginationDto
+  ) {
     return this.dashboardService.getAllCleaners(paginationDto);
   }
 
@@ -71,39 +75,32 @@ export class DashboardController {
     return this.dashboardService.getAllBookings(paginationDto);
   }
 
-   /*--------------------------------------------
+  /*--------------------------------------------
             Job Approval  WITH DETAILS
   --------------------------------------------*/
-  
 
-  // get all job approval 
+  // get all job approval
   @Get('job-approvals')
-  async getAllJobApprovals(
-    @Query() paginationDto: PaginationDto
-  ) {
+  async getAllJobApprovals(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllJobApprovals(paginationDto);
-  } 
-
+  }
 
   // approve or reject job approval by id
   @Patch('job-approvals/:id')
-  async updateJobApprovalById(  
+  async updateJobApprovalById(
     @Param('id') id: string,
-    @Body() JobStatusDto: JobStatusDto
+    @Body() JobStatusDto: JobStatusDto,
   ) {
     return this.dashboardService.updateJobApprovalById(id, JobStatusDto);
   }
 
-
   /*--------------------------------------------
-    Cleaner Requests with approve part 
+      Cleaner Requests with approve part 
   --------------------------------------------*/
 
   // get all cleaner requests with details
   @Get('cleaners/request')
-  async getAllCleanerRequests(
-    @Query() paginationDto: PaginationDto
-  ) {
+  async getAllCleanerRequests(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllCleanerRequests(paginationDto);
   }
 
@@ -123,12 +120,12 @@ export class DashboardController {
   }
 
   /*--------------------------------------------
-    Cleaner Requests with approve part 
+      Cleaner Requests with approve part 
   --------------------------------------------*/
   /*--------------------------------------------
-     Danger Requests with approve part 
+      Danger Requests with approve part 
    --------------------------------------------*/
-  // get all danger requests with 
+  // get all danger requests with
   @Get('danger/request')
   async getAllDangerRequests(@Query() paginationDto: PaginationDto) {
     return this.dashboardService.getAllDangerRequests(paginationDto);
@@ -150,7 +147,17 @@ export class DashboardController {
   }
 
   /*--------------------------------------------
-     Danger Requests with approve part 
+      Danger Requests with approve part 
    --------------------------------------------*/
-
 }
+
+
+
+
+
+
+
+
+
+
+
