@@ -29,6 +29,14 @@ export class ServiceService {
       return { service: deep, type: 'DEEP' };
     }
 
+    const residential = await this.prisma.residentialCleaningPackage.findUnique({
+      where: { id },
+    });
+
+    if (residential) {
+      return { service: residential, type: 'RESIDENTIAL' };
+    }
+
     return null;
   }
 
@@ -127,7 +135,11 @@ export class ServiceService {
         })) ||
         (await this.prisma.deepCleaningPackage.findUnique({
           where: { id },
+        })) ||
+        (await this.prisma.residentialCleaningPackage.findUnique({
+          where: { id },
         }));
+           
 
       if (oldService?.image) {
         await TanvirStorage.delete(
@@ -151,8 +163,13 @@ export class ServiceService {
         where: { id },
         data,
       });
-    } else {
+    } else if (type === 'DEEP') {
       updatedService = await this.prisma.deepCleaningPackage.update({
+        where: { id },
+        data,
+      });
+    } else if (type === 'RESIDENTIAL') {
+      updatedService = await this.prisma.residentialCleaningPackage.update({
         where: { id },
         data,
       });

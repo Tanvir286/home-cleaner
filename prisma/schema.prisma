@@ -307,6 +307,19 @@ model DeepCleaningPackage {
   @@map("deep_cleaning_packages")
 }
 
+
+model Commission {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+
+  percentage Decimal? @db.Decimal(5, 2)
+  fixed_fee Decimal? @db.Decimal(10, 2)
+
+  @@map("commissions")
+}
+
+
 // payment status for booking
 enum PaymentStatus {
   PENDING
