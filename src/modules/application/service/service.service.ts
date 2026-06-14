@@ -92,7 +92,10 @@ export class ServiceService {
   // update service
   async update(
     id: string, 
-    dto: UpdateServiceDto, image?: Express.Multer.File) {
+    dto: UpdateServiceDto, 
+    image?: Express.Multer.File
+  ) {
+   
     if (dto.serviceType) {
       throw new BadGatewayException('Service type cannot be updated');
     }
@@ -107,7 +110,7 @@ export class ServiceService {
       throw new BadGatewayException('Service not found');
     }
 
-    const { service, type } = foundService;
+    const { type } = foundService;
 
     const data: any = {};
 
@@ -229,4 +232,39 @@ export class ServiceService {
       },
     };
   }
+
+  // get all residential cleaning services
+  async getAllResidentialCleaning() {
+   
+    const services = await this.prisma.residentialCleaningPackage.findMany({
+      select: {
+        id: true,
+        title: true,  
+        serviceType: true,
+        packageType: true,
+        image: true,
+        price: true,
+        description: true,
+        duration: true,
+      },
+    });
+
+    const formattedServices = services.map((service) => ({
+      ...service,
+      image_url: service.image
+        ? TanvirStorage.url(
+            appConfig().storageUrl.package + '/' + service.image,
+          )
+        : null,
+    }));
+
+    return {
+      success: true,
+      message: 'Residential cleaning services retrieved successfully',
+      data: {
+        services: formattedServices,
+      },
+    };
+  }
+
 }

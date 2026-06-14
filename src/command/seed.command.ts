@@ -129,6 +129,50 @@ export class SeedCommand extends CommandRunner {
       ],
     });
 
+    /* ================= RESIDENTIAL CLEANING PACKAGES ================= */
+
+    await this.prisma.residentialCleaningPackage.createMany({
+      skipDuplicates: true,
+      data: [
+        {
+          title: 'Eco Refresh',
+          serviceType: 'RESIDENTIAL_CLEANING',
+          packageType: 'GENERAL',
+          price: 149,
+          description:
+            'Kitchen: Countertops, sink, cabinet exteriors, appliance exteriors. Bathrooms: Toilet, sink, shower/tub, mirrors. Living Areas: Dusting, vacuuming, sweeping, mopping, trash removal. Bedrooms: Dusting, vacuuming, trash removal.',
+          duration: '2-3 hours',
+        },
+        {
+          title: 'Eco Restore',
+          serviceType: 'RESIDENTIAL_CLEANING',
+          packageType: 'MOST_POPULAR',
+          price: 229,
+          description:
+            'Everything in Eco Refresh. Microwave interior cleaning. Detailed appliance wipe down. Windowsill cleaning. Light blind dusting. Baseboard spot cleaning. Additional bathroom detailing.',
+          duration: '3-5 hours',
+        },
+        {
+          title: 'EcoElite Clean',
+          serviceType: 'RESIDENTIAL_CLEANING',
+          packageType: 'DEEP_CLEANING',
+          price: 399,
+          description:
+            'Everything in Eco Restore. Cabinet exterior detail cleaning. Backsplash cleaning. Detailed grout attention. Detailed shower cleaning. Fixture polishing. Baseboard cleaning. Door cleaning. Light switch cleaning. Interior window cleaning. High-touch disinfection',
+          duration: '5-8 hours',
+        },
+        {
+          title: 'Eco Revival',
+          serviceType: 'RESIDENTIAL_CLEANING',
+          packageType: 'PREMIUM',
+          price: 549,
+          description:
+            'Everything in Eco Elite Deep Clean. Interior cabinet wipe down. Interior refrigerator cleaning. Interior oven cleaning. Wall spot cleaning. Trim cleaning. Heavy dust removal. Final property presentation cleaning.',
+          duration: '6-10 hours',
+        },
+      ],
+    });
+
     /* ================= DEEP CLEANING PACKAGES ================= */
 
     await this.prisma.deepCleaningPackage.createMany({

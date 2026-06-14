@@ -218,10 +218,15 @@ model Location {
 
 enum serviceType {
   GENERAL_CLEANING
+  RESIDENTIAL_CLEANING
   DEEP_CLEANING
 }
 
 enum PackageType {
+  GENERAL
+  MOST_POPULAR
+  DEEP_CLEANING
+  PREMIUM
   ECO_SPARK
   SPARK
   GREENFLOW
@@ -245,6 +250,25 @@ enum BookingStatus {
   CANCELLED
 }
 
+model ResidentialCleaningPackage {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  title       String?
+  serviceType serviceType @default(RESIDENTIAL_CLEANING)
+  packageType PackageType
+  image       String?
+  description String?
+  duration    String?
+  price       Decimal?    @db.Decimal(10, 2)
+
+  booking Booking[] @relation("ResidentialCleaningPackageBookings")
+
+  @@map("residential_cleaning_packages")
+}
+
 model GeneralCleaningPackage {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -252,7 +276,7 @@ model GeneralCleaningPackage {
   deleted_at DateTime?
 
   title       String?
-  serviceType serviceType @default(GENERAL_CLEANING)
+  serviceType serviceType @default(GENERAL_CLEANING)   
   packageType PackageType
   image       String?
   description String?
@@ -310,6 +334,9 @@ model Booking {
   general_cleaning_package_id String?
   general_cleaning_package    GeneralCleaningPackage? @relation("GeneralCleaningPackageBookings", fields: [general_cleaning_package_id], references: [id], onDelete: Cascade)
 
+  residential_cleaning_package_id String?
+  residential_cleaning_package    ResidentialCleaningPackage? @relation("ResidentialCleaningPackageBookings", fields: [residential_cleaning_package_id], references: [id], onDelete: Cascade)
+
   danger_notification Danger? @relation("DangerNotificationToBooking")
 
   payment_transaction PaymentTransaction? @relation("paymentTransactionBooking")
@@ -320,7 +347,7 @@ model Booking {
   maid_location      String
   homeowner_location String
 
-  // optional cancle reason and date 
+  // optional cancle reason and date
   cancle_reason String?
 
   before_photos String[]

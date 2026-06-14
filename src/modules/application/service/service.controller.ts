@@ -64,7 +64,11 @@ export class ServiceController {
     return await this.serviceService.getAllDeepCleaningPackage();
   }
 
-
+  // get all residential cleaning services
+  @Get('residential-cleaning-package')
+  async getAllResidentialCleaning() {
+    return await this.serviceService.getAllResidentialCleaning();
+  }
   
 
 }
