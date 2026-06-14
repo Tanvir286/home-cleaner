@@ -7,6 +7,7 @@ import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import { CleanerStatusDto } from './dto/cleaner-status.dto';
 import { DangerStatusDto } from './dto/danger-status.dto';
 import { JobStatusDto } from './dto/job-status.dto';
+import { UpdateCommissionDto } from './dto/update-commission.dto';
 
 @Injectable()
 export class DashboardService {
@@ -184,6 +185,73 @@ export class DashboardService {
         success: true,
         message: 'Recent activities retrieved successfully',
         data: paginateResponse(data, total, page, perPage),
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+
+  /*--------------------------------------------
+            Commission with details
+  --------------------------------------------*/
+  
+  // get all commission with details
+  async getCommissions() {
+    try {
+      const commissions = await this.prisma.commission.findMany({
+        orderBy: {
+          created_at: 'desc',
+        },
+      });
+
+      const data = commissions.map((commission) => ({
+        id: commission.id,
+        percentage: Number(commission.percentage ?? 0),
+        fixed_fee: Number(commission.fixed_fee ?? 0),
+        created_at: commission.created_at,
+        updated_at: commission.updated_at,
+      }));
+
+      return {
+        success: true,
+        message: 'Commissions retrieved successfully',
+        data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }  
+
+  // update commission by id
+  async updateCommissionById(id: string, updateCommissionDto: UpdateCommissionDto) {
+    try {
+      const commission = await this.prisma.commission.findUnique({
+        where: { id },
+      });
+
+      if (!commission) {
+        return {
+          success: false,
+          message: 'Commission not found',
+        };
+      }
+
+      const updatedCommission = await this.prisma.commission.update({
+        where: { id },
+        data: updateCommissionDto,
+      });
+
+      return {
+        success: true,
+        message: 'Commission updated successfully',
+        data: updatedCommission,
       };
     } catch (error: any) {
       return {

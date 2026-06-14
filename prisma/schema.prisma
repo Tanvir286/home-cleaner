@@ -366,6 +366,8 @@ model Booking {
   before_photos String[]
   after_photos  String[]
 
+  revenue Decimal? @db.Decimal(10, 2)
+
   maid_note String?
 
   total_price    Decimal?      @db.Decimal(10, 2)

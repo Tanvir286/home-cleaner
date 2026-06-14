@@ -20,6 +20,7 @@ import { PaginationDto } from 'src/common/pagination/dto/offset-pagination.dto';
 import { CleanerStatusDto } from './dto/cleaner-status.dto';
 import { DangerStatusDto } from './dto/danger-status.dto';
 import { JobStatusDto } from './dto/job-status.dto';
+import { UpdateCommissionDto } from './dto/update-commission.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -40,6 +41,28 @@ export class DashboardController {
   ) {
     return this.dashboardService.getActivities(paginationDto);
   }
+
+  /*--------------------------------------------
+            Commission with details
+  --------------------------------------------*/
+
+  // get all commission with details
+  @Get('commissions')
+  async getCommissions(
+  ) {
+    return this.dashboardService.getCommissions();
+  }
+
+  // update commission by id
+  @Patch('commissions/:id')
+  async updateCommissionById(
+    @Param('id') id: string,
+    @Body() updateCommissionDto: UpdateCommissionDto,
+  ) {
+    return this.dashboardService.updateCommissionById(id, updateCommissionDto);
+  }
+
+
 
   /*--------------------------------------------
             HOMEOWNER LIST WITH DETAILS

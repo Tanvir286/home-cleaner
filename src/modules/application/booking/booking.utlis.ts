@@ -125,3 +125,12 @@ export async function checkBalance(prisma: PrismaService, userId: string) {
   return user?.balance ?? 0;
   
 }
+
+
+export async  function checkCommission(prisma: PrismaService) {
+ 
+  const commission = await prisma.commission.findFirst({
+    orderBy: { created_at: 'desc' },
+  });
+  return commission?.percentage ?? 0;
+}

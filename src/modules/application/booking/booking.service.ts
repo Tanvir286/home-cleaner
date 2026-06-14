@@ -11,6 +11,7 @@ import { PaginationstausDto } from './dto/params-booking.dto';
 import {
   bookingSlotTimeMap,
   checkBalance,
+  checkCommission,
   checkSlotAvailability,
   formatBookingDate,
   resolvePackage,
@@ -214,7 +215,14 @@ export class BookingService {
 
   // create booking
   async create(userId: string, dto: CreateBookingDto) {
-    const { maid_id, package_id, booking_date, slot, address } = dto;
+
+    const { 
+      maid_id, 
+      package_id, 
+      booking_date, 
+      slot, 
+      address 
+    } = dto;
 
     const maid_location = await this.prisma.user.findUnique({
       where: { id: maid_id },
@@ -241,6 +249,7 @@ export class BookingService {
     const balance = await checkBalance(this.prisma, userId);
 
     const packageData = await resolvePackage(this.prisma, package_id);
+
 
     const totalPrice = Number(packageData.total_price ?? 0);
     const currentBalance = Number(balance ?? 0);
