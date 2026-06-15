@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Decimal } from '@prisma/client/runtime/library';
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import { StringHelper } from 'src/common/helper/string.helper';
 import appConfig from 'src/config/app.config';
@@ -127,10 +128,21 @@ export async function checkBalance(prisma: PrismaService, userId: string) {
 }
 
 
-export async  function checkCommission(prisma: PrismaService) {
- 
+export async function checkCommission(
+  prisma: PrismaService,
+  balance: number | Decimal,
+) {
   const commission = await prisma.commission.findFirst({
     orderBy: { created_at: 'desc' },
+    select: { percentage: true },
   });
-  return commission?.percentage ?? 0;
+
+  const percentage = Number(commission?.percentage ?? 0);
+  const balanceValue = Number(balance ?? 0);
+  const amount = Number(((balanceValue * percentage) / 100).toFixed(2));
+
+  return {
+    percentage,
+    amount,
+  };
 }

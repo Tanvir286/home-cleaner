@@ -272,9 +272,12 @@ export class BookingService {
 
     const balance = await checkBalance(this.prisma, userId);
 
-    const packageData = await resolvePackage(this.prisma, package_id);
+    const { amount: commissionAmount, percentage: commissionPercentage } =
+      await checkCommission(this.prisma, balance);
 
+    const packageData = await resolvePackage(this.prisma, package_id);
     const totalPrice = Number(packageData.total_price ?? 0);
+
     const currentBalance = Number(balance ?? 0);
 
     if (totalPrice <= 0) {
@@ -321,6 +324,7 @@ export class BookingService {
             homeowner_latitude: homeownerLatitude,
             homeowner_longitude: homeownerLongitude,
             status: 'PENDING',
+            revenue: commissionAmount,
             total_price: packageData.total_price ?? null,
             ...(packageData.general_cleaning_package_id
               ? {
@@ -390,6 +394,10 @@ export class BookingService {
       message: 'Booking created successfully',
       data: {
         ...booking,
+        commission: {
+          percentage: commissionPercentage,
+          amount: commissionAmount,
+        },
         general_cleaning_package: formatPackage(
           booking.general_cleaning_package,
         ),

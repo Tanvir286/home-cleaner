@@ -705,7 +705,10 @@ export class DashboardService {
   }
 
   // approve or reject job approval by id
-  async updateJobApprovalById(id: string, updateDto: JobStatusDto) {
+  async updateJobApprovalById(
+    id: string, 
+    updateDto: JobStatusDto
+  ) {
     try {
       const { status } = updateDto as any;
 
@@ -734,25 +737,56 @@ export class DashboardService {
         };
       }
 
-      // Approve
+      // Approve - Transfer amount to maid and record transaction
       if (status === 'VERIFIED') {
-        const updated = await this.prisma.booking.update({
-          where: { id },
-          data: {
-            status: BookingStatus.COMPLETED,
-          },
+        const maidId = existingBooking.maid_id;
+        const amount = Number(existingBooking.total_price ?? 0);
+
+        const updated = await this.prisma.$transaction(async (tx) => {
+          // Update booking status to COMPLETED
+          const completedBooking = await tx.booking.update({
+            where: { id },
+            data: {
+              status: BookingStatus.COMPLETED,
+            },
+          });
+
+          // Transfer amount to maid
+          if (amount > 0 && maidId) {
+            await tx.user.update({
+              where: { id: maidId },
+              data: {
+                balance: {
+                  increment: amount,
+                },
+              },
+            });
+
+            // Record payment transaction
+            await tx.paymentTransaction.create({
+              data: {
+                booking_id: id,
+                user_id: maidId,
+                type: 'earning',
+                status: 'completed',
+                amount: amount,
+              },
+            });
+          }
+
+          return completedBooking;
         });
 
         await sendAdminNotification({
           sender_id: 'system',
-          text: `Booking ${updated.id} has been verified or rejected and marked as completed.`,
+          text: `Booking ${updated.id} has been approved and marked as completed. Amount $${amount} transferred to maid.`,
           type: 'approve_job_submission',
           entity_id: updated.id,
         });
 
         return {
           success: true,
-          message: 'Booking approved and marked as completed',
+          message: 'Booking approved and marked as completed. Payment transferred to maid.',
           data: updated,
         };
       }
@@ -789,6 +823,13 @@ export class DashboardService {
           });
         }
       });
+
+      await sendAdminNotification({
+          sender_id: 'system',
+          text: `Booking ${existingBooking.id} has been rejected and the amount has been refunded to your balance.`,
+          type: 'reject_job_submission',
+          entity_id: existingBooking.id,
+        });
 
       return {
         success: true,
@@ -1025,7 +1066,6 @@ export class DashboardService {
   /*--------------------------------------------
      Cleaner Requests with approve part 
   --------------------------------------------*/
-
   /*--------------------------------------------
       Danger Requests with approve part
   --------------------------------------------*/
