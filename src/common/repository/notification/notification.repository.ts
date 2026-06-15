@@ -41,12 +41,14 @@ export type NotificationType =
   | 'create_booking'
   | 'approve_booking'
   | 'complete_booking'
-  | 'started_job'
+  | 'started_booking'
   | 'submitted_job'
   | 'approve_job_submission'
   | 'reject_job_submission'
   | 'cancel_booking'
+  | 'cleaner_verification_update'
   | 'review_booking'
+  | 'update_commission'
   | 'update_booking';
 
 export class NotificationRepository {

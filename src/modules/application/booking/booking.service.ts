@@ -27,6 +27,10 @@ import { StartedBookingDto } from './dto/started-booking.dto';
 import { DangerDto } from './dto/danger.dto';
 import { stat } from 'node:fs';
 import { SubmittedBookingDto } from './dto/submittted-booking.dto';
+import {
+  sendAdminNotification,
+  sendUserNotification,
+} from 'src/common/utils/notification.util';
 
 @Injectable()
 export class BookingService {
@@ -46,11 +50,10 @@ export class BookingService {
       availability: true,
 
       maidVerification: {
-      some: {
-        status: VerificationStatus.VERIFIED,
+        some: {
+          status: VerificationStatus.VERIFIED,
+        },
       },
-    },
-
     };
 
     const [total, maids] = await this.prisma.$transaction([
@@ -119,12 +122,7 @@ export class BookingService {
   }
 
   // available maids list
-  async getMaidSlots(
-    maidId: string, 
-    month: number, 
-    year: number
-  ) {
- 
+  async getMaidSlots(maidId: string, month: number, year: number) {
     const maid = await this.prisma.user.findUnique({
       where: { id: maidId },
     });
@@ -215,21 +213,47 @@ export class BookingService {
 
   // create booking
   async create(userId: string, dto: CreateBookingDto) {
+    const { maid_id, package_id, booking_date, slot, address } = dto;
 
-    const { 
-      maid_id, 
-      package_id, 
-      booking_date, 
-      slot, 
-      address 
-    } = dto;
+    const homeowner = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { location: true, latitude: true, longitude: true },
+    });
+
+    if (!homeowner) {
+      throw new NotFoundException('Homeowner not found');
+    }
+
+    if (!homeowner.latitude) {
+      throw new BadRequestException('Homeowner location is not available');
+    }
+
+    if (!homeowner.longitude) {
+      throw new BadRequestException('Homeowner location is not available');
+    }
 
     const maid_location = await this.prisma.user.findUnique({
       where: { id: maid_id },
-      select: { location: true },
+      select: { location: true, latitude: true, longitude: true },
     });
 
+    if (!maid_location) {
+      throw new NotFoundException('Maid not found');
+    }
+
+    if (!maid_location.latitude) {
+      throw new BadRequestException('Maid location is not available');
+    }
+
+    if (!maid_location.longitude) {
+      throw new BadRequestException('Maid location is not available');
+    }
+
     const maidLocationValue = maid_location?.location ?? '';
+    const maidLatitude = maid_location?.latitude;
+    const maidLongitude = maid_location?.longitude;
+    const homeownerLatitude = homeowner?.latitude;
+    const homeownerLongitude = homeowner?.longitude;
 
     const [year, month, day] = booking_date.split('-').map(Number);
     const parsedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
@@ -250,7 +274,6 @@ export class BookingService {
 
     const packageData = await resolvePackage(this.prisma, package_id);
 
-
     const totalPrice = Number(packageData.total_price ?? 0);
     const currentBalance = Number(balance ?? 0);
 
@@ -265,67 +288,94 @@ export class BookingService {
     let booking;
     try {
       booking = await this.prisma.$transaction(async (tx) => {
-      const deducted = await tx.user.updateMany({
-        where: {
-          id: userId,
-          balance: {
-            gte: totalPrice,
-          },
-        },
-        data: {
-          balance: {
-            decrement: totalPrice,
-          },
-        },
-      });
-
-      if (deducted.count === 0) {
-        throw new BadRequestException('Insufficient balance for this booking');
-      }
-
-      return tx.booking.create({
-        data: {
-          user: { connect: { id: userId } },
-          maid: { connect: { id: maid_id } },
-          booking_date: parsedDate,
-          slot,
-          maid_location: maidLocationValue,
-          homeowner_location: address,
-          status: 'PENDING',
-          total_price: packageData.total_price ?? null,
-          ...(packageData.general_cleaning_package_id
-            ? { general_cleaning_package: { connect: { id: packageData.general_cleaning_package_id } } }
-            : {}),
-          ...(packageData.deep_cleaning_package_id
-            ? { deep_cleaning_package: { connect: { id: packageData.deep_cleaning_package_id } } }
-            : {}),
-        },
-        include: {
-          maid: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+        const deducted = await tx.user.updateMany({
+          where: {
+            id: userId,
+            balance: {
+              gte: totalPrice,
             },
           },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+          data: {
+            balance: {
+              decrement: totalPrice,
             },
           },
-          general_cleaning_package: true,
-          deep_cleaning_package: true,
-        },
-      });
+        });
+
+        if (deducted.count === 0) {
+          throw new BadRequestException(
+            'Insufficient balance for this booking',
+          );
+        }
+
+        return tx.booking.create({
+          data: {
+            user: { connect: { id: userId } },
+            maid: { connect: { id: maid_id } },
+            booking_date: parsedDate,
+            slot,
+            maid_location: maidLocationValue,
+            homeowner_location: address,
+            maid_latitude: maidLatitude,
+            maid_longitude: maidLongitude,
+            homeowner_latitude: homeownerLatitude,
+            homeowner_longitude: homeownerLongitude,
+            status: 'PENDING',
+            total_price: packageData.total_price ?? null,
+            ...(packageData.general_cleaning_package_id
+              ? {
+                  general_cleaning_package: {
+                    connect: { id: packageData.general_cleaning_package_id },
+                  },
+                }
+              : {}),
+            ...(packageData.deep_cleaning_package_id
+              ? {
+                  deep_cleaning_package: {
+                    connect: { id: packageData.deep_cleaning_package_id },
+                  },
+                }
+              : {}),
+          },
+          include: {
+            maid: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            general_cleaning_package: true,
+            deep_cleaning_package: true,
+          },
+        });
       });
     } catch (err: any) {
       console.error('Prisma transaction error in createBooking:', err);
-      throw new BadRequestException(err?.message ?? 'Invalid data provided for a Prisma operation.');
+      throw new BadRequestException(
+        err?.message ?? 'Invalid data provided for a Prisma operation.',
+      );
     }
 
-    const formatPackage = (pkg: typeof booking.general_cleaning_package | typeof booking.deep_cleaning_package) => {
+    await sendAdminNotification({
+      sender_id: userId,
+      text: `New booking created by ${booking.user.name} for ${booking.maid.name} on ${formatBookingDate(booking.booking_date)}.`,
+      type: 'create_booking',
+      entity_id: booking.id,
+    });
+
+    const formatPackage = (
+      pkg:
+        | typeof booking.general_cleaning_package
+        | typeof booking.deep_cleaning_package,
+    ) => {
       if (!pkg) return null;
       return {
         ...pkg,
@@ -340,7 +390,9 @@ export class BookingService {
       message: 'Booking created successfully',
       data: {
         ...booking,
-        general_cleaning_package: formatPackage(booking.general_cleaning_package),
+        general_cleaning_package: formatPackage(
+          booking.general_cleaning_package,
+        ),
         deep_cleaning_package: formatPackage(booking.deep_cleaning_package),
       },
     };
@@ -413,7 +465,6 @@ export class BookingService {
         booking_date: formatBookingDate(booking.booking_date),
         status: booking.status,
         cancle_reason: booking.cancle_reason ?? null,
-
         maid: {
           id: booking.maid.id,
           name: booking.maid.name,
@@ -480,6 +531,10 @@ export class BookingService {
           : null,
         slot: booking.slot,
         address: booking.homeowner_location,
+        maid_latitude: booking.maid_latitude,
+        maid_longitude: booking.maid_longitude,
+        homeowner_latitude: booking.homeowner_latitude,
+        homeowner_longitude: booking.homeowner_longitude,
         date_time: `${formatBookingDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
         price: booking.total_price ? `$${booking.total_price}` : null,
         maid: {
@@ -510,7 +565,7 @@ export class BookingService {
     bookingId: string,
     updateBookingDto: HomeownerUpdateBookingDto,
   ) {
-    const { status,cancle_reason } = updateBookingDto;
+    const { status, cancle_reason } = updateBookingDto;
 
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
@@ -540,9 +595,9 @@ export class BookingService {
       const cancelledBooking = await tx.booking.update({
         where: { id: bookingId },
         data: {
-          status: status ,
+          status: status,
           cancle_reason: cancle_reason,
-         },
+        },
       });
 
       if (refundAmount > 0) {
@@ -557,6 +612,14 @@ export class BookingService {
       }
 
       return cancelledBooking;
+    });
+
+    await sendUserNotification({
+      sender_id: userId,
+      receiver_id: booking.maid_id,
+      text: `Booking cancelled by homeowner for ${booking.id} on ${formatBookingDate(booking.booking_date)}. Reason: ${cancle_reason}`,
+      type: 'cancel_booking',
+      entity_id: booking.id,
     });
 
     return {
@@ -838,6 +901,10 @@ export class BookingService {
           : null,
 
         address: booking.homeowner_location,
+        maid_latitude: booking.maid_latitude,
+        maid_longitude: booking.maid_longitude,
+        homeowner_latitude: booking.homeowner_latitude,
+        homeowner_longitude: booking.homeowner_longitude,
         time: `${slotTime.start} - ${slotTime.end}`,
         booking_date: formatBookingDate(booking.booking_date),
         cancle_reason: booking.cancle_reason ?? null,
@@ -892,6 +959,15 @@ export class BookingService {
       data: { status },
     });
 
+    await sendAdminNotification({
+      sender_id: maidId,
+      text: `Booking ${status.toLowerCase()} by maid for ${booking.id} on ${formatBookingDate(booking.booking_date)}.`,
+      type: (status === BookingStatus.CONFIRMED
+        ? 'accept_booking'
+        : 'reject_booking') as any,
+      entity_id: booking.id,
+    });
+
     return {
       success: true,
       message: `Booking ${status.toLowerCase()} successfully`,
@@ -900,10 +976,7 @@ export class BookingService {
   }
 
   //  booking status (pending, upcoming, completed, cancelled)
-  async getBookingsByStatusForMaid(
-    maidId: string, 
-    query: PaginationstausDto
-  ) {
+  async getBookingsByStatusForMaid(maidId: string, query: PaginationstausDto) {
     const { page, perPage, bookingStatus } = query;
     const skip = (page - 1) * perPage;
 
@@ -968,6 +1041,10 @@ export class BookingService {
           price: packageData?.price,
           slot: booking.slot,
           address: booking.homeowner_location,
+          maid_latitude: booking.maid_latitude,
+          maid_longitude: booking.maid_longitude,
+          homeowner_latitude: booking.homeowner_latitude,
+          homeowner_longitude: booking.homeowner_longitude,
           time: `${slotTime.start} - ${slotTime.end}`,
           booking_date: formatBookingDate(booking.booking_date),
           status: booking.status,
@@ -1031,6 +1108,13 @@ export class BookingService {
     const updatedBooking = await this.prisma.booking.update({
       where: { id: bookingId },
       data: { status },
+    });
+
+    await sendAdminNotification({
+      sender_id: maidId,
+      text: `Booking started by maid for ${booking.id} on ${formatBookingDate(booking.booking_date)}.`,
+      type: 'started_booking',
+      entity_id: booking.id,
     });
 
     return {
@@ -1107,6 +1191,7 @@ export class BookingService {
         id: true,
         maid_id: true,
         homeowner_location: true,
+        booking_date: true,
 
         danger_notification: {
           select: {
@@ -1202,6 +1287,13 @@ export class BookingService {
         longitude: true,
         created_at: true,
       },
+    });
+
+    await sendAdminNotification({
+      sender_id: maidId,
+      text: `Danger alert reported by maid for ${booking.id} on ${formatBookingDate(booking.booking_date)}.`,
+      type: 'danger_request',
+      entity_id: booking.id,
     });
 
     return {

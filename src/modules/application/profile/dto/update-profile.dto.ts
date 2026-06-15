@@ -20,6 +20,12 @@ export class UpdateProfileDto {
   experience_years?: number;
 
   @IsOptional()
+  latitude?: number;
+
+  @IsOptional()
+  longitude?: number;
+
+  @IsOptional()
   @IsArray()
   @IsEnum(ServiceType, { each: true })
   service_type?: ServiceType[];

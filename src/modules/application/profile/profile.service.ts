@@ -5,6 +5,7 @@ import appConfig from 'src/config/app.config';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateLocationDto } from './dto/create-location.dto';
+import { onlySendUserNotification } from 'src/common/utils/notification.util';
 
 @Injectable()
 export class ProfileService {
@@ -52,6 +53,8 @@ export class ProfileService {
         location: true,
         about_me: true,
         service_type: true,
+        latitude: true,
+        longitude: true,
         experience_years: true,
         maidVerification: {
           orderBy: { created_at: 'desc' },
@@ -184,8 +187,7 @@ export class ProfileService {
         id: user.id,
         name: user.name,
         email: user.email,
-        verification_status:
-          user.maidVerification?.[0]?.status === 'VERIFIED',
+        verification_status: user.maidVerification?.[0]?.status === 'VERIFIED',
         avater_url: user.avatar
           ? TanvirStorage.url(appConfig().storageUrl.avatar + '/' + user.avatar)
           : null,
@@ -201,6 +203,8 @@ export class ProfileService {
         average_rating,
         total_reviews: totalReviews,
         recent_jobs,
+        latitude: user.latitude,
+        longitude: user.longitude,
       },
     };
   }
@@ -383,8 +387,12 @@ export class ProfileService {
     if (dto.name !== undefined) userData.name = dto.name;
     if (dto.location !== undefined) userData.location = dto.location;
     if (dto.about_me !== undefined) userData.about_me = dto.about_me;
-    if (dto.service_type !== undefined) userData.service_type = dto.service_type;
-    if (dto.experience_years !== undefined) userData.experience_years = dto.experience_years;
+    if (dto.service_type !== undefined)
+      userData.service_type = dto.service_type;
+    if (dto.experience_years !== undefined)
+      userData.experience_years = dto.experience_years;
+    if (dto.latitude !== undefined) userData.latitude = dto.latitude;
+    if (dto.longitude !== undefined) userData.longitude = dto.longitude;
 
     // -------- image --------
 
@@ -439,6 +447,14 @@ export class ProfileService {
               experience_years: true,
             },
           });
+
+    await onlySendUserNotification({
+      sender_id: userId,
+      receiver_id: userId,
+      text: `Your profile has been updated successfully.`,
+      type: 'profile_update',
+      entity_id: userId,
+    });
 
     return {
       success: true,
@@ -536,6 +552,8 @@ export class ProfileService {
         avatar: true,
         location: true,
         about_me: true,
+        latitude: true,
+        longitude: true,
       },
     });
 
@@ -556,6 +574,8 @@ export class ProfileService {
           : null,
         location: user.location,
         about_me: user.about_me,
+        latitude: user.latitude,
+        longitude: user.longitude,
       },
     };
   }
@@ -570,6 +590,8 @@ export class ProfileService {
 
     if (dto.location !== undefined) userData.location = dto.location;
     if (dto.about_me !== undefined) userData.about_me = dto.about_me;
+    if (dto.latitude !== undefined) userData.latitude = dto.latitude;
+    if (dto.longitude !== undefined) userData.longitude = dto.longitude;
 
     // -------- update user --------
 
@@ -621,6 +643,14 @@ export class ProfileService {
             },
           });
 
+    await onlySendUserNotification({
+      sender_id: userId,
+      receiver_id: userId,
+      text: `Your profile has been updated successfully.`,
+      type: 'profile_update',
+      entity_id: userId,
+    });
+
     return {
       success: true,
       message: 'Profile updated successfully',
@@ -630,15 +660,10 @@ export class ProfileService {
     };
   }
 
-  
   // topic: saved location part)---------->
-  
+
   // post save location
-  async saveLocation(
-    userId: string,
-    locationDto: CreateLocationDto,
-  ) {
-   
+  async saveLocation(userId: string, locationDto: CreateLocationDto) {
     const { location_name, location_type } = locationDto;
 
     const newLocation = await this.prisma.location.create({
@@ -649,6 +674,14 @@ export class ProfileService {
       },
     });
 
+    await onlySendUserNotification({
+      sender_id: userId,
+      receiver_id: userId,
+      text: `Your location has been saved successfully.`,
+      type: 'profile_update',
+      entity_id: userId,
+    });
+
     return {
       success: true,
       message: 'Location saved successfully',
@@ -657,10 +690,7 @@ export class ProfileService {
   }
 
   // get saved location
-  async getSavedLocations(
-    userId: string,
-  ) {
- 
+  async getSavedLocations(userId: string) {
     const locations = await this.prisma.location.findMany({
       where: {
         user_id: userId,
@@ -683,10 +713,7 @@ export class ProfileService {
   }
 
   // get a specific saved location by id
-  async getSavedLocationById(
-    userId: string,
-    locationId: string,
-  ) {
+  async getSavedLocationById(userId: string, locationId: string) {
     const location = await this.prisma.location.findFirst({
       where: {
         id: locationId,
@@ -738,7 +765,7 @@ export class ProfileService {
       where: {
         id: locationId,
       },
-      data: locationData
+      data: locationData,
     });
 
     return {
@@ -749,10 +776,7 @@ export class ProfileService {
   }
 
   // detele saved location
-  async deleteSavedLocation(
-    userId: string,
-    locationId: string,
-  ) {
+  async deleteSavedLocation(userId: string, locationId: string) {
     const location = await this.prisma.location.findFirst({
       where: {
         id: locationId,
@@ -778,5 +802,4 @@ export class ProfileService {
       message: 'Location deleted successfully',
     };
   }
-
 }

@@ -8,6 +8,7 @@ import { CleanerStatusDto } from './dto/cleaner-status.dto';
 import { DangerStatusDto } from './dto/danger-status.dto';
 import { JobStatusDto } from './dto/job-status.dto';
 import { UpdateCommissionDto } from './dto/update-commission.dto';
+import { sendAdminNotification } from 'src/common/utils/notification.util';
 
 @Injectable()
 export class DashboardService {
@@ -194,11 +195,10 @@ export class DashboardService {
     }
   }
 
-
   /*--------------------------------------------
             Commission with details
   --------------------------------------------*/
-  
+
   // get all commission with details
   async getCommissions() {
     try {
@@ -227,10 +227,13 @@ export class DashboardService {
         message: error.message,
       };
     }
-  }  
+  }
 
   // update commission by id
-  async updateCommissionById(id: string, updateCommissionDto: UpdateCommissionDto) {
+  async updateCommissionById(
+    id: string,
+    updateCommissionDto: UpdateCommissionDto,
+  ) {
     try {
       const commission = await this.prisma.commission.findUnique({
         where: { id },
@@ -246,6 +249,13 @@ export class DashboardService {
       const updatedCommission = await this.prisma.commission.update({
         where: { id },
         data: updateCommissionDto,
+      });
+
+      await sendAdminNotification({
+        sender_id: 'system',
+        text: `Commission updated to ${updatedCommission.percentage}% + $${updatedCommission.fixed_fee} (was ${commission.percentage}% + $${commission.fixed_fee})`,
+        type: 'update_commission',
+        entity_id: updatedCommission.id,
       });
 
       return {
@@ -733,6 +743,13 @@ export class DashboardService {
           },
         });
 
+        await sendAdminNotification({
+          sender_id: 'system',
+          text: `Booking ${updated.id} has been verified or rejected and marked as completed.`,
+          type: 'approve_job_submission',
+          entity_id: updated.id,
+        });
+
         return {
           success: true,
           message: 'Booking approved and marked as completed',
@@ -985,6 +1002,13 @@ export class DashboardService {
         },
       });
 
+      await sendAdminNotification({
+        sender_id: 'system',
+        text: `Your cleaner verification request has been ${status.toLowerCase()}.`,
+        type: 'cleaner_verification_update',
+        entity_id: id,
+      });
+
       return {
         success: true,
         message: 'Cleaner request status updated successfully',
@@ -1001,7 +1025,7 @@ export class DashboardService {
   /*--------------------------------------------
      Cleaner Requests with approve part 
   --------------------------------------------*/
-  
+
   /*--------------------------------------------
       Danger Requests with approve part
   --------------------------------------------*/
@@ -1081,7 +1105,6 @@ export class DashboardService {
       };
     }
   }
-  
 
   // get danger request by id
   async getDangerRequestById(id: string) {
@@ -1136,10 +1159,7 @@ export class DashboardService {
   }
 
   // approve or reject danger request by id
-  async updateDangerRequestById(
-    id: string,
-    updateDto: DangerStatusDto
-  ) {
+  async updateDangerRequestById(id: string, updateDto: DangerStatusDto) {
     try {
       const { status } = updateDto;
 
@@ -1178,6 +1198,13 @@ export class DashboardService {
         },
       });
 
+      await sendAdminNotification({
+        sender_id: 'system',
+        text: `Danger request ${danger.id} has been ${status.toLowerCase()}.`,
+        type: 'update_booking',
+        entity_id: danger.id,
+      });
+
       return {
         success: true,
         message: 'Danger request status updated successfully',
@@ -1191,11 +1218,7 @@ export class DashboardService {
     }
   }
 
-
   /*--------------------------------------------
      Danger Requests with approve part 
    --------------------------------------------*/
-
-
-
 }

@@ -72,6 +72,9 @@ model User {
   fcm_token   String?
   device_type String?
 
+  latitude  Float? 
+  longitude Float?
+
   // billing info  
   billing_id        String?
   // stripe connect account 
@@ -357,8 +360,15 @@ model Booking {
   booking_date DateTime @db.Date
   slot         Slot
 
+  // location 
   maid_location      String
   homeowner_location String
+
+  maid_latitude      Float?
+  maid_longitude     Float?
+
+  homeowner_latitude  Float?
+  homeowner_longitude Float?
 
   // optional cancle reason and date
   cancle_reason String?

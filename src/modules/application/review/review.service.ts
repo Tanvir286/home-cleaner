@@ -10,6 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 import { TanvirStorage } from 'src/common/lib/Disk/TanvirStorage';
 import appConfig from 'src/config/app.config';
+import { sendAdminNotification, sendUserNotification } from 'src/common/utils/notification.util';
 
 @Injectable()
 export class ReviewService {
@@ -65,6 +66,16 @@ export class ReviewService {
       },
     });
 
+    await sendUserNotification({
+      sender_id: homeownerId,
+      receiver_id: booking.maid_id,
+      text: `New review submitted for booking ${booking.id}`,
+      type: 'review_booking',
+      entity_id: review.id,
+    });
+   
+
+
     return {
       success: true,
       message: 'Review created successfully',
@@ -83,6 +94,8 @@ export class ReviewService {
       select: {
         id: true,
         homeowner_id: true,
+        maid_id: true,
+        booking_id: true,
       },
     });
 
@@ -100,6 +113,14 @@ export class ReviewService {
         rating: updateReviewDto.rating,
         comment: updateReviewDto.comment,
       }
+    });
+
+    await sendUserNotification({
+      sender_id: homeownerId,
+      receiver_id: existingReview.maid_id,
+      text: `Review updated for booking ${existingReview.booking_id}`,
+      type: 'review_booking',
+      entity_id: existingReview.id,
     });
 
     return {

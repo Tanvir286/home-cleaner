@@ -4,6 +4,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+/*----------------------(Send Admin Notification)----------------------*/
+
 type SendAdminNotificationPayload = {
   sender_id: string;
   text: string;
@@ -32,5 +34,53 @@ export const sendAdminNotification = async (
     entity_id: payload.entity_id || payload.sender_id,
   };
 
+  return await NotificationRepository.createNotification(notificationPayload);
+};
+
+/*-----------------------(Send User Notification)----------------------*/
+
+
+type SendUserNotificationPayload = {
+  sender_id: string;
+  receiver_id: string;
+  text: string;
+  type: NotificationType;
+  entity_id?: string;
+};
+
+
+
+export const sendUserNotification = async (
+
+  payload: SendUserNotificationPayload,
+) => {
+  const notificationPayload = {
+    ...payload,
+    entity_id: payload.entity_id ?? payload.sender_id,
+  };
+
+  return await NotificationRepository.createNotification(notificationPayload);
+};
+
+
+/*-----------------------(Only Send User Notification)----------------------*/
+
+
+type SendMeNotificationPayload = {
+  sender_id: string;
+  receiver_id: string;
+  text: string;
+  type: NotificationType;
+  entity_id?: string;
+};
+
+
+export const onlySendUserNotification = async (
+  payload: SendMeNotificationPayload,
+) => {
+  const notificationPayload = {
+    ...payload,
+    entity_id: payload.entity_id ?? payload.sender_id,
+  };
   return await NotificationRepository.createNotification(notificationPayload);
 };
