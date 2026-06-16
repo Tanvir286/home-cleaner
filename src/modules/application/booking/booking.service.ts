@@ -13,6 +13,7 @@ import {
   checkBalance,
   checkCommission,
   checkSlotAvailability,
+  findAddress,
   formatBookingDate,
   resolvePackage,
   uploadBookingImages,
@@ -213,25 +214,10 @@ export class BookingService {
 
   // create booking
   async create(userId: string, dto: CreateBookingDto) {
+    
     const { maid_id, package_id, booking_date, slot, address } = dto;
 
-    const homeowner = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { location: true, latitude: true, longitude: true },
-    });
-
-    if (!homeowner) {
-      throw new NotFoundException('Homeowner not found');
-    }
-
-    if (!homeowner.latitude) {
-      throw new BadRequestException('Homeowner location is not available');
-    }
-
-    if (!homeowner.longitude) {
-      throw new BadRequestException('Homeowner location is not available');
-    }
-
+  
     const maid_location = await this.prisma.user.findUnique({
       where: { id: maid_id },
       select: { location: true, latitude: true, longitude: true },
@@ -249,11 +235,13 @@ export class BookingService {
       throw new BadRequestException('Maid location is not available');
     }
 
+    const { findlocation_name, findlatitude, findlongitude } = await findAddress(this.prisma, address);
+
     const maidLocationValue = maid_location?.location ?? '';
     const maidLatitude = maid_location?.latitude;
     const maidLongitude = maid_location?.longitude;
-    const homeownerLatitude = homeowner?.latitude;
-    const homeownerLongitude = homeowner?.longitude;
+    const homeownerLatitude = findlatitude;
+    const homeownerLongitude = findlongitude;
 
     const [year, month, day] = booking_date.split('-').map(Number);
     const parsedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
@@ -318,7 +306,7 @@ export class BookingService {
             booking_date: parsedDate,
             slot,
             maid_location: maidLocationValue,
-            homeowner_location: address,
+            homeowner_location: findlocation_name,
             maid_latitude: maidLatitude,
             maid_longitude: maidLongitude,
             homeowner_latitude: homeownerLatitude,

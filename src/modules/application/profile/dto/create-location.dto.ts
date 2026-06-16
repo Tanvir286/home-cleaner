@@ -10,5 +10,10 @@ export class CreateLocationDto {
   @IsEnum(LocationType)
   location_type?: LocationType;
 
-  
+  @IsOptional()
+  latitude?: number;
+
+  @IsOptional()
+  longitude?: number;
+
 }

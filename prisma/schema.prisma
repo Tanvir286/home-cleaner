@@ -201,6 +201,9 @@ model Location {
   location_name String?
   location_type LocationType @default(OTHER)
 
+  latitude  Float?
+  longitude Float?
+
   user_id String
   user    User   @relation("SavedLocation", fields: [user_id], references: [id], onDelete: Cascade)
 

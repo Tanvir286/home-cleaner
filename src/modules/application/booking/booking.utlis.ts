@@ -8,6 +8,34 @@ import appConfig from 'src/config/app.config';
 // Define the available booking slots
 export type BookingSlot = 'A' | 'B' | 'C' | 'D';
 
+
+
+// find address with latitude and longitude
+export async function findAddress(
+  prisma: PrismaService,
+  address: string,
+) {
+   const foundLocation = await prisma.location.findFirst({
+    where: {
+      id: address,
+    },
+    select: {
+      location_name: true,
+      latitude: true,
+      longitude: true,
+    },
+  });
+
+  return {
+    findlocation_name: foundLocation?.location_name,
+    findlatitude: foundLocation?.latitude,
+    findlongitude: foundLocation?.longitude,
+  }
+
+
+}
+
+
 // Define the time slots for booking
 export const bookingSlotTimeMap: Record<BookingSlot, { start: string; end: string }> = {
   A: { start: '07:30am', end: '10:00am' },

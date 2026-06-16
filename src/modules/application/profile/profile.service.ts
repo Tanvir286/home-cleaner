@@ -664,13 +664,28 @@ export class ProfileService {
 
   // post save location
   async saveLocation(userId: string, locationDto: CreateLocationDto) {
-    const { location_name, location_type } = locationDto;
+      
+    const { 
+      location_name, 
+      location_type, 
+      latitude, 
+      longitude 
+    }  = locationDto;
+
+    if (!location_name && !location_type && latitude === undefined && longitude === undefined) {
+      return {
+        success: false,
+        message: 'At least one field is required to save location',
+      };
+    }
 
     const newLocation = await this.prisma.location.create({
       data: {
         user_id: userId,
         location_name: location_name,
         location_type: location_type,
+        latitude: latitude,
+        longitude: longitude,
       },
     });
 
