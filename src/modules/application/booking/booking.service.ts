@@ -428,6 +428,7 @@ export class BookingService {
           maid: true,
           general_cleaning_package: true,
           deep_cleaning_package: true,
+          residential_cleaning_package: true,
           booking_reviews: {
             select: {
               rating: true,
@@ -445,11 +446,13 @@ export class BookingService {
 
     const formattedBookings = bookings.map((booking) => {
       const packageData =
-        booking.general_cleaning_package || booking.deep_cleaning_package;
+        booking.general_cleaning_package || booking.deep_cleaning_package || booking.residential_cleaning_package;
 
       const serviceType = booking.general_cleaning_package
         ? 'General Cleaning'
-        : 'Deep Cleaning';
+        : booking.deep_cleaning_package
+        ? 'Deep Cleaning'
+        : 'Residential Cleaning';
 
       const slotTime = bookingSlotTimeMap[booking.slot];
 
@@ -509,6 +512,7 @@ export class BookingService {
         user: true,
         general_cleaning_package: true,
         deep_cleaning_package: true,
+        residential_cleaning_package: true,
       },
     });
 
@@ -517,11 +521,13 @@ export class BookingService {
     }
 
     const packageData =
-      booking.general_cleaning_package || booking.deep_cleaning_package;
+      booking.general_cleaning_package || booking.deep_cleaning_package || booking.residential_cleaning_package;
 
     const serviceType = booking.general_cleaning_package
       ? 'General Cleaning'
-      : 'Deep Cleaning';
+      : booking.deep_cleaning_package
+      ? 'Deep Cleaning'
+      : 'Residential Cleaning';
 
     const slotTime = bookingSlotTimeMap[booking.slot];
 
@@ -811,6 +817,7 @@ export class BookingService {
         include: {
           general_cleaning_package: true,
           deep_cleaning_package: true,
+          residential_cleaning_package: true,
           user: {
             select: {
               id: true,
@@ -831,10 +838,12 @@ export class BookingService {
 
     const formattedBookings = bookings.map((booking) => {
       const packageData =
-        booking.general_cleaning_package || booking.deep_cleaning_package;
+        booking.general_cleaning_package || booking.deep_cleaning_package || booking.residential_cleaning_package;
       const serviceType = booking.general_cleaning_package
         ? 'General Cleaning'
-        : 'Deep Cleaning';
+        : booking.deep_cleaning_package
+        ? 'Deep Cleaning'
+        : 'Residential Cleaning';
       const slotTime = bookingSlotTimeMap[booking.slot];
 
       return {
@@ -880,6 +889,7 @@ export class BookingService {
         user: true,
         general_cleaning_package: true,
         deep_cleaning_package: true,
+        residential_cleaning_package: true,
       },
     });
 
@@ -888,10 +898,12 @@ export class BookingService {
     }
 
     const packageData =
-      booking.general_cleaning_package || booking.deep_cleaning_package;
+      booking.general_cleaning_package || booking.deep_cleaning_package || booking.residential_cleaning_package;
     const serviceType = booking.general_cleaning_package
       ? 'General Cleaning'
-      : 'Deep Cleaning';
+      : booking.deep_cleaning_package
+      ? 'Deep Cleaning'
+      : 'Residential Cleaning';
     const slotTime = bookingSlotTimeMap[booking.slot];
 
     return {
@@ -1006,6 +1018,7 @@ export class BookingService {
             },
           },
           general_cleaning_package: true,
+          residential_cleaning_package: true,
           deep_cleaning_package: true,
           booking_reviews: {
             select: {
@@ -1023,7 +1036,7 @@ export class BookingService {
     const formattedBookings = await Promise.all(
       bookings.map(async (booking) => {
         const packageData =
-          booking.general_cleaning_package || booking.deep_cleaning_package;
+          booking.general_cleaning_package || booking.deep_cleaning_package || booking.residential_cleaning_package;
         const slotTime = bookingSlotTimeMap[booking.slot];
 
         const aggregateRating = await this.prisma.review.aggregate({
@@ -1039,7 +1052,9 @@ export class BookingService {
           id: booking.id,
           service: booking.general_cleaning_package
             ? 'General Cleaning'
-            : 'Deep Cleaning',
+            : booking.deep_cleaning_package
+            ? 'Deep Cleaning'
+            : 'Residential Cleaning',
           package: packageData?.packageType,
           package_image: packageData?.image
             ? TanvirStorage.url(
@@ -1059,7 +1074,7 @@ export class BookingService {
           cancle_reason: booking.cancle_reason ?? null,
           homeowner: {
             id: booking.user.id,
-            name: booking.user.name,
+            name: booking.user.name,  
             location: booking.user.location,
             avatar: booking.user.avatar
               ? TanvirStorage.url(
