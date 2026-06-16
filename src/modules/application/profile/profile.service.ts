@@ -717,6 +717,8 @@ export class ProfileService {
         id: location.id,
         location_name: location.location_name,
         location_type: location.location_type,
+        latitude: location.latitude,
+        longitude: location.longitude,
       };
     });
 
@@ -756,11 +758,13 @@ export class ProfileService {
     locationId: string,
     locationDto: CreateLocationDto,
   ) {
-    const { location_name, location_type } = locationDto;
+    const { location_name, location_type, latitude, longitude } = locationDto;
 
     const locationData: any = {};
     if (location_name !== undefined) locationData.location_name = location_name;
     if (location_type !== undefined) locationData.location_type = location_type;
+    if (latitude !== undefined) locationData.latitude = latitude;
+    if (longitude !== undefined) locationData.longitude = longitude;
 
     const location = await this.prisma.location.findFirst({
       where: {

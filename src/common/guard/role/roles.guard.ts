@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 import { Role } from './role.enum';
 import { UserRepository } from '../../../common/repository/user/user.repository';
+import { IS_PUBLIC_KEY } from 'src/common/decorator/public.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -18,10 +19,20 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
+
 
     if (!requiredRoles) {
       return true;

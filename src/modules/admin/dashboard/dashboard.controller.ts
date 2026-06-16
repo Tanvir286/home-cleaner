@@ -21,6 +21,7 @@ import { CleanerStatusDto } from './dto/cleaner-status.dto';
 import { DangerStatusDto } from './dto/danger-status.dto';
 import { JobStatusDto } from './dto/job-status.dto';
 import { UpdateCommissionDto } from './dto/update-commission.dto';
+import { Public } from 'src/common/decorator/public.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -47,6 +48,7 @@ export class DashboardController {
   --------------------------------------------*/
 
   // get all commission with details
+  @Public()
   @Get('commissions')
   async getCommissions(
   ) {
@@ -54,6 +56,7 @@ export class DashboardController {
   }
 
   // update commission by id
+  @Public()
   @Patch('commissions/:id')
   async updateCommissionById(
     @Param('id') id: string,
