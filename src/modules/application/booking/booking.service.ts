@@ -551,6 +551,19 @@ export class BookingService {
         homeowner_longitude: booking.homeowner_longitude,
         date_time: `${formatBookingDate(booking.booking_date)}, at ${slotTime.start} - ${slotTime.end}`,
         price: booking.total_price ? `$${booking.total_price}` : null,
+        package_details: {
+          title: packageData?.title,
+          serviceType: packageData?.serviceType,
+          packageType: packageData?.packageType,
+          description: packageData?.description,
+          image: packageData?.image
+            ? TanvirStorage.url(
+                appConfig().storageUrl.package + '/' + packageData.image,
+              )
+            : null,
+           price: packageData?.price ? `$${packageData.price}` : null, 
+          duration: packageData?.duration,
+        },
         maid: {
           id: booking.maid.id,
           name: booking.maid.name,
