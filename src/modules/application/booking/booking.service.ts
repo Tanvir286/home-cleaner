@@ -838,7 +838,10 @@ export class BookingService {
               location: true,
               avatar: true,
               phone_number: true,
+              latitude: true,
+              longitude: true,
             },
+
           },
         },
         orderBy: {
@@ -879,6 +882,9 @@ export class BookingService {
           id: booking.user.id,
           name: booking.user.name,
           location: booking.user.location,
+          latitude: booking.user.latitude,
+          longitude: booking.user.longitude,
+          phone: booking.user.phone_number,
           avatar: booking.user.avatar
             ? TanvirStorage.url(
                 appConfig().storageUrl.avatar + '/' + booking.user.avatar,
@@ -951,6 +957,8 @@ export class BookingService {
           id: booking.user.id,
           name: booking.user.name,
           location: booking.user.location,
+          latitude: booking.user.latitude,
+          longitude: booking.user.longitude,
           phone: booking.user.phone_number,
           avatar: booking.user.avatar
             ? TanvirStorage.url(
@@ -1032,6 +1040,7 @@ export class BookingService {
           },
           general_cleaning_package: true,
           residential_cleaning_package: true,
+
           deep_cleaning_package: true,
           booking_reviews: {
             select: {
