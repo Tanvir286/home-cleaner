@@ -328,6 +328,13 @@ export class BookingService {
                   },
                 }
               : {}),
+            ...(packageData.residential_cleaning_package_id
+              ? {
+                  residential_cleaning_package: {
+                    connect: { id: packageData.residential_cleaning_package_id },
+                  },
+                }
+              : {}),
           },
           include: {
             maid: {
@@ -346,6 +353,7 @@ export class BookingService {
             },
             general_cleaning_package: true,
             deep_cleaning_package: true,
+            residential_cleaning_package: true,
           },
         });
       });
@@ -366,7 +374,8 @@ export class BookingService {
     const formatPackage = (
       pkg:
         | typeof booking.general_cleaning_package
-        | typeof booking.deep_cleaning_package,
+        | typeof booking.deep_cleaning_package
+        | typeof booking.residential_cleaning_package,
     ) => {
       if (!pkg) return null;
       return {
@@ -390,6 +399,9 @@ export class BookingService {
           booking.general_cleaning_package,
         ),
         deep_cleaning_package: formatPackage(booking.deep_cleaning_package),
+        residential_cleaning_package: formatPackage(
+          booking.residential_cleaning_package,
+        ),
       },
     };
   }

@@ -15,7 +15,7 @@ export class CreateBookingDto {
   @IsString()
   maid_id: string;
 
-  @ApiProperty({ description: 'Package ID (general or deep cleaning)', example: 'clxyz456' })
+  @ApiProperty({ description: 'Package ID (general, deep or residential cleaning)', example: 'clxyz456' })
   @IsNotEmpty()
   @IsString()
   package_id: string;
