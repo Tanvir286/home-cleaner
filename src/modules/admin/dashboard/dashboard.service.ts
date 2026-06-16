@@ -1199,7 +1199,10 @@ export class DashboardService {
   }
 
   // approve or reject danger request by id
-  async updateDangerRequestById(id: string, updateDto: DangerStatusDto) {
+  async updateDangerRequestById(
+    id: string, 
+    updateDto: DangerStatusDto
+  ) {
     try {
       const { status } = updateDto;
 

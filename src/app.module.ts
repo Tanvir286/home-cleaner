@@ -22,6 +22,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { PrometheusModule } from './prometheus/prometheus.module';
 import { RepositoryModule } from './common/repository/repository.module';
+import { CronModule } from './modules/cron/cron.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { RepositoryModule } from './common/repository/repository.module';
     ChatModule,
     PaymentModule,
     PrometheusModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [
