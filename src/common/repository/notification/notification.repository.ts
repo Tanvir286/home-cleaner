@@ -55,13 +55,14 @@ export class NotificationRepository {
   
   // create notification
   static async createNotification(payload: {
-    sender_id: string;
+    sender_id?: string | null;
     receiver_id: string;
     text: string;
     type: NotificationType;
     entity_id: string;
   }) {
-    const { sender_id, receiver_id, text, type, entity_id } = payload;
+    let { sender_id, receiver_id, text, type, entity_id } = payload;
+    const safeSenderId = sender_id === 'system' ? null : sender_id ?? null;
 
     try {
       let notificationEvent = await prisma.notificationEvent.findFirst({
@@ -76,7 +77,7 @@ export class NotificationRepository {
 
       const newNotification = await prisma.notification.create({
         data: {
-          sender_id,
+          sender_id: safeSenderId,
           receiver_id,
           entity_id,
           notification_event_id: notificationEvent.id,

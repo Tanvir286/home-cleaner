@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 /*----------------------(Send Admin Notification)----------------------*/
 
 type SendAdminNotificationPayload = {
-  sender_id: string;
+  sender_id?: string | null;
   text: string;
   type: NotificationType;
   entity_id?: string;
@@ -27,7 +27,7 @@ export const sendAdminNotification = async (
   }
 
   const notificationPayload = {
-    sender_id: payload.sender_id,
+    sender_id: payload.sender_id === 'system' ? null : payload.sender_id,
     receiver_id: adminUser.id,
     text: payload.text,
     type: payload.type,
@@ -41,7 +41,7 @@ export const sendAdminNotification = async (
 
 
 type SendUserNotificationPayload = {
-  sender_id: string;
+  sender_id?: string | null;
   receiver_id: string;
   text: string;
   type: NotificationType;
@@ -56,6 +56,7 @@ export const sendUserNotification = async (
 ) => {
   const notificationPayload = {
     ...payload,
+    sender_id: payload.sender_id === 'system' ? null : payload.sender_id,
     entity_id: payload.entity_id ?? payload.sender_id,
   };
 
@@ -67,7 +68,7 @@ export const sendUserNotification = async (
 
 
 type SendMeNotificationPayload = {
-  sender_id: string;
+  sender_id?: string | null;
   receiver_id: string;
   text: string;
   type: NotificationType;
