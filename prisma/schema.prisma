@@ -264,7 +264,7 @@ model ResidentialCleaningPackage {
 
   title       String?
   serviceType serviceType @default(RESIDENTIAL_CLEANING)
-  packageType PackageType
+  packageType PackageType?
   image       String?
   description String?
   duration    String?

@@ -48,8 +48,6 @@ type SendUserNotificationPayload = {
   entity_id?: string;
 };
 
-
-
 export const sendUserNotification = async (
 
   payload: SendUserNotificationPayload,

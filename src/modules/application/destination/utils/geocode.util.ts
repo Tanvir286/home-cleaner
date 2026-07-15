@@ -11,6 +11,15 @@ export async function geocodeAddress(address: string, apiKey: string) {
     throw new Error("Address not found");
   }
 
+  if (res.data.status !== "OK") {
+    throw new Error(`Geocoding API error: ${res.data.status}`);
+  }
+
+  if (!res.data.results[0].geometry || !res.data.results[0].geometry.location) {
+    throw new Error("invalid response from Geocoding API: missing geometry or location");
+  }
+
+
   const location = res.data.results[0].geometry.location;
 
   return {

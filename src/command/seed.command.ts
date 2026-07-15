@@ -8,15 +8,12 @@ interface SeedCommandOptions {
   commissionOnly?: boolean;
 }
 
-
 /*********************** USAGE INSTRUCTIONS ***********************
-Seed everything together	npm run seed 
-Seed only users	npm run seed -- --users-only
-Seed only packages	npm run seed -- --packages-only
-Seed only commission	npm run seed -- --commission-only
-`******************************************************************/
-
-
+Seed everything together   npm run seed 
+Seed only users            npm run seed -- --users-only
+Seed only packages         npm run seed -- --packages-only
+Seed only commission       npm run seed -- --commission-only
+******************************************************************/
 
 @Command({
   name: 'seed',
@@ -159,94 +156,33 @@ export class SeedCommand extends CommandRunner {
     if (!usersOnly && !commissionOnly) {
       console.log('📦 Packages seeding started...');
 
-      // GENERAL CLEANING PACKAGES
-      await this.prisma.generalCleaningPackage.createMany({
-        skipDuplicates: true,
-        data: [
-          {
-            title: 'Eco Spark',
-            packageType: 'ECO_SPARK',
-            price: 79,
-          },
-          {
-            title: 'Spark',
-            packageType: 'SPARK',
-            price: 99,
-          },
-          {
-            title: 'Green Flow',
-            packageType: 'GREENFLOW',
-            price: 129,
-          },
-          {
-            title: 'Glide',
-            packageType: 'GLIDE',
-            price: 229,
-          },
-        ],
-      });
-
-      // RESIDENTIAL CLEANING PACKAGES
+      // ONLY RESIDENTIAL CLEANING PACKAGES
       await this.prisma.residentialCleaningPackage.createMany({
         skipDuplicates: true,
         data: [
           {
-            title: 'Eco Refresh',
+            title: 'EcoRefresh Clean',
             serviceType: 'RESIDENTIAL_CLEANING',
-            packageType: 'GENERAL',
             price: 149,
             description:
-              'Kitchen: Countertops, sink, cabinet exteriors, appliance exteriors. Bathrooms: Toilet, sink, shower/tub, mirrors. Living Areas: Dusting, vacuuming, sweeping, mopping, trash removal. Bedrooms: Dusting, vacuuming, trash removal.',
-            duration: '2-3 hours',
+              'Weekly or bi-weekly maintenance cleaning.Apartments.Small homes.Homes already in good condition.Wipe countertops.Clean exterior of appliances.Clean sink and faucet.Spot clean cabinet exteriors.Sweep and mop floors.Clean and sanitize toilet.Clean sink and vanity.Clean mirrors.Clean shower/tub surfaces.Sweep and mop floors.Dust accessible surfaces.Make beds (if linens are provided).Vacuum carpets/rugs.Sweep and mop hard floors.Empty trash bins.Eco-friendly cleaning products.General dusting.Floor cleaning.Trash removal. ',
+            duration: '2-3 Hours',
           },
           {
-            title: 'Eco Restore',
+            title:'EcoRestore Deep Clean',
             serviceType: 'RESIDENTIAL_CLEANING',
-            packageType: 'MOST_POPULAR',
             price: 229,
             description:
-              'Everything in Eco Refresh. Microwave interior cleaning. Detailed appliance wipe down. Windowsill cleaning. Light blind dusting. Baseboard spot cleaning. Additional bathroom detailing.',
-            duration: '3-5 hours',
+              '  First-time customers. Seasonal cleaning. Homes needing extra attention. Includes Everything in EcoRefresh Clean. Detailed appliance exterior cleanings. Clean microwave interior. Detailed backsplash cleaning. Cabinet front detailing. Deep scrub shower/tub. Detailed tile cleaning. Detailed fixture cleaning. Detailed dusting of baseboards. Window sill cleaning. Door frame spot cleaning. Light switch and doorknob sanitizing. Baseboard cleaning. Ceiling fan dusting. Window sill cleaning. Extra attention to high-touch surfaces.',
+            duration: '3-5 Hours',
           },
           {
-            title: 'EcoElite Clean',
+            title: 'EcoElite Premium Clean',
             serviceType: 'RESIDENTIAL_CLEANING',
-            packageType: 'DEEP_CLEANING',
             price: 399,
             description:
-              'Everything in Eco Restore. Cabinet exterior detail cleaning. Backsplash cleaning. Detailed grout attention. Detailed shower cleaning. Fixture polishing. Baseboard cleaning. Door cleaning. Light switch cleaning. Interior window cleaning. High-touch disinfection',
-            duration: '5-8 hours',
-          },
-          {
-            title: 'Eco Revival',
-            serviceType: 'RESIDENTIAL_CLEANING',
-            packageType: 'PREMIUM',
-            price: 549,
-            description:
-              'Everything in Eco Elite Deep Clean. Interior cabinet wipe down. Interior refrigerator cleaning. Interior oven cleaning. Wall spot cleaning. Trim cleaning. Heavy dust removal. Final property presentation cleaning.',
-            duration: '6-10 hours',
-          },
-        ],
-      });
-
-      // DEEP CLEANING PACKAGES
-      await this.prisma.deepCleaningPackage.createMany({
-        skipDuplicates: true,
-        data: [
-          {
-            title: 'Eco Spark',
-            packageType: 'ECO_SPARK',
-            price: 89,
-          },
-          {
-            title: 'Green Flow',
-            packageType: 'GREENFLOW',
-            price: 129,
-          },
-          {
-            title: 'Glide',
-            packageType: 'GLIDE',
-            price: 229,
+              'Luxury homes. Special occasions. Annual deep cleaning, Homes requiring top-tier service, Includes Everything in EcoRestore Deep Clean, Interior refrigerator cleaning, Interior oven cleaning, Interior cabinet wipe-down (accessible areas), Detailed grout attention, Premium fixture detailing, Detailed baseboard cleaning, Detailed door and trim cleaning, Interior window cleaning (reachable areas), Wall spot cleaning, High-detail dusting throughout, Comprehensive home refresh, Priority scheduling, Enhanced quality-control inspection',
+            duration: '5-7 Hours',
           },
         ],
       });
@@ -256,13 +192,13 @@ export class SeedCommand extends CommandRunner {
 
     // Final report
     if (packagesOnly) {
-      console.log('🎉 Seed completed: Cleaning Packages only');
+      console.log('🎉 Seed completed: Residential Cleaning Packages only');
     } else if (usersOnly) {
       console.log('🎉 Seed completed: Users only');
     } else if (commissionOnly) {
       console.log('🎉 Seed completed: Commission only');
     } else {
-      console.log('🎉 Seed completed: Users + Commission + Cleaning Packages');
+      console.log('🎉 Seed completed: Users + Commission + Residential Cleaning Packages');
     }
 
     await this.prisma.$disconnect();

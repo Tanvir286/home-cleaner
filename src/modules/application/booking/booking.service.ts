@@ -841,7 +841,6 @@ export class BookingService {
               latitude: true,
               longitude: true,
             },
-
           },
         },
         orderBy: {
