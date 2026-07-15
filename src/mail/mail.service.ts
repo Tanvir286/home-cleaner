@@ -15,7 +15,6 @@ export class MailService {
     try {
       const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
       const subject = `${user.fname} is inviting you to ${appConfig().app.name}`;
-
       // add to queue
       await this.queue.add('sendMemberInvitation', {
         to: member.email,
@@ -38,7 +37,6 @@ export class MailService {
     try {
       const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
       const subject = 'Email Verification';
-
       // add to queue
       await this.queue.add('sendOtpCodeToEmail', {
         to: email,
@@ -63,7 +61,6 @@ export class MailService {
   }) {
     try {
       const verificationLink = `${appConfig().app.client_app_url}/verify-email?token=${params.token}&email=${params.email}&type=${params.type}`;
-
       // add to queue
       await this.queue.add('sendVerificationLink', {
         to: params.email,
