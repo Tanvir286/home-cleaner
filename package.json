@@ -20,6 +20,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "cross-env PRISMA_ENV=1 ts-node src/cmd.ts seed",
+    "seed:reset": "cross-env PRISMA_ENV=1 ts-node src/cmd.ts seed --reset",
     "cmd": "cross-env PRISMA_ENV=1 ts-node src/cmd.ts"
   },
   "dependencies": {

@@ -6,6 +6,7 @@ interface SeedCommandOptions {
   usersOnly?: boolean;
   packagesOnly?: boolean;
   commissionOnly?: boolean;
+  reset?: boolean;
 }
 
 /*********************** USAGE INSTRUCTIONS ***********************
@@ -13,6 +14,7 @@ Seed everything together   npm run seed
 Seed only users            npm run seed -- --users-only
 Seed only packages         npm run seed -- --packages-only
 Seed only commission       npm run seed -- --commission-only
+Reset and seed             npm run seed:reset
 ******************************************************************/
 
 @Command({
@@ -26,6 +28,7 @@ export class SeedCommand extends CommandRunner {
     const usersOnly = options?.usersOnly ?? false;
     const packagesOnly = options?.packagesOnly ?? false;
     const commissionOnly = options?.commissionOnly ?? false;
+    const reset = options?.reset ?? false;
 
     // Check if multiple options are selected
     const selectedOptions = [usersOnly, packagesOnly, commissionOnly].filter(
@@ -38,7 +41,7 @@ export class SeedCommand extends CommandRunner {
       );
     }
 
-    await this.main({ usersOnly, packagesOnly, commissionOnly });
+    await this.main({ usersOnly, packagesOnly, commissionOnly, reset });
   }
 
   @Option({
@@ -65,16 +68,35 @@ export class SeedCommand extends CommandRunner {
     return true;
   }
 
+  @Option({
+    flags: '--reset',
+    description: 'Reset existing seeded data before re-seeding',
+  })
+  parseReset(): boolean {
+    return true;
+  }
+
   private async main({
     usersOnly = false,
     packagesOnly = false,
     commissionOnly = false,
+    reset = false,
   }: SeedCommandOptions) {
     const password = await bcrypt.hash('123456', 10);
 
     /* ================= 1. USERS SEEDING ================= */
     if (!packagesOnly && !commissionOnly) {
       console.log('👤 Users seeding started...');
+
+      if (reset) {
+        await this.prisma.user.deleteMany({
+          where: {
+            email: {
+              in: ['admin@gmail.com', 'maid@gmail.com', 'homeowner@gmail.com'],
+            },
+          },
+        });
+      }
 
       // ADMIN
       await this.prisma.user.upsert({
@@ -134,14 +156,28 @@ export class SeedCommand extends CommandRunner {
     if (!usersOnly && !packagesOnly) {
       console.log('💰 Commission seeding started...');
 
-      await this.prisma.commission.deleteMany({});
+      if (reset) {
+        await this.prisma.commission.deleteMany({});
+      }
 
-      await this.prisma.commission.create({
-        data: {
-          percentage: 5,
-          fixed_fee: 10,
-        },
-      });
+      const existingCommission = await this.prisma.commission.findFirst();
+
+      if (existingCommission) {
+        await this.prisma.commission.update({
+          where: { id: existingCommission.id },
+          data: {
+            percentage: 5,
+            fixed_fee: 10,
+          },
+        });
+      } else {
+        await this.prisma.commission.create({
+          data: {
+            percentage: 5,
+            fixed_fee: 10,
+          },
+        });
+      }
 
       console.log('✅ Commission seeding completed');
     }
@@ -155,6 +191,14 @@ export class SeedCommand extends CommandRunner {
     /* ================= 3. PACKAGES SEEDING ================= */
     if (!usersOnly && !commissionOnly) {
       console.log('📦 Packages seeding started...');
+
+      if (reset) {
+        await this.prisma.residentialCleaningPackage.deleteMany({
+          where: {
+            serviceType: 'RESIDENTIAL_CLEANING',
+          },
+        });
+      }
 
       // ONLY RESIDENTIAL CLEANING PACKAGES
       await this.prisma.residentialCleaningPackage.createMany({
