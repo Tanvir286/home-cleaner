@@ -1226,7 +1226,6 @@ export class BookingService {
   /*----------------------------------------
   // topic:﹝﹝﹝ danger part ﹞﹞﹞
   -----------------------------------------*/
-
   // create danger booking
   async createDangerBooking(maidId: string, bookingId: string) {
     const booking = await this.prisma.booking.findUnique({
